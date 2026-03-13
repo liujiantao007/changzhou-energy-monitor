@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>常州能耗云运营驾驶舱</title>
+    <link rel="stylesheet" href="css/style.css">
+    <!-- ECharts库 - 直接使用CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <!-- SheetJS库 - 直接使用CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+    <div id="app">
+        <!-- 顶部导航栏 -->
+        <header class="navbar">
+            <div class="navbar-brand">常州能耗云运营驾驶舱</div>
+            <nav class="navbar-nav">
+                <a href="#home" class="nav-item active">首页</a>
+                <a href="#报账管理" class="nav-item">报账管理</a>
+                <a href="#电表管理" class="nav-item">电表管理</a>
+                <a href="#能耗分析" class="nav-item">能耗分析</a>
+                <a href="#报表管理" class="nav-item">报表管理</a>
+            </nav>
+            <div class="navbar-placeholder"></div>
+        </header>
+        
+        <!-- 主内容区 -->
+        <main class="main-content">
+            <!-- 首页内容 -->
+            <div id="home" class="page active">
+                <!-- 三栏布局 -->
+                <div class="grid-container">
+                    <!-- 左侧栏 -->
+                    <div class="column column-left">
+                        <!-- 能耗总览模块 -->
+                        <div class="module">
+                            <h3>能耗总览</h3>
+                            <div class="time-selector">
+                                <button class="time-btn">年</button>
+                                <button class="time-btn">月</button>
+                                <button class="time-btn active">日</button>
+                            </div>
+                            <div class="metrics">
+                                <div class="metric-item">
+                                    <span class="metric-label">总体能耗</span>
+                                    <div class="metric-value-wrapper">
+                                        <span class="metric-value" id="total-energy">0</span><span class="metric-unit">kWh</span>
+                                    </div>
+                                    <span class="metric-change" id="energy-change">+0%</span>
+                                </div>
+                                <div class="metric-item">
+                                    <span class="metric-label">总体电费</span>
+                                    <div class="metric-value-wrapper">
+                                        <span class="metric-value" id="total-cost-display">0</span><span class="metric-unit">元</span>
+                                    </div>
+                                    <span class="metric-change" id="cost-change">+0%</span>
+                                </div>
+                                <div class="metric-item">
+                                    <span class="metric-label">POI 总数</span>
+                                    <div class="metric-value-wrapper">
+                                        <span class="metric-value" id="total-poi">0</span><span class="metric-unit">个</span>
+                                    </div>
+                                    <span class="metric-change" id="poi-change">+0%</span>
+                                </div>
+                                <div class="metric-item">
+                                    <span class="metric-label">设备总数</span>
+                                    <div class="metric-value-wrapper">
+                                        <span class="metric-value" id="total-device">0</span><span class="metric-unit">个</span>
+                                    </div>
+                                    <span class="metric-change" id="device-change">+0%</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 用电量分项统计模块 -->
+                        <div class="module">
+                            <h3>用电量分项统计</h3>
+                            <div class="time-selector" id="electricity-time-selector">
+                                <button class="time-btn">年</button>
+                                <button class="time-btn">月</button>
+                                <button class="time-btn active">日</button>
+                            </div>
+                            <div id="electricity-chart" class="chart"></div>
+                        </div>
+                        
+                        <!-- POI分项统计模块 -->
+                        <div class="module">
+                            <h3>POI分项统计</h3>
+                            <div class="time-selector" id="poi-time-selector">
+                                <button class="time-btn">年</button>
+                                <button class="time-btn">月</button>
+                                <button class="time-btn active">日</button>
+                            </div>
+                            <div id="poi-chart" class="chart"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- 中间栏 -->
+                    <div class="column column-center">
+                        <!-- 核心地图模块 -->
+                        <div class="module">
+                            <h3>常州能耗分布</h3>
+                            <div id="map-chart" class="chart map-chart"></div>
+                        </div>
+                        
+                        <!-- 统计图表区域 -->
+                        <div class="chart-row">
+                            <div class="module">
+                                <h3>用电类型统计</h3>
+                                <div class="time-selector" id="electricity-type-time-selector">
+                                    <button class="time-btn">年</button>
+                                    <button class="time-btn">月</button>
+                                    <button class="time-btn active">日</button>
+                                </div>
+                                <div id="electricity-type-chart" class="chart"></div>
+                            </div>
+                            <div class="module">
+                                <h3>能耗趋势图</h3>
+                                <div id="energy-trend-chart" class="chart"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 右侧栏 -->
+                    <div class="column column-right">
+                        <!-- 报账总览模块 -->
+                        <div class="module">
+                            <h3>报账总览</h3>
+                            <div class="time-selector">
+                                <button class="time-btn">年</button>
+                                <button class="time-btn">月</button>
+                                <button class="time-btn active">日</button>
+                            </div>
+                            <div class="report-metrics">
+                                <div class="report-item">
+                                    <span class="report-label">租费</span>
+                                    <div class="report-stats">
+                                        <span class="report-total">总报账数: <span id="rent-total">0</span></span>
+                                        <span class="report-pending">待报账: <span id="rent-pending">0</span></span>
+                                        <span class="report-completed">已报账: <span id="rent-completed">0</span></span>
+                                        <div class="progress-bar">
+                                            <div class="progress" id="rent-progress"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="report-item">
+                                    <span class="report-label">电费</span>
+                                    <div class="report-stats">
+                                        <span class="report-total">总报账数: <span id="electricity-total">0</span></span>
+                                        <span class="report-pending">待报账: <span id="electricity-pending">0</span></span>
+                                        <span class="report-completed">已报账: <span id="electricity-completed">0</span></span>
+                                        <div class="progress-bar">
+                                            <div class="progress" id="electricity-progress"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 告警总览模块 -->
+                        <div class="module">
+                            <h3>告警总览</h3>
+                            <div class="refresh-btn" id="alarm-refresh">刷新</div>
+                            <div class="alarm-list" id="alarm-list">
+                                <!-- 告警信息将通过JavaScript动态生成 -->
+                            </div>
+                        </div>
+                        
+                        <!-- 事件总览模块 -->
+                        <div class="module">
+                            <h3>事件总览</h3>
+                            <div class="refresh-btn" id="event-refresh">刷新</div>
+                            <div class="event-list" id="event-list">
+                                <!-- 事件信息将通过JavaScript动态生成 -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 其他页面的空白占位 -->
+            <div id="报账管理" class="page">
+                <div class="placeholder">
+                    <h2>报账管理</h2>
+                    <p>功能开发中</p>
+                </div>
+            </div>
+            
+            <div id="电表管理" class="page">
+                <div class="placeholder">
+                    <h2>电表管理</h2>
+                    <p>功能开发中</p>
+                </div>
+            </div>
+            
+            <div id="能耗分析" class="page">
+                <div class="placeholder">
+                    <h2>能耗分析</h2>
+                    <p>功能开发中</p>
+                </div>
+            </div>
+            
+            <div id="报表管理" class="page">
+                <div class="placeholder">
+                    <h2>报表管理</h2>
+                    <p>功能开发中</p>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <!-- 数据加载状态 -->
+    <div id="loading" class="loading">
+        <div class="loading-content">
+            <div class="loading-spinner"></div>
+            <p>数据加载中...</p>
+        </div>
+    </div>
+    
+    <script src="js/app.js"></script>
+    <script src="js/data.js"></script>
+    <script src="js/charts.js"></script>
+    <script src="js/map.js"></script>
+</body>
+</html>
