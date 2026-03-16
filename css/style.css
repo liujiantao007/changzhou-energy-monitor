@@ -515,3 +515,44 @@ body {
 .event-list::-webkit-scrollbar-thumb:hover {
     background: #a8a8a8;
 }
+
+/* 区域选择器样式 */
+.region-selector {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+    padding: 0 10px;
+}
+
+.region-select {
+    flex: 0 0 12%;
+    width: 12%;
+    padding: 6px 10px;
+    border: 1px solid #d9d9d9;
+    border-radius: 4px;
+    font-size: 13px;
+    color: #333;
+    background-color: #fff;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.region-select:hover {
+    border-color: #40a9ff;
+}
+
+.region-select:focus {
+    outline: none;
+    border-color: #40a9ff;
+    box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+}
+
+.region-select:disabled {
+    background-color: #f5f5f5;
+    cursor: not-allowed;
+    color: #999;
+}
+
+.region-select option {
+    padding: 5px;
+}

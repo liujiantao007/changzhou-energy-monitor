@@ -251,6 +251,10 @@ function processExcelDataArray(rows) {
     const districtColIndex = columnMap['归属单元'] || columnMap['J'] || 9;
     console.log('归属单元列索引:', districtColIndex);
     
+    // 查找归属网格列（第11列，索引10）
+    const gridColIndex = columnMap['归属网格'] || 10;
+    console.log('归属网格列索引:', gridColIndex);
+    
     // 将数组转换为对象数组
     const objects = [];
     for (let i = 1; i < rows.length; i++) {
@@ -281,6 +285,11 @@ function processExcelDataArray(rows) {
         if (districtValue !== undefined && districtValue !== null && districtValue !== '') {
             obj['J'] = String(districtValue).trim();
         }
+        // 归属网格（第11列）
+        const gridValue = row[gridColIndex];
+        if (gridValue !== undefined && gridValue !== null && gridValue !== '') {
+            obj['GRID'] = String(gridValue).trim();
+        }
         // POI 名称
         if (row[poiColIndex]) obj['L'] = row[poiColIndex];
         // 度数
@@ -300,6 +309,7 @@ function processExcelDataArray(rows) {
                 用电类型: obj['K'],
                 用电属性: obj['I'],
                 归属单元: obj['J'],
+                归属网格: obj['GRID'],
                 POI: obj['L'],
                 度数: obj['AB'],
                 电费: obj['AC']
@@ -432,30 +442,6 @@ function getItemDate(item) {
     return item['A'] || item['A 列'] || item['日期'] || item['Date'] || null;
 }
 
-// 解析日期字符串为 Date 对象
-function parseDate(dateStr) {
-    if (!dateStr) return null;
-    
-    // 处理 2026/3/1 格式
-    if (typeof dateStr === 'string') {
-        const parts = dateStr.split('/');
-        if (parts.length === 3) {
-            const year = parseInt(parts[0]);
-            const month = parseInt(parts[1]) - 1; // 月份从 0 开始
-            const day = parseInt(parts[2]);
-            return new Date(year, month, day);
-        }
-        // 尝试直接解析
-        return new Date(dateStr);
-    }
-    
-    if (dateStr instanceof Date) {
-        return dateStr;
-    }
-    
-    return null;
-}
-
 // 查找最新日期
 function findLatestDate(data) {
     let latestDate = null;
@@ -551,6 +537,18 @@ function processData(data) {
     if (!window.originalDataCache || window.originalDataCache.length === 0) {
         window.originalDataCache = data.rawData || [];
         console.log('保存原始完整数据缓存，数据量:', window.originalDataCache.length);
+        
+        // 检查是否包含 GRID 字段
+        if (window.originalDataCache.length > 0) {
+            const firstItem = window.originalDataCache[0];
+            console.log('第一条数据检查:', {
+                date: firstItem['A'],
+                district: firstItem['J'],
+                grid: firstItem['GRID'],
+                energy: firstItem['AB'],
+                cost: firstItem['AC']
+            });
+        }
     }
     
     // 保存当前使用的数据

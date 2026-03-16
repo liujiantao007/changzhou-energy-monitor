@@ -189,12 +189,50 @@ function reloadDataWithoutLoading() {
             
             // 如果有区域筛选条件，先筛选区域
             if (currentDistrict) {
-                const districtKeyword = currentDistrict.replace(/区|市|县/g, '');
+                // 判断是网格还是区县
+                const isGrid = currentDistrict.includes('网格');
+                const keyword = currentDistrict.replace(/区|市|县|网格/g, '');
+                
+                console.log('筛选类型:', isGrid ? '网格' : '区县', '关键词:', keyword);
+                console.log('原始区域名:', currentDistrict, '处理后关键词:', keyword);
+                
+                // 检查数据源中的归属单元值
+                if (dataSource.length > 0) {
+                    const sampleUnits = dataSource.slice(0, 5).map(item => item['J']);
+                    console.log('数据源中的归属单元示例:', sampleUnits);
+                }
+                
                 dataToUse = dataSource.filter(item => {
-                    const unit = item['J'] || '';
-                    return unit.includes(districtKeyword) || unit.includes(currentDistrict);
+                    const unit = item['J'] || ''; // 归属单元
+                    const grid = item['GRID'] || ''; // 归属网格
+                    
+                    if (isGrid) {
+                        // 网格级别：匹配归属网格列
+                        return grid.includes(keyword) || grid === currentDistrict;
+                    } else {
+                        // 区县级别：匹配归属单元列
+                        const match = unit.includes(keyword) || unit.includes(currentDistrict);
+                        if (!match && unit.includes('武进')) {
+                            console.log('匹配失败 - 单元:', unit, '关键词:', keyword, '区域名:', currentDistrict);
+                        }
+                        return match;
+                    }
                 });
                 console.log('区域筛选后数据量:', dataToUse.length);
+                
+                // 调试：打印前 3 条筛选后的数据
+                if (dataToUse.length > 0) {
+                    console.log('前 3 条筛选数据:', {
+                        count: dataToUse.length,
+                        sample: dataToUse.slice(0, 3).map(item => ({
+                            date: item['A'],
+                            district: item['J'],
+                            grid: item['GRID'],
+                            energy: item['AB'],
+                            cost: item['AC']
+                        }))
+                    });
+                }
             }
             
             // 使用筛选数据重新加载
