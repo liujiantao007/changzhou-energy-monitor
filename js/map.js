@@ -67,8 +67,8 @@ function initMap() {
                 type: 'map',
                 map: '常州',
                 roam: true,
-                zoom: 1.0,
-                center: [119.72, 31.58],
+                zoom: 1.2,
+                center: [119.72, 31.62],
                 aspectScale: 0.75,
                 selectedMode: 'single',
                 data: [],
@@ -91,7 +91,7 @@ function initMap() {
                     fontSize: 12,
                     fontFamily: 'Microsoft YaHei, SimHei, sans-serif',
                     formatter: function(params) {
-                        // 如果能耗值不为 0，显示名称；否则不显示
+                        // 只有当日总体能耗大于 0 才显示网格名称
                         if (params.value && params.value > 0) {
                             return params.name;
                         }
@@ -213,12 +213,12 @@ function initMap() {
                 if (mapChart) {
                     mapChart.setOption({
                         geo: {
-                            center: [119.72, 31.58],
-                            zoom: 1.0
+                            center: [119.72, 31.62],
+                            zoom: 1.2
                         },
                         series: [{
-                            center: [119.72, 31.58],
-                            zoom: 1.0
+                            center: [119.72, 31.62],
+                            zoom: 1.2
                         }]
                     });
                 }
@@ -432,6 +432,17 @@ function updateMap(data) {
             });
         });
     }
+    
+    // 如果是首次加载数据，自动触发一次重置筛选以显示所有能耗>0 的网格
+    if (!window.mapDataLoaded) {
+        window.mapDataLoaded = true;
+        console.log('首次加载地图数据，自动重置筛选');
+        setTimeout(() => {
+            if (typeof resetDistrictFilter === 'function') {
+                resetDistrictFilter();
+            }
+        }, 500);
+    }
 }
 
 // 按区域过滤数据
@@ -501,17 +512,29 @@ function filterDataByRegion(regionName, regionLevel) {
     let filteredData;
     
     if (regionLevel === 'grid') {
-        // 网格级别：根据归属网格列（GRID列）进行筛选
-        console.log('网格级别筛选:', regionName);
+        // 网格级别：只更新选中状态，不筛选数据，保持显示所有能耗>0 的网格
+        console.log('网格级别选中:', regionName);
+        filteredData = dataSource; // 使用全部数据
         
-        filteredData = dataSource.filter(item => {
-            const grid = item['GRID'] || ''; // 归属网格
-            // 精确匹配网格名称（去掉"网格"后缀进行比较）
-            const gridName = regionName.replace(/网格$/, '');
-            return grid.includes(gridName) || grid === regionName;
-        });
+        // 更新图表和地图，保持所有能耗>0 的网格显示
+        if (typeof reloadDataWithFilter === 'function') {
+            reloadDataWithFilter(filteredData, regionName);
+        }
         
-        console.log('网格筛选后数据量:', filteredData.length);
+        // 取消之前的选中状态，然后选中当前网格
+        if (mapChart) {
+            mapChart.dispatchAction({
+                type: 'unSelect',
+                seriesIndex: 0
+            });
+            mapChart.dispatchAction({
+                type: 'select',
+                seriesIndex: 0,
+                name: regionName
+            });
+        }
+        
+        return; // 直接返回，不进行后续筛选
     } else if (regionLevel === 'district') {
         // 区县级别：根据归属单元列（J列）进行筛选
         console.log('区县级别筛选:', regionName);

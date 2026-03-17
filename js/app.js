@@ -93,10 +93,10 @@ function initNavigation() {
         item.addEventListener('click', function(e) {
             e.preventDefault();
             
-            // 移除所有导航项的active类
+            // 移除所有导航项的 active 类
             navItems.forEach(nav => nav.classList.remove('active'));
             
-            // 添加当前导航项的active类
+            // 添加当前导航项的 active 类
             this.classList.add('active');
             
             // 隐藏所有页面
@@ -107,6 +107,11 @@ function initNavigation() {
             const targetPage = document.getElementById(targetId);
             if (targetPage) {
                 targetPage.classList.add('active');
+                
+                // 如果是能耗分析页面，加载 iframe
+                if (targetId === '能耗分析') {
+                    loadEnergyAnalysisFrame();
+                }
             }
         });
     });
@@ -136,6 +141,27 @@ function initNavigation() {
     });
 }
 
+// 加载能耗分析 iframe
+function loadEnergyAnalysisFrame() {
+    const targetUrl = 'http://10.38.78.200/vuepeim/login';
+    
+    // 添加时间戳参数，避免缓存
+    const timestamp = new Date().getTime();
+    const urlWithTimestamp = targetUrl + '?t=' + timestamp;
+    
+    console.log('在新标签页中打开能耗分析页面:', urlWithTimestamp);
+    
+    // 使用 window.open 在新标签页中打开
+    const newWindow = window.open(urlWithTimestamp, '_blank');
+    
+    if (!newWindow) {
+        console.error('浏览器阻止了弹出窗口，请允许弹出窗口');
+        alert('浏览器阻止了新标签页的打开，请允许弹出窗口后重试');
+    } else {
+        console.log('新标签页已打开');
+    }
+}
+
 // 初始化时间选择器
 function initTimeSelectors() {
     const timeBtns = document.querySelectorAll('.time-btn');
@@ -159,6 +185,20 @@ function initTimeSelectors() {
             // 设置时间维度
             if (typeof setTimeRange === 'function') {
                 setTimeRange(timeRange);
+            }
+            
+            // 切换时间维度时，重置区域选中状态，显示所有能耗>0 的网格
+            if (typeof resetDistrictFilter === 'function') {
+                resetDistrictFilter();
+            }
+            
+            // 重置选择器
+            const districtSelect = document.getElementById('district-select');
+            const gridSelect = document.getElementById('grid-select');
+            if (districtSelect) districtSelect.value = '';
+            if (gridSelect) {
+                gridSelect.value = '';
+                gridSelect.disabled = true;
             }
             
             // 重新过滤数据（不显示加载提示框）
