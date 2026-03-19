@@ -96,8 +96,15 @@ function updateElectricityChart(data) {
             formatter: function(params) {
                 return params.name + ': ' + params.value.toLocaleString('zh-CN') + ' kWh (' + params.percent + '%)';
             },
+            backgroundColor: 'rgba(0, 0, 0, 0)',
+            borderColor: 'rgba(0, 0, 0, 0)',
+            borderWidth: 0,
+            shadowBlur: 0,
+            padding: [0, 0, 0, 0],
+            extraCssText: 'box-shadow: none; border: none; background: transparent !important;',
             textStyle: {
-                fontSize: 14
+                fontSize: 14,
+                color: '#fff'
             }
         },
         legend: {
@@ -106,7 +113,8 @@ function updateElectricityChart(data) {
             top: 'center',
             textStyle: {
                 fontSize: 14,
-                fontFamily: 'Microsoft YaHei, SimHei, sans-serif'
+                fontFamily: 'Microsoft YaHei, SimHei, sans-serif',
+                color: '#fff'
             }
         },
         series: [{
@@ -117,9 +125,7 @@ function updateElectricityChart(data) {
             avoidLabelOverlap: true,
             minShowLabelAngle: 0,
             itemStyle: {
-                borderRadius: 8,
-                borderColor: '#fff',
-                borderWidth: 2
+                borderRadius: 8
             },
             label: {
                 show: true,
@@ -128,7 +134,10 @@ function updateElectricityChart(data) {
                 },
                 fontSize: 12,
                 fontFamily: 'Microsoft YaHei, SimHei, sans-serif',
-                position: 'outside'
+                position: 'outside',
+                color: '#fff',
+                textBorderColor: 'transparent',
+                textBorderWidth: 0
             },
             emphasis: {
                 label: {
@@ -217,8 +226,15 @@ function updatePoiChart(data) {
             formatter: function(params) {
                 return params.name + ': ' + params.value.toLocaleString('zh-CN') + ' 个 (' + params.percent + '%)';
             },
+            backgroundColor: 'rgba(0, 0, 0, 0)',
+            borderColor: 'rgba(0, 0, 0, 0)',
+            borderWidth: 0,
+            shadowBlur: 0,
+            padding: [0, 0, 0, 0],
+            extraCssText: 'box-shadow: none; border: none; background: transparent !important;',
             textStyle: {
-                fontSize: 14
+                fontSize: 14,
+                color: '#fff'
             }
         },
         legend: {
@@ -227,7 +243,8 @@ function updatePoiChart(data) {
             top: 'center',
             textStyle: {
                 fontSize: 14,
-                fontFamily: 'Microsoft YaHei, SimHei, sans-serif'
+                fontFamily: 'Microsoft YaHei, SimHei, sans-serif',
+                color: '#fff'
             }
         },
         series: [{
@@ -238,9 +255,7 @@ function updatePoiChart(data) {
             avoidLabelOverlap: true,
             minShowLabelAngle: 0,
             itemStyle: {
-                borderRadius: 8,
-                borderColor: '#fff',
-                borderWidth: 2
+                borderRadius: 8
             },
             label: {
                 show: true,
@@ -249,7 +264,10 @@ function updatePoiChart(data) {
                 },
                 fontSize: 12,
                 fontFamily: 'Microsoft YaHei, SimHei, sans-serif',
-                position: 'outside'
+                position: 'outside',
+                color: '#fff',
+                textBorderColor: 'transparent',
+                textBorderWidth: 0
             },
             emphasis: {
                 label: {
@@ -337,8 +355,15 @@ function updateElectricityTypeChart(data) {
                     : params.value.toLocaleString('zh-CN') + ' 元';
                 return params.seriesName + '<br/>' + params.name + ': ' + value;
             },
+            backgroundColor: 'rgba(0, 0, 0, 0)',
+            borderColor: 'rgba(0, 0, 0, 0)',
+            borderWidth: 0,
+            shadowBlur: 0,
+            padding: [0, 0, 0, 0],
+            extraCssText: 'box-shadow: none; border: none; background: transparent !important;',
             textStyle: {
-                fontSize: 14
+                fontSize: 14,
+                color: '#fff'
             }
         },
         legend: {
@@ -347,7 +372,8 @@ function updateElectricityTypeChart(data) {
             top: 'center',
             textStyle: {
                 fontSize: 14,
-                fontFamily: 'Microsoft YaHei, SimHei, sans-serif'
+                fontFamily: 'Microsoft YaHei, SimHei, sans-serif',
+                color: '#fff'
             }
         },
         series: [
@@ -361,12 +387,13 @@ function updateElectricityTypeChart(data) {
                     show: true,
                     formatter: '{b}\n{c}',
                     fontSize: 12,
-                    fontFamily: 'Microsoft YaHei, SimHei, sans-serif'
+                    fontFamily: 'Microsoft YaHei, SimHei, sans-serif',
+                    color: '#fff',
+                    textBorderColor: 'transparent',
+                    textBorderWidth: 0
                 },
                 itemStyle: {
-                    borderRadius: 6,
-                    borderColor: '#fff',
-                    borderWidth: 2
+                    borderRadius: 6
                 },
                 emphasis: {
                     label: {
@@ -403,9 +430,7 @@ function updateElectricityTypeChart(data) {
                     fontFamily: 'Microsoft YaHei, SimHei, sans-serif'
                 },
                 itemStyle: {
-                    borderRadius: 4,
-                    borderColor: '#fff',
-                    borderWidth: 1
+                    borderRadius: 4
                 },
                 emphasis: {
                     label: {
@@ -430,56 +455,145 @@ function updateElectricityTypeChart(data) {
 }
 
 // 更新能耗趋势图
-function updateEnergyTrendChart(data) {
+let currentTrendTimeType = '日';  // 默认日维度
+
+function updateEnergyTrendChart(data, timeType) {
     if (!charts.energyTrendChart) return;
+    
+    // 使用传入的时间类型，或使用当前保存的类型
+    if (timeType) {
+        currentTrendTimeType = timeType;
+    }
     
     // 使用原始数据，不受时间选择器影响
     const rawData = data.rawData || [];
-    console.log('能耗趋势图原始数据条数:', rawData.length);
+    console.log('能耗趋势图原始数据条数:', rawData.length, '时间维度:', currentTrendTimeType);
     
-    // 获取最近12个月的数据
-    const monthlyData = {};
-    rawData.forEach(item => {
-        const dateStr = item['A'] || '';
-        const dateObj = parseDate(dateStr);
-        if (dateObj) {
-            const yearMonth = `${dateObj.getFullYear()}/${dateObj.getMonth() + 1}`;
-            if (!monthlyData[yearMonth]) {
-                monthlyData[yearMonth] = { energy: 0, cost: 0 };
+    let labels = [];
+    let energyValues = [];
+    let costValues = [];
+    
+    if (currentTrendTimeType === '日') {
+        // 日维度：最近30天
+        const dailyData = {};
+        rawData.forEach(item => {
+            const dateStr = item['A'] || '';
+            const dateObj = parseDate(dateStr);
+            if (dateObj) {
+                const dateKey = `${dateObj.getFullYear()}/${dateObj.getMonth() + 1}/${dateObj.getDate()}`;
+                if (!dailyData[dateKey]) {
+                    dailyData[dateKey] = { energy: 0, cost: 0 };
+                }
+                dailyData[dateKey].energy += Number(item['AB'] || item['ab'] || 0) || 0;
+                dailyData[dateKey].cost += Number(item['AC'] || item['ac'] || 0) || 0;
             }
-            monthlyData[yearMonth].energy += Number(item['AB'] || item['ab'] || 0) || 0;
-            monthlyData[yearMonth].cost += Number(item['AC'] || item['ac'] || 0) || 0;
+        });
+        
+        // 生成最近30天的日期列表
+        const days = [];
+        const now = new Date();
+        for (let i = 29; i >= 0; i--) {
+            const date = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
+            days.push(`${date.getFullYear()}/${date.getMonth() + 1}/${date.getDate()}`);
         }
-    });
-    
-    // 生成最近12个月的月份列表
-    const months = [];
-    const now = new Date();
-    for (let i = 11; i >= 0; i--) {
-        const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
-        months.push(`${date.getFullYear()}/${date.getMonth() + 1}`);
+        
+        labels = days.map(d => {
+            const parts = d.split('/');
+            return parts[1] + '/' + parts[2];
+        });
+        energyValues = days.map(day => {
+            const data = dailyData[day];
+            return data ? Math.floor(data.energy) : 0;
+        });
+        costValues = days.map(day => {
+            const data = dailyData[day];
+            return data ? Math.floor(data.cost) : 0;
+        });
+        
+    } else if (currentTrendTimeType === '月') {
+        // 月维度：最近12个月
+        const monthlyData = {};
+        rawData.forEach(item => {
+            const dateStr = item['A'] || '';
+            const dateObj = parseDate(dateStr);
+            if (dateObj) {
+                const yearMonth = `${dateObj.getFullYear()}/${dateObj.getMonth() + 1}`;
+                if (!monthlyData[yearMonth]) {
+                    monthlyData[yearMonth] = { energy: 0, cost: 0 };
+                }
+                monthlyData[yearMonth].energy += Number(item['AB'] || item['ab'] || 0) || 0;
+                monthlyData[yearMonth].cost += Number(item['AC'] || item['ac'] || 0) || 0;
+            }
+        });
+        
+        // 生成最近12个月的月份列表
+        const months = [];
+        const now = new Date();
+        for (let i = 11; i >= 0; i--) {
+            const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+            months.push(`${date.getFullYear()}/${date.getMonth() + 1}`);
+        }
+        
+        labels = months.map(m => m.split('/')[1] + '月');
+        energyValues = months.map(month => {
+            const data = monthlyData[month];
+            return data ? Math.floor(data.energy) : 0;
+        });
+        costValues = months.map(month => {
+            const data = monthlyData[month];
+            return data ? Math.floor(data.cost) : 0;
+        });
+        
+    } else if (currentTrendTimeType === '年') {
+        // 年维度：最近12年
+        const yearlyData = {};
+        rawData.forEach(item => {
+            const dateStr = item['A'] || '';
+            const dateObj = parseDate(dateStr);
+            if (dateObj) {
+                const year = dateObj.getFullYear();
+                if (!yearlyData[year]) {
+                    yearlyData[year] = { energy: 0, cost: 0 };
+                }
+                yearlyData[year].energy += Number(item['AB'] || item['ab'] || 0) || 0;
+                yearlyData[year].cost += Number(item['AC'] || item['ac'] || 0) || 0;
+            }
+        });
+        
+        // 生成最近12年的年份列表
+        const years = [];
+        const now = new Date();
+        for (let i = 11; i >= 0; i--) {
+            years.push(now.getFullYear() - i);
+        }
+        
+        labels = years.map(y => y + '年');
+        energyValues = years.map(year => {
+            const data = yearlyData[year];
+            return data ? Math.floor(data.energy) : 0;
+        });
+        costValues = years.map(year => {
+            const data = yearlyData[year];
+            return data ? Math.floor(data.cost) : 0;
+        });
     }
     
-    // 构建图表数据
-    const energyValues = months.map(month => {
-        const data = monthlyData[month];
-        return data ? Math.floor(data.energy) : 0;
-    });
-    
-    const costValues = months.map(month => {
-        const data = monthlyData[month];
-        return data ? Math.floor(data.cost) : 0;
-    });
-    
-    console.log('能耗趋势图月份:', months);
+    console.log('能耗趋势图标签:', labels);
     console.log('能耗趋势图能耗数据:', energyValues);
     console.log('能耗趋势图电费数据:', costValues);
     
     const option = {
         tooltip: {
             trigger: 'axis',
+            backgroundColor: 'rgba(0, 0, 0, 0)',
+            borderColor: 'rgba(0, 0, 0, 0)',
+            borderWidth: 0,
+            shadowBlur: 0,
+            padding: [0, 0, 0, 0],
+            extraCssText: 'box-shadow: none; border: none; background: transparent !important;',
             textStyle: {
-                fontSize: 14
+                fontSize: 14,
+                color: '#fff'
             },
             formatter: function(params) {
                 let result = params[0].axisValue + '<br/>';
@@ -495,7 +609,8 @@ function updateEnergyTrendChart(data) {
             top: 5,
             textStyle: {
                 fontSize: 14,
-                fontFamily: 'Microsoft YaHei, SimHei, sans-serif'
+                fontFamily: 'Microsoft YaHei, SimHei, sans-serif',
+                color: '#fff'
             }
         },
         grid: {
@@ -508,10 +623,11 @@ function updateEnergyTrendChart(data) {
         xAxis: {
             type: 'category',
             boundaryGap: false,
-            data: months.map(m => m.split('/')[1] + '月'),
+            data: labels,
             axisLabel: {
                 fontSize: 12,
-                fontFamily: 'Microsoft YaHei, SimHei, sans-serif'
+                fontFamily: 'Microsoft YaHei, SimHei, sans-serif',
+                color: '#fff'
             }
         },
         yAxis: [
@@ -522,13 +638,20 @@ function updateEnergyTrendChart(data) {
                 axisLabel: {
                     fontSize: 12,
                     fontFamily: 'Microsoft YaHei, SimHei, sans-serif',
+                    color: '#fff',
                     formatter: function(value) {
                         return value.toLocaleString('zh-CN');
                     }
                 },
                 nameTextStyle: {
                     fontSize: 12,
-                    fontFamily: 'Microsoft YaHei, SimHei, sans-serif'
+                    fontFamily: 'Microsoft YaHei, SimHei, sans-serif',
+                    color: '#fff'
+                },
+                splitLine: {
+                    lineStyle: {
+                        color: 'rgba(255, 255, 255, 0.1)'
+                    }
                 }
             },
             {
@@ -538,13 +661,18 @@ function updateEnergyTrendChart(data) {
                 axisLabel: {
                     fontSize: 12,
                     fontFamily: 'Microsoft YaHei, SimHei, sans-serif',
+                    color: '#fff',
                     formatter: function(value) {
                         return value.toLocaleString('zh-CN');
                     }
                 },
                 nameTextStyle: {
                     fontSize: 12,
-                    fontFamily: 'Microsoft YaHei, SimHei, sans-serif'
+                    fontFamily: 'Microsoft YaHei, SimHei, sans-serif',
+                    color: '#fff'
+                },
+                splitLine: {
+                    show: false
                 }
             }
         ],
@@ -614,9 +742,15 @@ function updateEnergyTrendChart(data) {
     console.log('能耗趋势图配置已设置');
 }
 
+// 获取当前能耗趋势图的时间维度
+function getCurrentTrendTimeType() {
+    return currentTrendTimeType;
+}
+
 // 导出图表函数
 window.initCharts = initCharts;
 window.updateElectricityChart = updateElectricityChart;
 window.updatePoiChart = updatePoiChart;
 window.updateElectricityTypeChart = updateElectricityTypeChart;
 window.updateEnergyTrendChart = updateEnergyTrendChart;
+window.getCurrentTrendTimeType = getCurrentTrendTimeType;

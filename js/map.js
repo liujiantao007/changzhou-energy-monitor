@@ -83,7 +83,7 @@ function initMap() {
                         }
                     },
                     itemStyle: {
-                        areaColor: '#ffd666'
+                        areaColor: 'rgba(255, 214, 102, 0.8)'
                     }
                 },
                 label: {
@@ -109,12 +109,12 @@ function initMap() {
                         }
                     },
                     itemStyle: {
-                        areaColor: '#ffd666'
+                        areaColor: 'rgba(255, 214, 102, 0.8)'
                     }
                 },
                 itemStyle: {
-                    areaColor: '#f0f5ff',
-                    borderColor: '#1890ff',
+                    areaColor: 'rgba(240, 245, 255, 0.8)',
+                    borderColor: 'rgba(24, 144, 255, 0.8)',
                     borderWidth: 1
                 }
             }
@@ -214,7 +214,17 @@ function initMap() {
                     mapChart.setOption({
                         geo: {
                             center: [119.72, 31.62],
-                            zoom: 1.2
+                            zoom: 1.2,
+                            itemStyle: {
+                                areaColor: 'rgba(255, 255, 255, 0.5)',
+                                borderColor: 'rgba(24, 144, 255, 0.5)',
+                                borderWidth: 1
+                            },
+                            emphasis: {
+                                itemStyle: {
+                                    areaColor: 'rgba(255, 214, 102, 0.5)'
+                                }
+                            }
                         },
                         series: [{
                             center: [119.72, 31.62],
@@ -512,11 +522,22 @@ function filterDataByRegion(regionName, regionLevel) {
     let filteredData;
     
     if (regionLevel === 'grid') {
-        // 网格级别：只更新选中状态，不筛选数据，保持显示所有能耗>0 的网格
-        console.log('网格级别选中:', regionName);
-        filteredData = dataSource; // 使用全部数据
+        // 网格级别：根据 GRID 列进行筛选
+        console.log('网格级别筛选:', regionName);
         
-        // 更新图表和地图，保持所有能耗>0 的网格显示
+        // 提取网格名称关键词（如"西湖网格" -> "西湖"）
+        const gridKeyword = regionName.replace(/网格/g, '');
+        console.log('筛选关键词:', gridKeyword);
+        
+        filteredData = dataSource.filter(item => {
+            const grid = item['GRID'] || ''; // 归属网格
+            // 模糊匹配：包含关键词即可
+            return grid.includes(gridKeyword) || grid.includes(regionName);
+        });
+        
+        console.log('网格筛选后数据量:', filteredData.length);
+        
+        // 更新图表和地图
         if (typeof reloadDataWithFilter === 'function') {
             reloadDataWithFilter(filteredData, regionName);
         }
@@ -534,6 +555,8 @@ function filterDataByRegion(regionName, regionLevel) {
             });
         }
         
+        // 更新地图高亮
+        updateMapHighlight(regionName);
         return; // 直接返回，不进行后续筛选
     } else if (regionLevel === 'district') {
         // 区县级别：根据归属单元列（J列）进行筛选

@@ -32,7 +32,7 @@ body {
 
 /* 顶部导航栏 */
 .navbar {
-    background: linear-gradient(90deg, #0d47a1 0%, #1976d2 100%);
+    background: transparent;
     color: white;
     padding: 0 1.56vw; /* 30px / 1920px */
     height: 70px;
@@ -99,7 +99,8 @@ body {
 .main-content {
     height: calc(1080px - 70px);
     position: relative;
-    padding: 0.52vw 1vw; /* 垂直10px / 水平1% */
+    padding: 10px 1vw; /* 垂直 10px / 水平 1% */
+    overflow: hidden;
 }
 
 .page {
@@ -160,6 +161,30 @@ body {
     color: rgba(255, 255, 255, 0.5);
 }
 
+/* 加载动画 */
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+#能耗分析 {
+    padding: 0;
+    overflow: hidden;
+}
+
+#energy-iframe-container {
+    width: 100%;
+    height: 100%;
+    position: relative;
+}
+
+#energy-analysis-frame {
+    width: 100%;
+    height: 100%;
+    border: none;
+    display: block;
+}
+
 /* 三栏布局 */
 .grid-container {
     display: grid;
@@ -173,11 +198,12 @@ body {
     display: flex;
     flex-direction: column;
     gap: 8px;
+    min-height: 0;
 }
 
 /* 模块样式 */
 .module {
-    background: rgba(255, 255, 255, 0.95);
+    background: transparent;
     border-radius: 8px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
     padding: 10px;
@@ -194,13 +220,22 @@ body {
     color: #1976d2;
     border-bottom: 2px solid #e3f2fd;
     padding-bottom: 4px;
+    flex-shrink: 0;
 }
 
 /* 左侧栏模块高度分配 */
+.column-left {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    height: 100%;
+}
+
 .column-left .module {
-    flex: 0 0 auto;
-    height: 33.33%;
+    flex: 1;
     min-height: 0;
+    display: flex;
+    flex-direction: column;
 }
 
 /* 中间栏模块高度分配 */
@@ -212,14 +247,14 @@ body {
 }
 
 .column-center > .module:first-child {
-    flex: 0 0 auto;
-    height: 66.66%;
+    flex: 2;
     min-height: 0;
+    display: flex;
+    flex-direction: column;
 }
 
 .chart-row {
-    flex: 0 0 auto;
-    height: 33.33%;
+    flex: 1;
     min-height: 0;
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -229,13 +264,23 @@ body {
 .chart-row .module {
     height: 100%;
     min-height: 0;
-    max-height: 100%;
+    display: flex;
+    flex-direction: column;
 }
 
 /* 右侧栏模块高度分配 */
+.column-right {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    height: 100%;
+}
+
 .column-right .module {
     flex: 1;
     min-height: 0;
+    display: flex;
+    flex-direction: column;
 }
 
 /* 时间选择器 */
@@ -245,13 +290,14 @@ body {
     z-index: 10;
     position: relative;
     flex-wrap: wrap;
+    flex-shrink: 0;
 }
 
 .time-btn {
     padding: 3px 10px;
     font-size: 11px;
-    border: 1px solid #d9d9d9;
-    background-color: white;
+    border: 1px solid #90caf9;
+    background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
     cursor: pointer;
     transition: all 0.3s ease;
 }
@@ -265,7 +311,7 @@ body {
 }
 
 .time-btn.active {
-    background-color: #1976d2;
+    background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
     color: white;
     border-color: #1976d2;
 }
@@ -277,6 +323,7 @@ body {
     grid-gap: 8px;
     flex: 1;
     min-height: 0;
+    align-content: start;
 }
 
 .metric-item {
@@ -288,6 +335,7 @@ body {
     flex-direction: column;
     justify-content: center;
     align-items: center;
+    min-height: 80px;
 }
 
 .metric-label {
@@ -415,55 +463,137 @@ body {
     flex: 1;
     min-height: 0;
     overflow-y: auto;
+    overflow-x: hidden;
+    padding: 0;
+    max-height: 100%;
 }
 
 .alarm-item, .event-item {
     padding: 8px;
-    border-bottom: 1px solid #f0f0f0;
+    border-bottom: 1px solid #e8e8e8;
     font-size: 12px;
+    background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+    margin-bottom: 4px;
+    border-radius: 4px;
 }
 
 .alarm-item:last-child, .event-item:last-child {
     border-bottom: none;
 }
 
-.alarm-time, .event-time {
+/* 告警项三行布局 */
+.alarm-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 4px;
+    line-height: 1.4;
+}
+
+.alarm-row:last-child {
+    margin-bottom: 0;
+}
+
+.alarm-row .label {
     color: #999;
     font-size: 10px;
-    margin-bottom: 3px;
+    margin-right: 4px;
+    flex-shrink: 0;
 }
 
-.alarm-location, .event-location {
-    font-weight: bold;
-    margin-bottom: 3px;
+.alarm-row .content {
     color: #333;
-    font-size: 12px;
-}
-
-.alarm-type, .event-type {
-    margin-bottom: 3px;
-    color: #666;
     font-size: 11px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
-.alarm-level {
+.alarm-row.level-row .level-badge {
     display: inline-block;
     padding: 1px 6px;
-    border-radius: 8px;
+    border-radius: 4px;
     font-size: 10px;
     color: white;
+    margin-right: 8px;
 }
 
-.alarm-level.emergency {
+.alarm-row.level-row .level-badge.level-1 {
     background-color: #ff4d4f;
 }
 
-.alarm-level.important {
+.alarm-row.level-row .level-badge.level-2 {
+    background-color: #fa8c16;
+}
+
+.alarm-row.level-row .level-badge.level-3 {
     background-color: #faad14;
 }
 
-.alarm-level.normal {
-    background-color: #1976d2;
+.alarm-row.level-row .level-badge.level-4 {
+    background-color: #52c41a;
+}
+
+/* Ensure alarm list has proper scrolling */
+.alarm-list {
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+}
+
+.alarm-row .time-info {
+    color: #666;
+    font-size: 10px;
+    margin-left: 12px;
+    flex-shrink: 0;
+}
+
+.alarm-row .duration-info {
+    color: #d32f2f;
+    font-size: 11px;
+    font-weight: 600;
+    margin-left: 12px;
+    padding: 2px 8px;
+    background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);
+    border-radius: 12px;
+    flex-shrink: 0;
+    box-shadow: 0 1px 3px rgba(211, 47, 47, 0.2);
+    transition: all 0.2s ease;
+}
+
+.alarm-row .duration-info:hover {
+    background: linear-gradient(135deg, #ffcdd2 0%, #ef9a9a 100%);
+    box-shadow: 0 2px 6px rgba(211, 47, 47, 0.3);
+    transform: translateY(-1px);
+}
+
+/* 加载状态 */
+.alarm-loading,
+.alarm-error,
+.alarm-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    color: #999;
+    font-size: 12px;
+}
+
+.alarm-loading .spinner {
+    width: 24px;
+    height: 24px;
+    border: 3px solid #e0e0e0;
+    border-top-color: #1890ff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 10px;
+}
+
+.alarm-error {
+    color: #ff4d4f;
+}
+
+.alarm-empty {
+    color: #999;
 }
 
 .alarm-status, .event-status {
@@ -570,27 +700,27 @@ body {
     flex: 0 0 12%;
     width: 12%;
     padding: 6px 10px;
-    border: 1px solid #d9d9d9;
+    border: 1px solid #90caf9;
     border-radius: 4px;
     font-size: 13px;
     color: #333;
-    background-color: #fff;
+    background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
     cursor: pointer;
     transition: all 0.3s ease;
 }
 
 .region-select:hover {
-    border-color: #40a9ff;
+    border-color: #42a5f5;
 }
 
 .region-select:focus {
     outline: none;
-    border-color: #40a9ff;
+    border-color: #1976d2;
     box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
 }
 
 .region-select:disabled {
-    background-color: #f5f5f5;
+    background: linear-gradient(135deg, #e0e0e0 0%, #bdbdbd 100%);
     cursor: not-allowed;
     color: #999;
 }

@@ -143,23 +143,70 @@ function initNavigation() {
 
 // 加载能耗分析 iframe
 function loadEnergyAnalysisFrame() {
-    const targetUrl = 'http://10.38.78.200/vuepeim/login';
+    console.log('loadEnergyAnalysisFrame 被调用');
     
-    // 添加时间戳参数，避免缓存
-    const timestamp = new Date().getTime();
-    const urlWithTimestamp = targetUrl + '?t=' + timestamp;
-    
-    console.log('在新标签页中打开能耗分析页面:', urlWithTimestamp);
-    
-    // 使用 window.open 在新标签页中打开
-    const newWindow = window.open(urlWithTimestamp, '_blank');
-    
-    if (!newWindow) {
-        console.error('浏览器阻止了弹出窗口，请允许弹出窗口');
-        alert('浏览器阻止了新标签页的打开，请允许弹出窗口后重试');
-    } else {
-        console.log('新标签页已打开');
-    }
+    // 延迟一点执行，确保 DOM 已完全准备好
+    setTimeout(() => {
+        const iframe = document.getElementById('energy-analysis-frame');
+        const loadingDiv = document.getElementById('energy-iframe-loading');
+        const targetUrl = 'http://10.38.78.217:8516/';
+        
+        if (!iframe) {
+            console.error('未找到 iframe 元素');
+            if (loadingDiv) {
+                loadingDiv.innerHTML = '<p style="color: #f44336; font-size: 16px; text-align: center;">页面加载错误</p>';
+            }
+            return;
+        }
+        
+        console.log('iframe 元素找到，current src:', iframe.src);
+        
+        // 如果已经加载过，不再重复加载
+        if (iframe.src && iframe.src !== '' && iframe.src !== 'about:blank' && iframe.src.indexOf('10.38.78.217') > -1) {
+            console.log('能耗分析 iframe 已加载，src:', iframe.src);
+            if (loadingDiv) {
+                loadingDiv.style.display = 'none';
+            }
+            return;
+        }
+        
+        console.log('开始加载能耗分析 iframe:', targetUrl);
+        
+        // 显示加载状态
+        if (loadingDiv) {
+            loadingDiv.style.display = 'flex';
+            console.log('显示加载提示');
+        }
+        
+        // 先设置 onload 和 onerror，再设置 src
+        iframe.onload = function() {
+            console.log('能耗分析 iframe 加载完成');
+            if (loadingDiv) {
+                setTimeout(() => {
+                    loadingDiv.style.display = 'none';
+                }, 500);
+            }
+        };
+        
+        iframe.onerror = function() {
+            console.error('能耗分析 iframe 加载失败');
+            if (loadingDiv) {
+                loadingDiv.innerHTML = '<p style="color: #f44336; font-size: 16px; text-align: center;">加载失败，可能是网络问题或跨域限制</p>';
+            }
+        };
+        
+        // 设置 iframe 源
+        iframe.src = targetUrl;
+        console.log('iframe src 已设置为:', targetUrl);
+        
+        // 设置超时处理（15 秒）
+        setTimeout(() => {
+            if (loadingDiv && loadingDiv.style.display !== 'none') {
+                console.warn('能耗分析 iframe 加载超时');
+                loadingDiv.innerHTML = '<p style="color: #ff9800; font-size: 16px; text-align: center;">加载时间较长，请耐心等待<br><button onclick="location.reload()" style="margin-top:10px;padding:5px 15px;cursor:pointer;">刷新页面</button></p>';
+            }
+        }, 15000);
+    }, 100); // 延迟 100ms 确保 DOM 准备好
 }
 
 // 初始化时间选择器
@@ -170,6 +217,7 @@ function initTimeSelectors() {
         btn.addEventListener('click', function() {
             // 获取点击的时间维度
             const timeRange = this.textContent;
+            
             console.log('时间维度切换为:', timeRange);
             
             // 同步更新所有时间选择器的按钮状态
@@ -182,27 +230,37 @@ function initTimeSelectors() {
                 }
             });
             
+            // 获取父元素，判断是哪个时间选择器
+            const parent = this.closest('.time-selector');
+            const parentId = parent ? parent.id : '';
+            
+            // 如果是能耗趋势图的时间选择器，只更新能耗趋势图
+            if (parentId === 'trend-time-selector') {
+                // 更新能耗趋势图
+                if (typeof updateEnergyTrendChart === 'function') {
+                    const cachedData = {
+                        rawData: window.originalDataCache || window.rawDataCache || []
+                    };
+                    updateEnergyTrendChart(cachedData, timeRange);
+                }
+                return;  // 不继续执行后面的逻辑
+            }
+            
             // 设置时间维度
             if (typeof setTimeRange === 'function') {
                 setTimeRange(timeRange);
             }
             
-            // 切换时间维度时，重置区域选中状态，显示所有能耗>0 的网格
-            if (typeof resetDistrictFilter === 'function') {
-                resetDistrictFilter();
-            }
-            
-            // 重置选择器
-            const districtSelect = document.getElementById('district-select');
-            const gridSelect = document.getElementById('grid-select');
-            if (districtSelect) districtSelect.value = '';
-            if (gridSelect) {
-                gridSelect.value = '';
-                gridSelect.disabled = true;
-            }
-            
-            // 重新过滤数据（不显示加载提示框）
+            // 重新过滤数据（保持当前区域选择）
             reloadDataWithoutLoading();
+            
+            // 同时更新能耗趋势图
+            if (typeof updateEnergyTrendChart === 'function') {
+                const cachedData = {
+                    rawData: window.originalDataCache || window.rawDataCache || []
+                };
+                updateEnergyTrendChart(cachedData, timeRange);
+            }
         });
     });
     
@@ -343,6 +401,14 @@ function reloadDataWithFilter(filteredData, district) {
         // 处理数据
         processData(data);
         
+        // 更新能耗趋势图，使用当前选择的时间维度
+        if (typeof updateEnergyTrendChart === 'function') {
+            const currentTimeType = typeof getCurrentTrendTimeType === 'function' 
+                ? getCurrentTrendTimeType() 
+                : '日';
+            updateEnergyTrendChart(data, currentTimeType);
+        }
+        
         // 更新标题显示当前区域
         updateTitleWithDistrict(district);
         
@@ -451,51 +517,319 @@ function hideLoading() {
 
 // 加载告警信息
 function loadAlarms() {
-    // 模拟告警数据
-    const alarms = [
-        {
-            time: '2026-03-10 10:30:00',
-            location: '天宁区',
-            type: '用电量异常',
-            level: 'emergency',
-            status: '待处理'
-        },
-        {
-            time: '2026-03-10 09:15:00',
-            location: '武进区',
-            type: '设备离线',
-            level: 'important',
-            status: '处理中'
-        },
-        {
-            time: '2026-03-10 08:45:00',
-            location: '新北区',
-            type: '电压波动',
-            level: 'normal',
-            status: '已处理'
-        }
-    ];
-    
-    // 更新告警列表
     const alarmList = document.getElementById('alarm-list');
-    if (alarmList) {
-        alarmList.innerHTML = '';
-        
-        alarms.forEach(alarm => {
-            const alarmItem = document.createElement('div');
-            alarmItem.className = 'alarm-item';
-            alarmItem.innerHTML = `
-                <div class="alarm-time">${alarm.time}</div>
-                <div class="alarm-location">${alarm.location}</div>
-                <div class="alarm-type">${alarm.type}</div>
-                <div class="alarm-level ${alarm.level}">
-                    ${alarm.level === 'emergency' ? '紧急' : alarm.level === 'important' ? '重要' : '一般'}
-                </div>
-                <div class="alarm-status">状态: ${alarm.status}</div>
-            `;
-            alarmList.appendChild(alarmItem);
-        });
+    
+    if (!alarmList) {
+        console.error('未找到告警列表元素');
+        return;
     }
+    
+    // 显示加载状态
+    alarmList.innerHTML = '<div class="alarm-loading"><div class="spinner"></div><span>正在加载告警数据...</span></div>';
+    
+    // 从 CSV 文件加载告警数据，添加时间戳避免缓存
+    fetch('data/data_gaojing.csv?t=' + Date.now())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('网络响应失败: ' + response.status);
+            }
+            return response.arrayBuffer();
+        })
+        .then(buffer => {
+            // 尝试多种编码方式解码
+            let text;
+            const utf8Decoder = new TextDecoder('utf-8');
+            const utf8Text = utf8Decoder.decode(buffer);
+            
+            // 检查是否包含乱码特征
+            const hasGarbledChars = /锘|娴|犲|姝|€/.test(utf8Text);
+            
+            if (hasGarbledChars) {
+                // UTF-8 解码后包含乱码，尝试 GBK
+                const gbkDecoder = new TextDecoder('gbk');
+                text = gbkDecoder.decode(buffer);
+                console.log('使用 GBK 编码解析告警数据');
+            } else {
+                text = utf8Text;
+                console.log('使用 UTF-8 编码解析告警数据');
+            }
+            
+            // 解析 CSV
+            const alarms = parseCSV(text);
+            
+            if (!alarms || alarms.length <= 1) {
+                // 空数据
+                alarmList.innerHTML = '<div class="alarm-empty"><span>暂无告警数据</span></div>';
+                return;
+            }
+            
+            // 跳过表头，取数据行
+            const dataRows = alarms.slice(1);
+            
+            console.log('告警数据加载成功，共', dataRows.length, '条记录');
+            
+            // 清空并渲染告警列表
+            alarmList.innerHTML = '';
+            
+            // 限制显示数量，避免过多
+            const maxAlarms = 100;
+            const displayData = dataRows.slice(0, maxAlarms);
+            
+            displayData.forEach((row, index) => {
+                if (index < 3) {
+                    console.log(`告警记录 ${index}:`, {
+                        '级别 (1)': row[1],
+                        '告警时间 (2)': row[2],
+                        '告警时长 (3)': row[3],
+                        '区域 (6)': row[6],
+                        '机房 (7)': row[7]
+                    });
+                }
+                
+                // CSV 字段映射：
+                // 0:序号，1:级别，2:告警时间，3:告警时长，4:告警值，5:地市，6:区域，7:机房，8:站点类型，9:设备名称，10:设备类型，11:监控量
+                const level = row[1] || '';           // 级别
+                const alarmTime = row[2] || '';        // 告警时间
+                const duration = row[3] || '';        // 告警时长
+                const region = row[6] || '';           // 区域
+                const room = row[7] || '';            // 机房
+                const stationType = row[8] || '';     // 站点类型
+                const deviceName = row[9] || '';      // 设备名称
+                const monitorItem = row[11] || '';     // 监控量
+                
+                // 级别映射：一级/二级/三级/四级
+                let levelClass = 'level-4';
+                let levelText = level;
+                if (level.includes('一级') || level === '1') {
+                    levelClass = 'level-1';
+                    levelText = '一级';
+                } else if (level.includes('二级') || level === '2') {
+                    levelClass = 'level-2';
+                    levelText = '二级';
+                } else if (level.includes('三级') || level === '3') {
+                    levelClass = 'level-3';
+                    levelText = '三级';
+                } else if (level.includes('四级') || level === '4') {
+                    levelClass = 'level-4';
+                    levelText = '四级';
+                }
+                
+                const alarmItem = document.createElement('div');
+                alarmItem.className = 'alarm-item';
+                
+                // 三行布局
+                alarmItem.innerHTML = `
+                    <div class="alarm-row level-row">
+                        <span class="level-badge ${levelClass}">${levelText}</span>
+                        <span class="time-info" title="告警时间">${alarmTime}</span>
+                        <span class="duration-info" title="告警时长" style="margin-left:8px;">⏱ ${duration}</span>
+                    </div>
+                    <div class="alarm-row">
+                        <span class="label">区域:</span>
+                        <span class="content" title="${region}">${region}</span>
+                        <span class="label" style="margin-left:8px;">机房:</span>
+                        <span class="content" title="${room}">${room}</span>
+                        <span class="label" style="margin-left:8px;">类型:</span>
+                        <span class="content">${stationType}</span>
+                    </div>
+                    <div class="alarm-row">
+                        <span class="label">设备:</span>
+                        <span class="content" title="${deviceName}">${deviceName}</span>
+                    </div>
+                    <div class="alarm-row">
+                        <span class="label">监控量:</span>
+                        <span class="content">${monitorItem}</span>
+                    </div>
+                `;
+                
+                alarmList.appendChild(alarmItem);
+            });
+            
+            if (dataRows.length > maxAlarms) {
+                console.log('仅显示前', maxAlarms, '条告警记录，共', dataRows.length, '条');
+            }
+            
+            // 延迟启用自动滚动，确保 DOM 完全渲染
+            setTimeout(() => {
+                enableAutoScroll();
+            }, 100);
+        })
+        .catch(error => {
+            console.error('加载告警数据失败:', error);
+            alarmList.innerHTML = '<div class="alarm-error"><span>加载失败: ' + error.message + '</span></div>';
+        });
+}
+
+// CSV 解析辅助函数
+function parseCSV(text) {
+    const lines = text.trim().split(/\r?\n/);
+    return lines.map(line => {
+        const result = [];
+        let current = '';
+        let inQuotes = false;
+        
+        for (let i = 0; i < line.length; i++) {
+            const char = line[i];
+            
+            if (char === '"') {
+                inQuotes = !inQuotes;
+            } else if (char === ',' && !inQuotes) {
+                result.push(current.trim());
+                current = '';
+            } else {
+                current += char;
+            }
+        }
+        result.push(current.trim());
+        
+        return result;
+    });
+}
+
+// 自动滚动功能
+let autoScrollInterval = null;
+let isUserScrolling = false;
+let userScrollTimer = null;
+let autoScrollEnabled = false;  // 防止重复启用
+let lastScrollTop = 0;  // 记录上次滚动位置
+let scrollDirection = 1;  // 滚动方向：1 向下，-1 向上
+
+function enableAutoScroll() {
+    // 如果已经启用，不再重复启用
+    if (autoScrollEnabled) {
+        console.log('自动滚动已启用，跳过');
+        return;
+    }
+    
+    const alarmList = document.getElementById('alarm-list');
+    
+    if (!alarmList) {
+        console.error('未找到告警列表元素');
+        return;
+    }
+    
+    console.log('启用自动滚动，列表高度:', alarmList.scrollHeight, 'px');
+    autoScrollEnabled = true;
+    
+    // 清除之前的定时器
+    if (autoScrollInterval) {
+        clearInterval(autoScrollInterval);
+    }
+    
+    // 监听用户滚动（使用 wheel 和 touchstart 事件，而不是 scroll）
+    alarmList.addEventListener('wheel', function() {
+        isUserScrolling = true;
+        if (autoScrollInterval) {
+            console.log('用户滚动，暂停自动滚动');
+            clearInterval(autoScrollInterval);
+        }
+        
+        // 用户停止滚动 3 秒后恢复自动滚动
+        if (userScrollTimer) {
+            clearTimeout(userScrollTimer);
+        }
+        
+        userScrollTimer = setTimeout(() => {
+            isUserScrolling = false;
+            console.log('恢复自动滚动');
+            startAutoScroll();
+        }, 3000);
+    });
+    
+    alarmList.addEventListener('touchstart', function() {
+        isUserScrolling = true;
+        if (autoScrollInterval) {
+            console.log('用户触摸，暂停自动滚动');
+            clearInterval(autoScrollInterval);
+        }
+    });
+    
+    alarmList.addEventListener('touchend', function() {
+        if (userScrollTimer) {
+            clearTimeout(userScrollTimer);
+        }
+        
+        userScrollTimer = setTimeout(() => {
+            isUserScrolling = false;
+            console.log('恢复自动滚动');
+            startAutoScroll();
+        }, 3000);
+    });
+    
+    // 监听滚动事件，只记录位置，不处理循环
+    alarmList.addEventListener('scroll', function() {
+        lastScrollTop = alarmList.scrollTop;
+    });
+    
+    startAutoScroll();
+}
+
+function startAutoScroll() {
+    const alarmList = document.getElementById('alarm-list');
+    
+    if (!alarmList) return;
+    
+    // 如果用户正在滚动，不启动
+    if (isUserScrolling) {
+        return;
+    }
+    
+    // 检查列表是否有足够的内容需要滚动
+    // 如果可视高度 >= 滚动高度，说明内容还没加载好或者内容太少不需要滚动
+    const hasEnoughContent = alarmList.scrollHeight > alarmList.clientHeight + 10;
+    
+    if (!hasEnoughContent) {
+        console.log('内容不足，暂不滚动。scrollHeight:', alarmList.scrollHeight, 'clientHeight:', alarmList.clientHeight);
+        // 1 秒后重试
+        setTimeout(() => {
+            if (!isUserScrolling) {
+                startAutoScroll();
+            }
+        }, 1000);
+        return;
+    }
+    
+    // 清除之前的定时器
+    if (autoScrollInterval) {
+        clearInterval(autoScrollInterval);
+    }
+    
+    console.log('开始自动滚动，列表总高度:', alarmList.scrollHeight, 'px, 可视高度:', alarmList.clientHeight, 'px');
+    
+    // 每 30ms 滚动 2px
+    autoScrollInterval = setInterval(() => {
+        if (!alarmList || isUserScrolling) {
+            return;
+        }
+        
+        const maxScrollTop = alarmList.scrollHeight - alarmList.clientHeight;
+        const currentScrollTop = alarmList.scrollTop;
+        
+        // 向下滚动模式
+        if (scrollDirection === 1) {
+            // 检查是否到底部
+            if (currentScrollTop >= maxScrollTop - 2) {
+                // 到底部，改为向上滚动
+                console.log('滚动到底部，改为向上滚动');
+                scrollDirection = -1;
+            } else {
+                // 继续向下滚动
+                alarmList.scrollTop += 2;
+            }
+        }
+        // 向上滚动模式
+        else {
+            // 检查是否到顶部
+            if (currentScrollTop <= 0) {
+                // 到顶部，改为向下滚动
+                console.log('滚动到顶部，改为向下滚动');
+                scrollDirection = 1;
+            } else {
+                // 继续向上滚动
+                alarmList.scrollTop -= 2;
+            }
+        }
+    }, 30);
 }
 
 // 加载事件信息
