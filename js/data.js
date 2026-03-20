@@ -47,7 +47,7 @@ function getTimeRange() {
     return currentTimeRange;
 }
 
-// 加载 Excel 数据
+// 从 API 加载数据
 function loadExcelData() {
     return new Promise((resolve, reject) => {
         // 检查缓存，如果存在则直接使用缓存数据
@@ -76,55 +76,29 @@ function loadExcelData() {
             return;
         }
         
-        // 使用 SheetJS 读取 Excel 文件
-        console.log('开始加载 CSV 数据...');
-        console.log('CSV 文件路径：data/data.csv');
+        // 从 API 加载数据
+        console.log('开始从 API 加载数据...');
+        console.log('API 地址：http://127.0.0.1:5000/api/data');
         
-        fetch('data/data.csv')
+        fetch('http://127.0.0.1:5000/api/data')
             .then(response => {
-                console.log('CSV 文件响应状态:', response.status, response.ok);
+                console.log('API 响应状态:', response.status, response.ok);
                 if (!response.ok) {
-                    throw new Error('无法读取 CSV 文件，HTTP 状态码：' + response.status);
+                    throw new Error('无法读取 API 数据，HTTP 状态码：' + response.status);
                 }
-                return response.arrayBuffer();
+                return response.json();
             })
-            .then(data => {
-                console.log('CSV 文件读取成功，数据大小:', data.byteLength, 'bytes');
-                // 尝试多种编码方式解码
-                let text;
-                let usedEncoding = '';
+            .then(result => {
+                console.log('API 数据加载成功:', result);
                 
-                // 首先尝试 UTF-8 编码
-                const utf8Decoder = new TextDecoder('utf-8');
-                const utf8Text = utf8Decoder.decode(data);
-                
-                // 检查UTF-8解码后是否包含乱码特征
-                // 乱码特征：连续的替换字符或不可读字符
-                const hasGarbledChars = /锘|娴|犲|姝|腑|浜|姣|瓒|妤|瀛|甯|€|鍒|鍒|鍒|鍒/.test(utf8Text);
-                
-                if (hasGarbledChars) {
-                    // UTF-8解码后包含乱码，尝试GBK
-                    console.log('UTF-8 解码后检测到乱码，尝试 GBK 编码');
-                    const gbkDecoder = new TextDecoder('gbk');
-                    text = gbkDecoder.decode(data);
-                    usedEncoding = 'GBK';
-                } else {
-                    text = utf8Text;
-                    usedEncoding = 'UTF-8';
+                if (!result.success) {
+                    throw new Error(result.error || 'API 返回错误');
                 }
                 
-                console.log('使用编码:', usedEncoding);
-                console.log('CSV 文本内容（前 500 字符）:', text.substring(0, 500));
+                const processedData = result.data;
                 
-                // 解析 CSV 数据
-                const jsonData = parseCSV(text);
-                
-                console.log('CSV 数据加载成功，共', jsonData.length, '行');
-                console.log('表头:', jsonData[0]);
-                console.log('第一行数据:', jsonData[1]);
-                
-                // 处理数据（将数组转换为对象）
-                const processedData = processExcelDataArray(jsonData);
+                console.log('处理后的数据条数:', processedData.length);
+                console.log('第一条数据:', processedData[0]);
                 
                 // 缓存原始数据
                 rawDataCache = processedData;
@@ -151,7 +125,7 @@ function loadExcelData() {
                 });
             })
             .catch(error => {
-                console.error('CSV 数据加载失败:', error);
+                console.error('API 数据加载失败:', error);
                 // 如果加载失败，使用模拟数据
                 console.log('使用模拟数据');
                 const mockData = generateMockData();
