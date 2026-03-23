@@ -1,3 +1,4 @@
+import os
 from flask import Flask, jsonify
 from flask_cors import CORS
 import pymysql
@@ -7,11 +8,11 @@ app = Flask(__name__)
 CORS(app)
 
 db_config = {
-    'host': '10.38.78.217',
-    'port': 3220,
-    'user': 'liujiantao',
-    'password': 'Liujt!@#',
-    'database': 'energy_management_2026',
+    'host': os.environ.get('DB_HOST', '10.38.78.217'),
+    'port': int(os.environ.get('DB_PORT', 3220)),
+    'user': os.environ.get('DB_USER', 'liujiantao'),
+    'password': os.environ.get('DB_PASSWORD', 'Liujt!@#'),
+    'database': os.environ.get('DB_NAME', 'energy_management_2026'),
     'charset': 'utf8mb4',
     'connect_timeout': 10
 }
@@ -71,6 +72,25 @@ def get_data():
             'error': str(e)
         }), 500
 
+@app.route('/api/health', methods=['GET'])
+def health_check():
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT 1")
+        cursor.close()
+        conn.close()
+        return jsonify({
+            'status': 'healthy',
+            'database': 'connected'
+        })
+    except Exception as e:
+        return jsonify({
+            'status': 'unhealthy',
+            'database': 'disconnected',
+            'error': str(e)
+        }), 503
+
 def format_date(date_value):
     if not date_value:
         return ''
@@ -96,7 +116,8 @@ if __name__ == '__main__':
     print(f"  Database: {db_config['database']}")
     print("\nAPI Endpoints:")
     print("  GET /api/data - Get all energy data")
-    print("\nServer starting on http://127.0.0.1:5000")
+    print("  GET /api/health - Health check")
+    print("\nServer starting on http://0.0.0.0:5000")
     print("=" * 60)
     
     app.run(host='0.0.0.0', port=5000, debug=True)

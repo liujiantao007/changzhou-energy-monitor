@@ -1,0 +1,66 @@
+version: '3.8'
+
+services:
+  energy-monitor:
+    build:
+      context: ../..
+      dockerfile: docker/all-in-one/Dockerfile
+    image: energy-monitor:0.1.5
+    container_name: energy-monitor
+    hostname: energy-monitor
+    restart: unless-stopped
+    
+    environment:
+      - DB_HOST=${DB_HOST:-10.38.78.217}
+      - DB_PORT=${DB_PORT:-3220}
+      - DB_USER=${DB_USER:-liujiantao}
+      - DB_PASSWORD=${DB_PASSWORD:-Liujt!@#}
+      - DB_NAME=${DB_NAME:-energy_management_2026}
+      - TZ=Asia/Shanghai
+    
+    ports:
+      - "80:80"
+    
+    volumes:
+      - logs:/var/log
+      - ./data:/app/data:ro
+    
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+    
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+    
+    security_opt:
+      - no-new-privileges:true
+    
+    networks:
+      - energy-network
+
+networks:
+  energy-network:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.29.0.0/16
+
+volumes:
+  logs:
+    driver: local

@@ -1,0 +1,76 @@
+# Git
+.git
+.gitignore
+.trae
+*.pyc
+__pycache__/
+*.py[cod]
+.pyo
+.pyd
+.pyo
+.idea/
+.vscode/
+*.swp
+*.swo
+*.swn
+.env
+.env.local
+*.log
+*.bak
+*.tmp
+*.bak
+*.old
+*~
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Node modules
+node_modules/
+npm-debug.log*
+yarn-error.log
+yarn.lock
+package-lock.json
+
+# Build outputs
+dist/
+build/
+*.egg-info/
+.eggs/
+.eggs-info/
+.eggs-info.json
+
+# Test files
+test_*.py
+*_test.py
+tests/
+coverage/
+.nyc_output/
+.pytest_cache/
+
+# IDE
+.idea/
+*.iml
+.ipr
+*.iws
+
+.idea_modules.xml
+vsc.log
+
+# Project specific
+data/data*.csv
+data/data_gaojing.csv
+compare_fields.py
+test_mysql.py
+test_api.py
+check_db_fields.py
+
+# Docker
+docker/*/D
+docker/*/d
+docker/*/*.log
+
+# Documentation
+*.md
+!docs/
