@@ -9,12 +9,14 @@
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
     <!-- SheetJS库 - 直接使用CDN -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <!-- 导航配置文件 -->
+    <script src="js/nav-config.js"></script>
 </head>
 <body>
     <div id="app">
         <!-- 顶部导航栏 -->
         <header class="navbar">
-            <div class="navbar-brand">常州能耗云运营驾驶舱</div>
+            <div class="navbar-brand">常州能耗运营驾驶舱</div>
             <nav class="navbar-nav">
                 <a href="#home" class="nav-item active">首页</a>
                 <a href="#报账管理" class="nav-item">报账管理</a>
@@ -72,18 +74,18 @@
                                 </div>
                             </div>
                         </div>
-                        
-                        <!-- 用电量分项统计模块 -->
+
+                        <!-- 用电方分类统计模块 -->
                         <div class="module">
-                            <h3>用电量分项统计</h3>
-                            <div class="time-selector" id="electricity-time-selector">
+                            <h3>能耗分项统计</h3>
+                            <div class="time-selector" id="consumer-type-time-selector">
                                 <button class="time-btn">年</button>
                                 <button class="time-btn">月</button>
                                 <button class="time-btn active">日</button>
                             </div>
-                            <div id="electricity-chart" class="chart"></div>
+                            <div id="consumer-type-chart" class="chart"></div>
                         </div>
-                        
+
                         <!-- POI分项统计模块 -->
                         <div class="module">
                             <h3>POI分项统计</h3>
@@ -194,19 +196,25 @@
             
             <!-- 其他页面的空白占位 -->
             <div id="报账管理" class="page">
-                <div class="placeholder">
-                    <h2>报账管理</h2>
-                    <p>功能开发中</p>
+                <div class="iframe-container">
+                    <div class="iframe-loading">
+                        <div class="spinner"></div>
+                        <span>报账管理加载中...</span>
+                    </div>
+                    <iframe id="baozhang-frame" src="" style="width: 100%; height: 100%; border: none; display: block;"></iframe>
                 </div>
             </div>
-            
+
             <div id="电表管理" class="page">
-                <div class="placeholder">
-                    <h2>电表管理</h2>
-                    <p>功能开发中</p>
+                <div class="iframe-container">
+                    <div class="iframe-loading">
+                        <div class="spinner"></div>
+                        <span>电表管理加载中...</span>
+                    </div>
+                    <iframe id="dianbiao-frame" src="" style="width: 100%; height: 100%; border: none; display: block;"></iframe>
                 </div>
             </div>
-            
+
             <div id="能耗分析" class="page">
                 <div id="energy-iframe-container" style="position: relative; width: 100%; height: 100%;">
                     <div id="energy-iframe-loading" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 1000;">
@@ -216,11 +224,14 @@
                     <iframe id="energy-analysis-frame" src="" style="width: 100%; height: 100%; border: none; display: block;"></iframe>
                 </div>
             </div>
-            
+
             <div id="报表管理" class="page">
-                <div class="placeholder">
-                    <h2>报表管理</h2>
-                    <p>功能开发中</p>
+                <div class="iframe-container">
+                    <div class="iframe-loading">
+                        <div class="spinner"></div>
+                        <span>报表管理加载中...</span>
+                    </div>
+                    <iframe id="baobiao-frame" src="" style="width: 100%; height: 100%; border: none; display: block;"></iframe>
                 </div>
             </div>
         </main>
@@ -236,7 +247,7 @@
     
     <script src="js/app.js"></script>
     <script src="js/data.js"></script>
-    <script src="js/charts.js"></script>
+    <script src="js/charts.js?v=20260326"></script>
     <script src="js/map.js"></script>
 </body>
 </html>

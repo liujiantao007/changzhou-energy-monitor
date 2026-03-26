@@ -108,9 +108,20 @@ function initNavigation() {
             if (targetPage) {
                 targetPage.classList.add('active');
                 
-                // 如果是能耗分析页面，加载 iframe
-                if (targetId === '能耗分析') {
-                    loadEnergyAnalysisFrame();
+                // 根据页面ID加载对应的 iframe
+                switch(targetId) {
+                    case '能耗分析':
+                        loadEnergyAnalysisFrame();
+                        break;
+                    case '报账管理':
+                        loadIframePage('baozhang-frame', NAV_CONFIG.baseURL + NAV_CONFIG.pages['报账管理'].path);
+                        break;
+                    case '电表管理':
+                        loadIframePage('dianbiao-frame', NAV_CONFIG.baseURL + NAV_CONFIG.pages['电表管理'].path);
+                        break;
+                    case '报表管理':
+                        loadIframePage('baobiao-frame', NAV_CONFIG.baseURL + NAV_CONFIG.pages['报表管理'].path);
+                        break;
                 }
             }
         });
@@ -134,6 +145,22 @@ function initNavigation() {
         pages.forEach(page => {
             if (page.id === hash) {
                 page.classList.add('active');
+
+                // 根据页面ID加载对应的 iframe
+                switch(hash) {
+                    case '能耗分析':
+                        loadEnergyAnalysisFrame();
+                        break;
+                    case '报账管理':
+                        loadIframePage('baozhang-frame', NAV_CONFIG.baseURL + NAV_CONFIG.pages['报账管理'].path);
+                        break;
+                    case '电表管理':
+                        loadIframePage('dianbiao-frame', NAV_CONFIG.baseURL + NAV_CONFIG.pages['电表管理'].path);
+                        break;
+                    case '报表管理':
+                        loadIframePage('baobiao-frame', NAV_CONFIG.baseURL + NAV_CONFIG.pages['报表管理'].path);
+                        break;
+                }
             } else {
                 page.classList.remove('active');
             }
@@ -209,6 +236,70 @@ function loadEnergyAnalysisFrame() {
     }, 100); // 延迟 100ms 确保 DOM 准备好
 }
 
+// 通用 iframe 加载函数
+function loadIframePage(iframeId, targetUrl) {
+    console.log('loadIframePage 被调用:', iframeId, targetUrl);
+
+    setTimeout(() => {
+        const iframe = document.getElementById(iframeId);
+        const container = iframe ? iframe.closest('.iframe-container') : null;
+        const loadingDiv = container ? container.querySelector('.iframe-loading') : null;
+
+        if (!iframe) {
+            console.error('未找到 iframe 元素:', iframeId);
+            return;
+        }
+
+        console.log('iframe 元素找到，current src:', iframe.src);
+
+        // 如果已经加载过，不再重复加载
+        if (iframe.src && iframe.src !== '' && iframe.src !== 'about:blank' && iframe.src.indexOf(targetUrl.split('//')[1]) > -1) {
+            console.log(iframeId, 'iframe 已加载，src:', iframe.src);
+            if (loadingDiv) {
+                loadingDiv.style.display = 'none';
+            }
+            return;
+        }
+
+        console.log('开始加载 iframe:', iframeId, targetUrl);
+
+        // 显示加载状态
+        if (loadingDiv) {
+            loadingDiv.style.display = 'flex';
+            console.log('显示加载提示');
+        }
+
+        // 先设置 onload 和 onerror，再设置 src
+        iframe.onload = function() {
+            console.log(iframeId, 'iframe 加载完成');
+            if (loadingDiv) {
+                setTimeout(() => {
+                    loadingDiv.style.display = 'none';
+                }, 500);
+            }
+        };
+
+        iframe.onerror = function() {
+            console.error(iframeId, 'iframe 加载失败');
+            if (loadingDiv) {
+                loadingDiv.innerHTML = '<div class="iframe-error"><span>加载失败，可能是网络问题或跨域限制</span></div>';
+            }
+        };
+
+        // 设置 iframe 源
+        iframe.src = targetUrl;
+        console.log('iframe src 已设置为:', targetUrl);
+
+        // 设置超时处理（15 秒）
+        setTimeout(() => {
+            if (loadingDiv && loadingDiv.style.display !== 'none') {
+                console.warn(iframeId, 'iframe 加载超时');
+                loadingDiv.innerHTML = '<div class="iframe-error"><span>加载时间较长，请耐心等待</span><button onclick="location.reload()" class="retry-btn">刷新页面</button></div>';
+            }
+        }, 15000);
+    }, 100); // 延迟 100ms 确保 DOM 准备好
+}
+
 // 初始化时间选择器
 function initTimeSelectors() {
     const timeBtns = document.querySelectorAll('.time-btn');
@@ -239,7 +330,8 @@ function initTimeSelectors() {
                 // 更新能耗趋势图
                 if (typeof updateEnergyTrendChart === 'function') {
                     const cachedData = {
-                        rawData: window.originalDataCache || window.rawDataCache || []
+                        rawData: window.originalDataCache || window.rawDataCache || [],
+                        latestDate: window.latestDate || null
                     };
                     updateEnergyTrendChart(cachedData, timeRange);
                 }
@@ -257,7 +349,8 @@ function initTimeSelectors() {
             // 同时更新能耗趋势图
             if (typeof updateEnergyTrendChart === 'function') {
                 const cachedData = {
-                    rawData: window.originalDataCache || window.rawDataCache || []
+                    rawData: window.originalDataCache || window.rawDataCache || [],
+                    latestDate: window.latestDate || null
                 };
                 updateEnergyTrendChart(cachedData, timeRange);
             }
@@ -268,125 +361,375 @@ function initTimeSelectors() {
 }
 
 // 重新加载数据（不显示加载提示框）
-function reloadDataWithoutLoading() {
+async function reloadDataWithoutLoading() {
     try {
-        // 检查是否有区域筛选条件
         const currentDistrict = (typeof getCurrentDistrict === 'function') ? getCurrentDistrict() : null;
         const currentTimeRangeValue = (typeof getTimeRange === 'function') ? getTimeRange() : '日';
-        
+
         console.log('=== 重新加载数据 ===');
         console.log('当前区域:', currentDistrict || '无');
         console.log('当前时间维度:', currentTimeRangeValue);
-        
-        // 使用原始完整数据作为数据源
-        const dataSource = window.originalDataCache || window.rawDataCache || [];
-        console.log('数据源数据量:', dataSource.length);
-        
-        if (dataSource.length > 0) {
-            let dataToUse = dataSource;
-            
-            // 如果有区域筛选条件，先筛选区域
+
+        const now = new Date();
+        const currentYear = now.getFullYear();
+        const currentMonth = now.getMonth() + 1;
+
+        // 对于月视图和年视图，直接使用 /api/summary 获取汇总数据
+        if (currentTimeRangeValue === '月' || currentTimeRangeValue === '年') {
+            let dateFrom, dateTo;
+            if (currentTimeRangeValue === '月') {
+                dateFrom = `${currentYear}-${String(currentMonth).padStart(2, '0')}-01`;
+                dateTo = `${currentYear}-${String(currentMonth).padStart(2, '0')}-31`;
+            } else {
+                dateFrom = `${currentYear}-01-01`;
+                dateTo = `${currentYear}-12-31`;
+            }
+
+            // 构建 API URL，包含区域筛选参数
+            let summaryUrl = `http://127.0.0.1:5000/api/summary?date_from=${dateFrom}&date_to=${dateTo}`;
             if (currentDistrict) {
-                // 判断是网格还是区县
-                const isGrid = currentDistrict.includes('网格');
-                const keyword = currentDistrict.replace(/区|市|县|网格/g, '');
-                
-                console.log('筛选类型:', isGrid ? '网格' : '区县', '关键词:', keyword);
-                console.log('原始区域名:', currentDistrict, '处理后关键词:', keyword);
-                
-                // 检查数据源中的归属单元值
-                if (dataSource.length > 0) {
-                    const sampleUnits = dataSource.slice(0, 5).map(item => item['J']);
-                    console.log('数据源中的归属单元示例:', sampleUnits);
-                }
-                
-                dataToUse = dataSource.filter(item => {
-                    const unit = item['J'] || ''; // 归属单元
-                    const grid = item['GRID'] || ''; // 归属网格
-                    
-                    if (isGrid) {
-                        // 网格级别：匹配归属网格列
-                        return grid.includes(keyword) || grid === currentDistrict;
-                    } else {
-                        // 区县级别：匹配归属单元列
-                        const match = unit.includes(keyword) || unit.includes(currentDistrict);
-                        if (!match && unit.includes('武进')) {
-                            console.log('匹配失败 - 单元:', unit, '关键词:', keyword, '区域名:', currentDistrict);
-                        }
-                        return match;
-                    }
-                });
-                console.log('区域筛选后数据量:', dataToUse.length);
-                
-                // 调试：打印前 3 条筛选后的数据
-                if (dataToUse.length > 0) {
-                    console.log('前 3 条筛选数据:', {
-                        count: dataToUse.length,
-                        sample: dataToUse.slice(0, 3).map(item => ({
-                            date: item['A'],
-                            district: item['J'],
-                            grid: item['GRID'],
-                            energy: item['AB'],
-                            cost: item['AC']
-                        }))
-                    });
-                }
-            }
-            
-            // 使用筛选数据重新加载
-            if (typeof reloadDataWithFilter === 'function') {
-                reloadDataWithFilter(dataToUse, currentDistrict);
-            }
-        } else {
-            // 没有数据缓存，加载全部数据
-            console.log('加载数据');
-            
-            // 加载 Excel 数据
-            loadExcelData().then(data => {
-                console.log('数据重新加载成功:', data);
-                
-                // 检查数据是否有效
-                if (!data || !data.energyData || data.energyData.length === 0) {
-                    console.warn('数据为空，使用模拟数据');
-                    const mockData = generateMockData();
-                    processData(mockData);
+                // 判断是区县还是网格：如果包含"网格"则是网格级别，否则是区县级别
+                if (currentDistrict.includes('网格')) {
+                    summaryUrl += `&grid=${encodeURIComponent(currentDistrict)}`;
+                    console.log('月/年视图：使用网格筛选', currentDistrict);
                 } else {
-                    // 处理数据
-                    processData(data);
+                    summaryUrl += `&district=${encodeURIComponent(currentDistrict)}`;
+                    console.log('月/年视图：使用区县筛选', currentDistrict);
                 }
-            }).catch(error => {
-                console.error('数据加载失败:', error);
-                // 使用模拟数据
-                console.log('使用模拟数据');
-                const mockData = generateMockData();
-                processData(mockData);
-            });
+            }
+            console.log('月/年视图：获取汇总数据', summaryUrl);
+
+            try {
+                const summaryResponse = await fetch(summaryUrl);
+                const summaryResult = await summaryResponse.json();
+
+                if (summaryResult.success) {
+                    console.log('汇总数据获取成功:', summaryResult);
+
+                    // 直接更新总览显示
+                    const roundedEnergy = Math.round(summaryResult.total_energy);
+                    const roundedCost = Math.round(summaryResult.total_cost);
+
+                    document.getElementById('total-energy').textContent = roundedEnergy.toLocaleString('zh-CN');
+                    document.getElementById('total-cost-display').textContent = roundedCost.toLocaleString('zh-CN');
+
+                    console.log('设置总能耗:', roundedEnergy.toLocaleString('zh-CN'));
+                    console.log('设置总电费:', roundedCost.toLocaleString('zh-CN'));
+
+                    // 从 summaryResult 获取 POI 和设备数量
+                    if (summaryResult.total_poi_count !== undefined) {
+                        document.getElementById('total-poi').textContent = summaryResult.total_poi_count;
+                    }
+                    if (summaryResult.total_device_count !== undefined) {
+                        document.getElementById('total-device').textContent = summaryResult.total_device_count;
+                    }
+
+                    // 计算并更新环比数据
+                    const currentEnergy = summaryResult.total_energy;
+                    const currentCost = summaryResult.total_cost;
+                    const currentPoi = summaryResult.total_poi_count || 0;
+                    const currentDevice = summaryResult.total_device_count || 0;
+                    const lastDate = summaryResult.last_date; // 当前月份的最后一天
+
+                    // 计算上期日期范围
+                    let prevDateFrom, prevDateTo;
+                    let prevDayForPoiDevice; // 用于 POI/设备 环比的日期
+
+                    if (currentTimeRangeValue === '月') {
+                        // 上月日期范围（用于能耗和电费的环比 - 这些是累计值，需要完整月份对比）
+                        const prevMonthDate = new Date(currentYear, currentMonth - 2, 1);
+                        const prevYear = prevMonthDate.getFullYear();
+                        const prevMonth = prevMonthDate.getMonth() + 1;
+                        const lastDayOfPrevMonth = new Date(prevYear, prevMonth, 0).getDate();
+
+                        prevDateFrom = `${prevYear}-${String(prevMonth).padStart(2, '0')}-01`;
+                        prevDateTo = `${prevYear}-${String(prevMonth).padStart(2, '0')}-${String(lastDayOfPrevMonth).padStart(2, '0')}`;
+
+                        // 对于 POI/设备 环比，使用上月同一天（或上月最后一天）
+                        let currentDay = 1;
+                        if (lastDate) {
+                            currentDay = parseInt(lastDate.split('-')[2], 10);
+                        }
+                        prevDayForPoiDevice = Math.min(currentDay, lastDayOfPrevMonth);
+                    } else {
+                        // 上年日期范围
+                        prevDateFrom = `${currentYear - 1}-01-01`;
+                        prevDateTo = `${currentYear - 1}-12-31`;
+                        prevDayForPoiDevice = null;
+                    }
+
+                    let prevSummaryUrl = `http://127.0.0.1:5000/api/summary?date_from=${prevDateFrom}&date_to=${prevDateTo}`;
+                    if (currentDistrict) {
+                        if (currentDistrict.includes('网格')) {
+                            prevSummaryUrl += `&grid=${encodeURIComponent(currentDistrict)}`;
+                        } else {
+                            prevSummaryUrl += `&district=${encodeURIComponent(currentDistrict)}`;
+                        }
+                    }
+                    console.log('获取上期数据用于环比:', prevSummaryUrl);
+
+                    try {
+                        const prevResponse = await fetch(prevSummaryUrl);
+                        const prevResult = await prevResponse.json();
+
+                        if (prevResult.success) {
+                            let previousEnergy, previousCost, previousPoi, previousDevice;
+
+                            if (currentTimeRangeValue === '月' && prevDayForPoiDevice) {
+                                // 对于月视图，需要分别获取：
+                                // 1. 上月完整月份的能耗和电费（累计值）
+                                // 2. 上月同一天（或最后一天）的 POI 和设备数量（时点值）
+                                previousEnergy = prevResult.total_energy;
+                                previousCost = prevResult.total_cost;
+
+                                // 获取上月同天的 POI/设备 数据
+                                const prevMonthDate = new Date(currentYear, currentMonth - 2, 1);
+                                const prevYear = prevMonthDate.getFullYear();
+                                const prevMonth = prevMonthDate.getMonth() + 1;
+                                const prevDayUrl = `${prevYear}-${String(prevMonth).padStart(2, '0')}-${String(prevDayForPoiDevice).padStart(2, '0')}`;
+
+                                let poiDeviceUrl = `http://127.0.0.1:5000/api/summary?date_from=${prevDayUrl}&date_to=${prevDayUrl}`;
+                                if (currentDistrict) {
+                                    if (currentDistrict.includes('网格')) {
+                                        poiDeviceUrl += `&grid=${encodeURIComponent(currentDistrict)}`;
+                                    } else {
+                                        poiDeviceUrl += `&district=${encodeURIComponent(currentDistrict)}`;
+                                    }
+                                }
+
+                                try {
+                                    const poiDeviceResponse = await fetch(poiDeviceUrl);
+                                    const poiDeviceResult = await poiDeviceResponse.json();
+                                    if (poiDeviceResult.success) {
+                                        previousPoi = poiDeviceResult.total_poi_count || 0;
+                                        previousDevice = poiDeviceResult.total_device_count || 0;
+                                    }
+                                } catch (e) {
+                                    console.error('获取上月同日POI/设备数据失败:', e);
+                                    previousPoi = 0;
+                                    previousDevice = 0;
+                                }
+                            } else {
+                                previousEnergy = prevResult.total_energy;
+                                previousCost = prevResult.total_cost;
+                                previousPoi = prevResult.total_poi_count || 0;
+                                previousDevice = prevResult.total_device_count || 0;
+                            }
+
+                            console.log('上期能耗:', previousEnergy, '本期能耗:', currentEnergy);
+                            console.log('上期电费:', previousCost, '本期电费:', currentCost);
+                            console.log('上期POI:', previousPoi, '本期POI:', currentPoi);
+                            console.log('上期设备:', previousDevice, '本期设备:', currentDevice);
+
+                            // 计算环比百分比
+                            // 对于年视图：
+                            // - 能耗和电费：使用完整年份对比
+                            // - POI和设备：使用去年12月31日与今年最后一天的数据对比（时点值）
+                            let energyChange, costChange, poiChange, deviceChange;
+
+                            if (currentTimeRangeValue === '年') {
+                                const currentRecordCount = summaryResult.record_count || 0;
+                                const prevRecordCount = prevResult.record_count || 0;
+
+                                // 能量和电费：使用完整年份对比
+                                energyChange = calculateChangePercent(currentEnergy, previousEnergy);
+                                costChange = calculateChangePercent(currentCost, previousCost);
+
+                                // POI和设备：获取去年12月31日的数据
+                                const prevYearDec31 = `${currentYear - 1}-12-31`;
+                                let poiDeviceUrl = `http://127.0.0.1:5000/api/summary?date_from=${prevYearDec31}&date_to=${prevYearDec31}`;
+                                if (currentDistrict) {
+                                    if (currentDistrict.includes('网格')) {
+                                        poiDeviceUrl += `&grid=${encodeURIComponent(currentDistrict)}`;
+                                    } else {
+                                        poiDeviceUrl += `&district=${encodeURIComponent(currentDistrict)}`;
+                                    }
+                                }
+
+                                try {
+                                    const poiDeviceResponse = await fetch(poiDeviceUrl);
+                                    const poiDeviceResult = await poiDeviceResponse.json();
+                                    if (poiDeviceResult.success) {
+                                        const prevYearPoi = poiDeviceResult.total_poi_count || 0;
+                                        const prevYearDevice = poiDeviceResult.total_device_count || 0;
+
+                                        console.log('去年12月31日POI:', prevYearPoi, '去年12月31日设备:', prevYearDevice);
+                                        console.log('今年POI:', currentPoi, '今年设备:', currentDevice);
+
+                                        poiChange = calculateChangePercent(currentPoi, prevYearPoi);
+                                        deviceChange = calculateChangePercent(currentDevice, prevYearDevice);
+                                    }
+                                } catch (e) {
+                                    console.error('获取去年12月31日POI/设备数据失败:', e);
+                                    poiChange = null;
+                                    deviceChange = null;
+                                }
+
+                                // 如果去年数据明显不完整，不显示能耗和电费的环比
+                                if (prevRecordCount < currentRecordCount * 0.5) {
+                                    console.log('去年数据不完整（', prevRecordCount, '条），不显示能耗和电费环比');
+                                    energyChange = null;
+                                    costChange = null;
+                                }
+                            } else {
+                                energyChange = calculateChangePercent(currentEnergy, previousEnergy);
+                                costChange = calculateChangePercent(currentCost, previousCost);
+                                poiChange = calculateChangePercent(currentPoi, previousPoi);
+                                deviceChange = calculateChangePercent(currentDevice, previousDevice);
+                            }
+
+                            // 更新环比显示
+                            updateChangeDisplay('energy-change', energyChange);
+                            updateChangeDisplay('cost-change', costChange);
+                            updateChangeDisplay('poi-change', poiChange);
+                            updateChangeDisplay('device-change', deviceChange);
+                        }
+                    } catch (error) {
+                        console.error('获取上期数据失败:', error);
+                    }
+
+                    // 更新趋势图
+                    if (typeof updateEnergyTrendChart === 'function') {
+                        const cachedData = {
+                            rawData: window.rawDataCache || [],
+                            latestDate: summaryResult.last_date || null // 传递数据库最新日期
+                        };
+                        updateEnergyTrendChart(cachedData, currentTimeRangeValue);
+                    }
+
+                    // 更新用电方分类饼图（双环：外环能耗，内环电费）
+                    if (typeof updateConsumerTypeChart === 'function') {
+                        const consumerData = {
+                            rawData: window.rawDataCache || [],
+                            energyData: [{
+                                mobile_cumulative_energy: summaryResult.total_mobile_energy || 0,
+                                mobile_electricity_fee: summaryResult.total_mobile_fee || 0,
+                                tower_cumulative_energy: summaryResult.total_tower_energy || 0,
+                                tower_electricity_fee: summaryResult.total_tower_fee || 0
+                            }],
+                            latestDate: summaryResult.last_date || null
+                        };
+                        updateConsumerTypeChart(consumerData);
+                    }
+
+                    // 更新 POI 分项统计图表
+                    if (typeof updatePoiChart === 'function') {
+                        const poiData = {
+                            rawData: window.rawDataCache || [],
+                            energyData: [{
+                                mobile_poi_count: summaryResult.total_mobile_poi || 0,
+                                tower_poi_count: summaryResult.total_tower_poi || 0
+                            }],
+                            latestDate: summaryResult.last_date || null
+                        };
+                        updatePoiChart(poiData);
+                    }
+
+                    // 更新用电类型统计图表
+                    if (typeof updateElectricityTypeChart === 'function') {
+                        const electricityTypeData = {
+                            rawData: window.rawDataCache || [],
+                            energyData: [{
+                                direct_power_supply_energy: summaryResult.total_direct_energy || 0,
+                                direct_power_supply_cost: summaryResult.total_direct_cost || 0,
+                                indirect_power_supply_energy: summaryResult.total_indirect_energy || 0,
+                                indirect_power_supply_cost: summaryResult.total_indirect_cost || 0
+                            }],
+                            latestDate: summaryResult.last_date || null
+                        };
+                        updateElectricityTypeChart(electricityTypeData);
+                    }
+                }
+            } catch (error) {
+                console.error('获取月/年汇总数据失败:', error);
+            }
+
+            return;
         }
+
+        // 对于日视图，加载包含上月同天的数据范围以支持环比计算
+        const prevMonthDate = new Date(currentYear, currentMonth - 2, 1);
+        const prevMonthYear = prevMonthDate.getFullYear();
+        const prevMonth = prevMonthDate.getMonth() + 1;
+        const prevMonthStart = `${prevMonthYear}-${String(prevMonth).padStart(2, '0')}-20`;
+        const currentMonthEnd = `${currentYear}-${String(currentMonth).padStart(2, '0')}-20`;
+
+        // 构建 API URL，包含区域筛选参数
+        let apiUrl = `http://127.0.0.1:5000/api/summary_data?date_from=${prevMonthStart}&date_to=${currentMonthEnd}`;
+        if (currentDistrict) {
+            if (currentDistrict.includes('网格')) {
+                apiUrl += `&grid=${encodeURIComponent(currentDistrict)}`;
+            } else {
+                apiUrl += `&district=${encodeURIComponent(currentDistrict)}`;
+            }
+        }
+        console.log('日视图：加载详细数据', apiUrl);
+
+        const response = await fetch(apiUrl);
+        const result = await response.json();
+
+        if (!result.success) {
+            console.error('API 返回错误:', result.error);
+            return;
+        }
+
+        const processedData = result.data;
+        const latestDate = result.latest_date;
+
+        console.log('API 数据加载成功，数据条数:', processedData.length);
+        console.log('最新有效日期:', latestDate);
+
+        // 缓存原始数据
+        window.rawDataCache = processedData;
+
+        // 根据当前时间维度过滤数据
+        const filteredData = filterDataByTimeRange(processedData);
+
+        // 构建数据对象
+        const data = {
+            rawData: processedData,
+            energyData: filteredData,
+            latestDate: latestDate,
+            reportData: {
+                rent: { total: 0, pending: 0, completed: 0 },
+                electricity: { total: 0, pending: 0, completed: 0 }
+            },
+            trendData: generateTrendData(processedData)
+        };
+
+        // 处理数据
+        processData(data);
+
+        // 更新能耗趋势图
+        if (typeof updateEnergyTrendChart === 'function') {
+            updateEnergyTrendChart(data, currentTimeRangeValue);
+        }
+
+        // 更新标题显示当前区域
+        updateTitleWithDistrict(currentDistrict);
+
     } catch (error) {
-        console.error('数据加载失败:', error);
-        // 使用模拟数据
-        const mockData = generateMockData();
-        processData(mockData);
+        console.error('重新加载数据失败:', error);
     }
 }
 
 // 使用筛选后的数据重新加载图表
 function reloadDataWithFilter(filteredData, district) {
     console.log('使用筛选数据重新加载图表，区域:', district, '数据量:', filteredData.length);
-    
+
     try {
         // 根据当前时间维度过滤数据
         const timeFilteredData = filterDataByTimeRange(filteredData);
-        
+
         console.log('时间过滤后数据量:', timeFilteredData.length);
-        
+
         // 计算总体电费用于调试
         const testCost = timeFilteredData.reduce((sum, item) => {
             const value = item['AC'] || 0;
             return sum + Number(value || 0);
         }, 0);
         console.log('筛选后的总体电费（原始）:', testCost, '四舍五入:', Math.round(testCost));
-        
+
         // 构建数据对象
         const data = {
             rawData: filteredData,
@@ -395,9 +738,10 @@ function reloadDataWithFilter(filteredData, district) {
                 rent: { total: 0, pending: 0, completed: 0 },
                 electricity: { total: 0, pending: 0, completed: 0 }
             },
-            trendData: generateTrendData(filteredData)
+            trendData: generateTrendData(filteredData),
+            latestDate: window.latestDate || null // 使用全局保存的最新日期
         };
-        
+
         // 处理数据
         processData(data);
         
@@ -518,85 +862,66 @@ function hideLoading() {
 // 加载告警信息
 function loadAlarms() {
     const alarmList = document.getElementById('alarm-list');
-    
+
     if (!alarmList) {
         console.error('未找到告警列表元素');
         return;
     }
-    
+
     // 显示加载状态
     alarmList.innerHTML = '<div class="alarm-loading"><div class="spinner"></div><span>正在加载告警数据...</span></div>';
-    
-    // 从 CSV 文件加载告警数据，添加时间戳避免缓存
-    fetch('data/data_gaojing.csv?t=' + Date.now())
+
+    // 从新的 API 获取 meter_alarm 表中最新一天的告警数据
+    fetch('http://127.0.0.1:5000/api/alarms/latest_day')
         .then(response => {
             if (!response.ok) {
                 throw new Error('网络响应失败: ' + response.status);
             }
-            return response.arrayBuffer();
+            return response.json();
         })
-        .then(buffer => {
-            // 尝试多种编码方式解码
-            let text;
-            const utf8Decoder = new TextDecoder('utf-8');
-            const utf8Text = utf8Decoder.decode(buffer);
-            
-            // 检查是否包含乱码特征
-            const hasGarbledChars = /锘|娴|犲|姝|€/.test(utf8Text);
-            
-            if (hasGarbledChars) {
-                // UTF-8 解码后包含乱码，尝试 GBK
-                const gbkDecoder = new TextDecoder('gbk');
-                text = gbkDecoder.decode(buffer);
-                console.log('使用 GBK 编码解析告警数据');
-            } else {
-                text = utf8Text;
-                console.log('使用 UTF-8 编码解析告警数据');
+        .then(result => {
+            if (!result.success) {
+                throw new Error(result.error || '获取告警数据失败');
             }
-            
-            // 解析 CSV
-            const alarms = parseCSV(text);
-            
-            if (!alarms || alarms.length <= 1) {
+
+            const alarms = result.data || [];
+
+            console.log('告警数据加载成功，共', alarms.length, '条记录，最新日期:', result.latest_date);
+
+            if (alarms.length === 0) {
                 // 空数据
                 alarmList.innerHTML = '<div class="alarm-empty"><span>暂无告警数据</span></div>';
                 return;
             }
-            
-            // 跳过表头，取数据行
-            const dataRows = alarms.slice(1);
-            
-            console.log('告警数据加载成功，共', dataRows.length, '条记录');
-            
+
             // 清空并渲染告警列表
             alarmList.innerHTML = '';
-            
+
             // 限制显示数量，避免过多
             const maxAlarms = 100;
-            const displayData = dataRows.slice(0, maxAlarms);
-            
+            const displayData = alarms.slice(0, maxAlarms);
+
             displayData.forEach((row, index) => {
                 if (index < 3) {
                     console.log(`告警记录 ${index}:`, {
-                        '级别 (1)': row[1],
-                        '告警时间 (2)': row[2],
-                        '告警时长 (3)': row[3],
-                        '区域 (6)': row[6],
-                        '机房 (7)': row[7]
+                        '级别': row['级别'],
+                        '告警时间': row['告警时间'],
+                        '告警时长': row['告警时长'],
+                        '区域': row['区域'],
+                        '机房': row['机房']
                     });
                 }
-                
-                // CSV 字段映射：
-                // 0:序号，1:级别，2:告警时间，3:告警时长，4:告警值，5:地市，6:区域，7:机房，8:站点类型，9:设备名称，10:设备类型，11:监控量
-                const level = row[1] || '';           // 级别
-                const alarmTime = row[2] || '';        // 告警时间
-                const duration = row[3] || '';        // 告警时长
-                const region = row[6] || '';           // 区域
-                const room = row[7] || '';            // 机房
-                const stationType = row[8] || '';     // 站点类型
-                const deviceName = row[9] || '';      // 设备名称
-                const monitorItem = row[11] || '';     // 监控量
-                
+
+                // API 字段映射
+                const level = row['级别'] || '';
+                const alarmTime = row['告警时间'] || '';
+                const duration = row['告警时长'] || '';
+                const region = row['区域'] || '';
+                const room = row['机房'] || '';
+                const stationType = row['站点类型'] || '';
+                const deviceName = row['设备名称'] || '';
+                const monitorItem = row['监控量'] || '';
+
                 // 级别映射：一级/二级/三级/四级
                 let levelClass = 'level-4';
                 let levelText = level;
@@ -613,10 +938,10 @@ function loadAlarms() {
                     levelClass = 'level-4';
                     levelText = '四级';
                 }
-                
+
                 const alarmItem = document.createElement('div');
                 alarmItem.className = 'alarm-item';
-                
+
                 // 三行布局
                 alarmItem.innerHTML = `
                     <div class="alarm-row level-row">
@@ -641,14 +966,14 @@ function loadAlarms() {
                         <span class="content">${monitorItem}</span>
                     </div>
                 `;
-                
+
                 alarmList.appendChild(alarmItem);
             });
-            
-            if (dataRows.length > maxAlarms) {
-                console.log('仅显示前', maxAlarms, '条告警记录，共', dataRows.length, '条');
+
+            if (alarms.length > maxAlarms) {
+                console.log('仅显示前', maxAlarms, '条告警记录，共', alarms.length, '条');
             }
-            
+
             // 延迟启用自动滚动，确保 DOM 完全渲染
             setTimeout(() => {
                 enableAutoScroll();
@@ -694,6 +1019,147 @@ let autoScrollEnabled = false;  // 防止重复启用
 let lastScrollTop = 0;  // 记录上次滚动位置
 let scrollDirection = 1;  // 滚动方向：1 向下，-1 向上
 
+// 事件列表自动滚动功能
+let eventScrollInterval = null;
+let isEventUserScrolling = false;
+let eventScrollTimer = null;
+let eventScrollEnabled = false;
+let eventScrollDirection = 1;
+
+function enableEventAutoScroll() {
+    if (eventScrollEnabled) {
+        console.log('事件列表自动滚动已启用，跳过');
+        return;
+    }
+
+    const eventList = document.getElementById('event-list');
+
+    if (!eventList) {
+        console.error('未找到事件列表元素');
+        return;
+    }
+
+    console.log('启用事件列表自动滚动，列表高度:', eventList.scrollHeight, 'px');
+    eventScrollEnabled = true;
+
+    if (eventScrollInterval) {
+        clearInterval(eventScrollInterval);
+    }
+
+    eventList.addEventListener('wheel', function() {
+        isEventUserScrolling = true;
+        if (eventScrollInterval) {
+            console.log('用户滚动事件列表，暂停自动滚动');
+            clearInterval(eventScrollInterval);
+        }
+
+        if (eventScrollTimer) {
+            clearTimeout(eventScrollTimer);
+        }
+
+        eventScrollTimer = setTimeout(() => {
+            isEventUserScrolling = false;
+            console.log('恢复事件列表自动滚动');
+            startEventAutoScroll();
+        }, 10000);
+    });
+
+    eventList.addEventListener('touchstart', function() {
+        isEventUserScrolling = true;
+        if (eventScrollInterval) {
+            console.log('用户触摸事件列表，暂停自动滚动');
+            clearInterval(eventScrollInterval);
+        }
+    });
+
+    eventList.addEventListener('touchend', function() {
+        if (eventScrollTimer) {
+            clearTimeout(eventScrollTimer);
+        }
+
+        eventScrollTimer = setTimeout(() => {
+            isEventUserScrolling = false;
+            console.log('恢复事件列表自动滚动');
+            startEventAutoScroll();
+        }, 10000);
+    });
+
+    // 点击事件 - 暂停 10 秒后恢复
+    eventList.addEventListener('click', function() {
+        isEventUserScrolling = true;
+        if (eventScrollInterval) {
+            console.log('用户点击事件列表，暂停自动滚动 10 秒');
+            clearInterval(eventScrollInterval);
+        }
+
+        if (eventScrollTimer) {
+            clearTimeout(eventScrollTimer);
+        }
+
+        eventScrollTimer = setTimeout(() => {
+            isEventUserScrolling = false;
+            console.log('10 秒后恢复事件列表自动滚动');
+            startEventAutoScroll();
+        }, 10000);
+    });
+
+    startEventAutoScroll();
+}
+
+function startEventAutoScroll() {
+    const eventList = document.getElementById('event-list');
+
+    if (!eventList) return;
+
+    if (isEventUserScrolling) {
+        return;
+    }
+
+    const hasEnoughContent = eventList.scrollHeight > eventList.clientHeight + 10;
+
+    if (!hasEnoughContent) {
+        console.log('事件列表内容不足，暂不滚动。scrollHeight:', eventList.scrollHeight, 'clientHeight:', eventList.clientHeight);
+        setTimeout(() => {
+            if (!isEventUserScrolling) {
+                startEventAutoScroll();
+            }
+        }, 1000);
+        return;
+    }
+
+    if (eventScrollInterval) {
+        clearInterval(eventScrollInterval);
+    }
+
+    console.log('开始事件列表自动滚动，列表总高度:', eventList.scrollHeight, 'px, 可视高度:', eventList.clientHeight, 'px');
+
+    eventScrollInterval = setInterval(() => {
+        if (!eventList || isEventUserScrolling) {
+            return;
+        }
+
+        const maxScrollTop = eventList.scrollHeight - eventList.clientHeight;
+        const currentScrollTop = eventList.scrollTop;
+
+        if (eventScrollDirection === 1) {
+            if (currentScrollTop >= maxScrollTop - 2) {
+                console.log('事件列表滚动到底部，改为向上滚动');
+                eventScrollDirection = -1;
+            } else {
+                eventList.scrollTop += 2;
+            }
+        }
+        else {
+            if (currentScrollTop <= 0) {
+                console.log('事件列表滚动到顶部，改为向下滚动');
+                eventScrollDirection = 1;
+            } else {
+                eventList.scrollTop -= 2;
+            }
+        }
+    }, 30);
+}
+
 function enableAutoScroll() {
     // 如果已经启用，不再重复启用
     if (autoScrollEnabled) {
@@ -723,19 +1189,19 @@ function enableAutoScroll() {
             console.log('用户滚动，暂停自动滚动');
             clearInterval(autoScrollInterval);
         }
-        
-        // 用户停止滚动 3 秒后恢复自动滚动
+
+        // 用户停止滚动 10 秒后恢复自动滚动
         if (userScrollTimer) {
             clearTimeout(userScrollTimer);
         }
-        
+
         userScrollTimer = setTimeout(() => {
             isUserScrolling = false;
             console.log('恢复自动滚动');
             startAutoScroll();
-        }, 3000);
+        }, 10000);
     });
-    
+
     alarmList.addEventListener('touchstart', function() {
         isUserScrolling = true;
         if (autoScrollInterval) {
@@ -743,17 +1209,36 @@ function enableAutoScroll() {
             clearInterval(autoScrollInterval);
         }
     });
-    
+
     alarmList.addEventListener('touchend', function() {
         if (userScrollTimer) {
             clearTimeout(userScrollTimer);
         }
-        
+
         userScrollTimer = setTimeout(() => {
             isUserScrolling = false;
             console.log('恢复自动滚动');
             startAutoScroll();
-        }, 3000);
+        }, 10000);
+    });
+
+    // 点击事件 - 暂停 10 秒后恢复
+    alarmList.addEventListener('click', function() {
+        isUserScrolling = true;
+        if (autoScrollInterval) {
+            console.log('用户点击，暂停自动滚动 10 秒');
+            clearInterval(autoScrollInterval);
+        }
+
+        if (userScrollTimer) {
+            clearTimeout(userScrollTimer);
+        }
+
+        userScrollTimer = setTimeout(() => {
+            isUserScrolling = false;
+            console.log('10 秒后恢复自动滚动');
+            startAutoScroll();
+        }, 10000);
     });
     
     // 监听滚动事件，只记录位置，不处理循环
@@ -834,45 +1319,134 @@ function startAutoScroll() {
 
 // 加载事件信息
 function loadEvents() {
-    // 模拟事件数据
-    const events = [
-        {
-            time: '2026-03-10 11:00:00',
-            location: '钟楼区',
-            type: '设备维护',
-            status: '已完成'
-        },
-        {
-            time: '2026-03-10 10:00:00',
-            location: '经开区',
-            type: '系统升级',
-            status: '进行中'
-        },
-        {
-            time: '2026-03-10 09:30:00',
-            location: '溧阳市',
-            type: '数据同步',
-            status: '已完成'
-        }
-    ];
-    
-    // 更新事件列表
     const eventList = document.getElementById('event-list');
-    if (eventList) {
-        eventList.innerHTML = '';
-        
-        events.forEach(event => {
-            const eventItem = document.createElement('div');
-            eventItem.className = 'event-item';
-            eventItem.innerHTML = `
-                <div class="event-time">${event.time}</div>
-                <div class="event-location">${event.location}</div>
-                <div class="event-type">${event.type}</div>
-                <div class="event-status">状态: ${event.status}</div>
-            `;
-            eventList.appendChild(eventItem);
-        });
+
+    if (!eventList) {
+        console.error('未找到事件列表元素');
+        return;
     }
+
+    // 重置滚动状态
+    eventScrollEnabled = false;
+    isEventUserScrolling = false;
+    if (eventScrollInterval) {
+        clearInterval(eventScrollInterval);
+        eventScrollInterval = null;
+    }
+    if (eventScrollTimer) {
+        clearTimeout(eventScrollTimer);
+        eventScrollTimer = null;
+    }
+    // 重置滚动位置到顶部
+    eventList.scrollTop = 0;
+    eventScrollDirection = 1;
+
+    // 显示加载状态
+    eventList.innerHTML = '<div class="alarm-loading"><div class="spinner"></div><span>正在加载事件数据...</span></div>';
+
+    // 从 API 获取 meter_event 表中最新一天的事件数据
+    fetch('http://127.0.0.1:5000/api/events/latest_day')
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('网络响应失败: ' + response.status);
+            }
+            return response.json();
+        })
+        .then(result => {
+            if (!result.success) {
+                throw new Error(result.error || '获取事件数据失败');
+            }
+
+            const events = result.data || [];
+
+            console.log('事件数据加载成功，共', events.length, '条记录，最新日期:', result.latest_date);
+
+            if (events.length === 0) {
+                // 空数据
+                eventList.innerHTML = '<div class="alarm-empty"><span>暂无事件数据</span></div>';
+                return;
+            }
+
+            // 清空并渲染事件列表
+            eventList.innerHTML = '';
+
+            // 限制显示数量
+            const maxEvents = 100;
+            const displayData = events.slice(0, maxEvents);
+
+            displayData.forEach((event, index) => {
+                if (index < 3) {
+                    console.log(`事件记录 ${index}:`, {
+                        '分析日期': event['分析日期'],
+                        '供电类型': event['供电类型'],
+                        '区县': event['区县'],
+                        '归属': event['归属'],
+                        '关联位置点': event['关联位置点'],
+                        '电表编号': event['电表编号'],
+                        '电表事件': event['电表事件']
+                    });
+                }
+
+                // 事件字段映射
+                const eventDate = event['分析日期'] || '';
+                const electricityType = event['供电类型'] || '';
+                const district = event['区县'] || '';
+                const ownership = event['归属'] || '';
+                const location = event['关联位置点'] || '';
+                const meterNumber = event['电表编号'] || '';
+                const meterEvent = event['电表事件'] || '';
+
+                const eventItem = document.createElement('div');
+                eventItem.className = 'event-item';
+
+                // 根据事件类型设置不同的样式
+                let eventTypeClass = '';
+                if (meterEvent.includes('一级告警')) {
+                    eventTypeClass = 'event-critical';
+                } else if (meterEvent.includes('二级告警')) {
+                    eventTypeClass = 'event-warning';
+                } else {
+                    eventTypeClass = 'event-normal';
+                }
+
+                eventItem.innerHTML = `
+                    <div class="event-row level-row">
+                        <span class="level-badge ${eventTypeClass}">${meterEvent}</span>
+                        <span class="time-info" title="分析日期">${eventDate}</span>
+                        <span class="duration-info" title="供电类型" style="margin-left:8px;">⚡ ${electricityType}</span>
+                    </div>
+                    <div class="event-row">
+                        <span class="label">区县:</span>
+                        <span class="content" title="${district}">${district}</span>
+                        <span class="label" style="margin-left:8px;">归属:</span>
+                        <span class="content">${ownership}</span>
+                    </div>
+                    <div class="event-row">
+                        <span class="label">位置:</span>
+                        <span class="content" title="${location}">${location}</span>
+                    </div>
+                    <div class="event-row">
+                        <span class="label">电表:</span>
+                        <span class="content">${meterNumber}</span>
+                    </div>
+                `;
+
+                eventList.appendChild(eventItem);
+            });
+
+            if (events.length > maxEvents) {
+                console.log('仅显示前', maxEvents, '条事件记录，共', events.length, '条');
+            }
+
+            // 延迟启用自动滚动，确保 DOM 完全渲染
+            setTimeout(() => {
+                enableEventAutoScroll();
+            }, 100);
+        })
+        .catch(error => {
+            console.error('加载事件数据失败:', error);
+            eventList.innerHTML = '<div class="alarm-error"><span>加载失败: ' + error.message + '</span></div>';
+        });
 }
 
 // 导出函数

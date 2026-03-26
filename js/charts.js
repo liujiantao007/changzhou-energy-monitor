@@ -33,7 +33,13 @@ function initCharts() {
     if (document.getElementById('electricity-type-chart')) {
         charts.electricityTypeChart = echarts.init(document.getElementById('electricity-type-chart'));
     }
-    
+
+    // 初始化用电方分类饼图（移动/铁塔）
+    if (document.getElementById('consumer-type-chart')) {
+        charts.consumerTypeChart = echarts.init(document.getElementById('consumer-type-chart'));
+        console.log('初始化用电方分类饼图');
+    }
+
     // 初始化能耗趋势图
     if (document.getElementById('energy-trend-chart')) {
         charts.energyTrendChart = echarts.init(document.getElementById('energy-trend-chart'));
@@ -166,234 +172,387 @@ function updateElectricityChart(data) {
     console.log('用电量分项统计图表配置已设置');
 }
 
-// 更新POI分项统计图表
+// 更新 POI 分项统计图表
 function updatePoiChart(data) {
-    console.log('更新POI分项统计图表...');
-    
+    console.log('更新 POI 分项统计图表...');
+
     if (!charts.poiChart) {
-        console.error('POI分项统计图表实例不存在');
+        console.error('POI 分项统计图表实例不存在');
         return;
     }
-    
+
     const energyData = data.energyData || [];
-    console.log('POI分项统计数据条数:', energyData.length);
-    
-    // 打印前几条数据的用电属性和POI名称
-    console.log('前5条数据样例:');
-    for (let i = 0; i < Math.min(5, energyData.length); i++) {
-        console.log(`  第${i+1}条 - 用电属性(I): "${energyData[i]['I']}", POI名称(L): "${energyData[i]['L']}"`);
-    }
-    
-    // 按用电属性列（I列）分类统计POI名称列（L列）去重数量
-    const poiDataByAttr = {};
-    
+    console.log('POI 分项统计数据条数:', energyData.length);
+
+    // 汇总 tower_poi_count 和 mobile_poi_count 数据
+    let mobilePoi = 0;
+    let towerPoi = 0;
+
     energyData.forEach(item => {
-        // 使用用电属性列（I列）作为分类
-        const attr = item['I'] || item['i'] || item['用电属性'] || '其他';
-        // 使用POI名称列（L列）
-        const poiName = item['L'] || item['l'] || item['poi名称'] || '';
-        
-        if (poiName) {
-            if (!poiDataByAttr[attr]) {
-                poiDataByAttr[attr] = new Set();
-            }
-            poiDataByAttr[attr].add(poiName);
-        }
+        mobilePoi += Number(item.mobile_poi_count || 0) || 0;
+        towerPoi += Number(item.tower_poi_count || 0) || 0;
     });
-    
-    // 打印每个用电属性的POI集合
-    console.log('各用电属性的POI集合:');
-    Object.entries(poiDataByAttr).forEach(([attr, poiSet]) => {
-        console.log(`  ${attr}: ${poiSet.size}个POI`, Array.from(poiSet).slice(0, 3));
-    });
-    
-    // 转换为饼图数据格式
-    const chartData = Object.entries(poiDataByAttr).map(([name, poiSet]) => ({
-        name,
-        value: poiSet.size
-    }));
-    
-    console.log('POI分项统计图表数据:', chartData);
-    
-    if (chartData.length === 0) {
-        console.warn('没有数据用于POI饼图显示');
+
+    const chartData = [
+        { name: '移动', value: mobilePoi },
+        { name: '铁塔', value: towerPoi }
+    ];
+
+    const total = mobilePoi + towerPoi;
+    console.log('POI 分项统计数据 - 移动:', mobilePoi, '个，铁塔:', towerPoi, '个，总计:', total, '个');
+
+    if (total === 0) {
+        console.warn('没有 POI 数据用于饼图显示');
+        charts.poiChart.setOption({
+            title: {
+                text: '暂无数据',
+                left: 'center',
+                top: 'center',
+                textStyle: {
+                    color: '#999',
+                    fontSize: 14,
+                    fontFamily: 'Microsoft YaHei, SimHei, sans-serif'
+                }
+            },
+            series: [{
+                type: 'pie',
+                radius: ['40%', '70%'],
+                data: [],
+                label: { show: false }
+            }]
+        });
         return;
     }
-    
+
     const option = {
         tooltip: {
             trigger: 'item',
             formatter: function(params) {
-                return params.name + ': ' + params.value.toLocaleString('zh-CN') + ' 个 (' + params.percent + '%)';
+                const value = params.value.toLocaleString('zh-CN');
+                const percent = params.percent.toFixed(1);
+                return `<div style="font-family: Microsoft YaHei, SimHei, sans-serif; font-size: 12px; color: #fff; background: rgba(0,0,0,0.8); padding: 8px 12px; border-radius: 4px;">
+                    <div style="font-weight: bold; margin-bottom: 4px;">${params.name}</div>
+                    <div>POI 数量：${value} 个</div>
+                    <div>占比：${percent}%</div>
+                </div>`;
             },
-            backgroundColor: 'rgba(0, 0, 0, 0)',
-            borderColor: 'rgba(0, 0, 0, 0)',
+            backgroundColor: 'transparent',
+            borderColor: 'transparent',
             borderWidth: 0,
-            shadowBlur: 0,
-            padding: [0, 0, 0, 0],
-            extraCssText: 'box-shadow: none; border: none; background: transparent !important;',
-            textStyle: {
-                fontSize: 14,
-                color: '#fff'
-            }
+            padding: 0,
+            extraCssText: 'box-shadow: none; border: none;'
         },
         legend: {
             orient: 'vertical',
-            left: 'left',
-            top: 'center',
+            right: '1%',
+            top: '1%',
             textStyle: {
-                fontSize: 14,
+                fontSize: 13,
                 fontFamily: 'Microsoft YaHei, SimHei, sans-serif',
                 color: '#fff'
-            }
+            },
+            formatter: function(name) {
+                const data = chartData.find(d => d.name === name);
+                const value = data ? data.value.toLocaleString('zh-CN') : '0';
+                const percent = total > 0 && data ? ((data.value / total) * 100).toFixed(1) : '0.0';
+                return `${name}: ${value} 个 (${percent}%)`;
+            },
+            itemWidth: 15,
+            itemHeight: 15,
+            itemGap: 12
         },
         series: [{
-            name: 'POI 数量',
+            name: 'POI 分类',
             type: 'pie',
-            radius: '50%',
-            center: ['55%', '50%'],
+            radius: ['40%', '65%'],
+            center: ['28%', '50%'],
             avoidLabelOverlap: true,
-            minShowLabelAngle: 0,
-            itemStyle: {
-                borderRadius: 8
-            },
+            minShowLabelAngle: 5,
             label: {
                 show: true,
                 formatter: function(params) {
-                    return params.name + '\n' + params.value.toLocaleString('zh-CN') + ' 个\n(' + params.percent + '%)';
+                    const percent = params.percent != null ? params.percent.toFixed(1) : '0.0';
+                    return `${params.name}\n${percent}%`;
                 },
                 fontSize: 12,
                 fontFamily: 'Microsoft YaHei, SimHei, sans-serif',
+                fontWeight: 'bold',
                 position: 'outside',
                 color: '#fff',
-                textBorderColor: 'transparent',
-                textBorderWidth: 0
+                textShadowBlur: 2,
+                textShadowColor: 'rgba(0,0,0,0.5)'
+            },
+            labelLine: {
+                show: true,
+                length: 6,
+                length2: 8,
+                lineStyle: {
+                    color: 'rgba(255,255,255,0.6)',
+                    width: 1
+                }
             },
             emphasis: {
                 label: {
                     show: true,
-                    fontSize: 14,
+                    fontSize: 16,
                     fontWeight: 'bold',
                     fontFamily: 'Microsoft YaHei, SimHei, sans-serif'
                 },
                 itemStyle: {
-                    shadowBlur: 10,
+                    shadowBlur: 15,
                     shadowOffsetX: 0,
                     shadowColor: 'rgba(0, 0, 0, 0.5)'
                 }
             },
-            labelLine: {
-                show: true,
-                length: 5,
-                length2: 5
-            },
             data: chartData,
-            color: ['#5470c6', '#91cc75', '#fac858', '#ee6666', '#73c0de', '#3ba272', '#fc8452', '#9a60b4', '#ea7ccc']
+            color: ['#5470c6', '#ee6666']
         }]
     };
-    
-    charts.poiChart.setOption(option);
-    console.log('POI分项统计图表配置已设置');
+
+    charts.poiChart.setOption(option, true);
+    console.log('POI 分项统计图表配置已设置');
 }
 
-// 更新用电类型统计图表（两层嵌套环形图）
+// 更新用电类型统计图表（双环：外环能耗，内环电费）
 function updateElectricityTypeChart(data) {
     console.log('更新用电类型统计图表...');
-    
+
+    // 定义颜色系 (在此处统一管理，方便后续修改)
+    // ==========================================
+    const colors = {
+        // 外环 - 能耗 (冷色/警示系)
+        energy: [
+            '#1565C0', // 直供电 - 深蓝
+            '#C62828'  // 转供电 - 深红
+        ],
+        // 内环 - 电费 (暖色/财富系)
+        cost: [
+            '#2E7D32', // 直供电 - 深绿
+            '#F9A825'  // 转供电 - 琥珀黄
+        ]
+    };
+
     if (!charts.electricityTypeChart) {
         console.error('用电类型统计图表实例不存在');
         return;
     }
-    
+
     const energyData = data.energyData || [];
     console.log('用电类型统计数据条数:', energyData.length);
-    
-    // 按用电类型列（K 列）分类统计度数和电费
-    const typeData = {};
+
+    // 汇总直供电和转供电的能耗和电费
+    let directEnergy = 0;
+    let directCost = 0;
+    let indirectEnergy = 0;
+    let indirectCost = 0;
+
     energyData.forEach(item => {
-        const type = item['K'] || item['k'] || item['用电类型'] || '其他';
-        const energy = Number(item['AB'] || item['ab'] || 0) || 0;
-        const cost = Number(item['AC'] || item['ac'] || 0) || 0;
-        
-        if (!typeData[type]) {
-            typeData[type] = { energy: 0, cost: 0 };
-        }
-        typeData[type].energy += energy;
-        typeData[type].cost += cost;
+        directEnergy += Number(item.direct_power_supply_energy || 0) || 0;
+        directCost += Number(item.direct_power_supply_cost || 0) || 0;
+        indirectEnergy += Number(item.indirect_power_supply_energy || 0) || 0;
+        indirectCost += Number(item.indirect_power_supply_cost || 0) || 0;
     });
-    
-    // 转换为图表数据格式
-    const energyDataArray = Object.entries(typeData).map(([name, data]) => ({
-        name,
-        value: Math.floor(data.energy)
-    }));
-    
-    const costDataArray = Object.entries(typeData).map(([name, data]) => ({
-        name,
-        value: Math.floor(data.cost)
-    }));
-    
-    console.log('用电类型统计 - 电量数据:', energyDataArray);
-    console.log('用电类型统计 - 电费数据:', costDataArray);
-    
-    if (energyDataArray.length === 0) {
-        console.warn('没有数据用于用电类型图表显示');
+
+    const energyDataArray = [
+        { name: '直供电', value: Math.floor(directEnergy), itemStyle: { color: '#1565C0' } },
+        { name: '转供电', value: Math.floor(indirectEnergy), itemStyle: { color: '#C62828' } }
+    ];
+
+    const costDataArray = [
+        { name: '直供电', value: Math.floor(directCost), itemStyle: { color: '#2E7D32' } },
+        { name: '转供电', value: Math.floor(indirectCost), itemStyle: { color: '#F9A825' } }
+    ];
+
+    const totalEnergy = directEnergy + indirectEnergy;
+    const totalCost = directCost + indirectCost;
+    console.log('用电类型统计 - 直供电:', directEnergy.toFixed(2), 'kWh,', directCost.toFixed(2), '元');
+    console.log('用电类型统计 - 转供电:', indirectEnergy.toFixed(2), 'kWh,', indirectCost.toFixed(2), '元');
+
+    if (totalEnergy === 0) {
+        console.warn('没有用电类型数据用于图表显示');
+        charts.electricityTypeChart.setOption({
+            title: {
+                text: '暂无数据',
+                left: 'center',
+                top: 'center',
+                textStyle: {
+                    color: '#999',
+                    fontSize: 14,
+                    fontFamily: 'Microsoft YaHei, SimHei, sans-serif'
+                }
+            },
+            series: [{
+                type: 'pie',
+                radius: ['40%', '70%'],
+                data: [],
+                label: { show: false }
+            }]
+        });
         return;
     }
-    
-    // 外层圆环图颜色（蓝色系）
-    const outerColors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#f97316', '#84cc16', '#ec4899'];
-    // 内层饼状图颜色（紫色/粉色系）
-    const innerColors = ['#8b5cf6', '#ec4899', '#f472b6', '#fb7185', '#a78bfa', '#c084fc', '#e879f9', '#f472b6', '#fb7185'];
-    
+
     const option = {
         tooltip: {
             trigger: 'item',
             formatter: function(params) {
-                const value = params.seriesName === '电量' 
-                    ? params.value.toLocaleString('zh-CN') + ' kWh'
-                    : params.value.toLocaleString('zh-CN') + ' 元';
-                return params.seriesName + '<br/>' + params.name + ': ' + value;
+                const value = params.value.toLocaleString('zh-CN');
+                const unit = params.seriesName === '能耗' ? 'kWh' : '元';
+                const percent = params.percent.toFixed(1);
+                return `<div style="font-family: Microsoft YaHei, SimHei, sans-serif; font-size: 12px; color: #fff; background: rgba(0,0,0,0.8); padding: 8px 12px; border-radius: 4px;">
+                    <div style="font-weight: bold; margin-bottom: 4px;">${params.seriesName} - ${params.name}</div>
+                    <div>数值：${value} ${unit}</div>
+                    <div>占比：${percent}%</div>
+                </div>`;
             },
-            backgroundColor: 'rgba(0, 0, 0, 0)',
-            borderColor: 'rgba(0, 0, 0, 0)',
+            backgroundColor: 'transparent',
+            borderColor: 'transparent',
             borderWidth: 0,
-            shadowBlur: 0,
-            padding: [0, 0, 0, 0],
-            extraCssText: 'box-shadow: none; border: none; background: transparent !important;',
-            textStyle: {
-                fontSize: 14,
-                color: '#fff'
+            padding: 0,
+            extraCssText: 'box-shadow: none; border: none;'
+        },
+        // 富文本样式定义
+        textStyle: {
+            rich: {
+                energyTitle: {
+                    fontSize: 12,
+                    fontWeight: 'bold',
+                    color: '#90cdf4',
+                    padding: [0, 0, 4, 0],
+                    fontFamily: 'Microsoft YaHei, SimHei, sans-serif'
+                },
+                costTitle: {
+                    fontSize: 12,
+                    fontWeight: 'bold',
+                    color: '#f6ad55',
+                    padding: [0, 0, 4, 0],
+                    fontFamily: 'Microsoft YaHei, SimHei, sans-serif'
+                }
             }
         },
-        legend: {
-            orient: 'vertical',
-            left: 'left',
-            top: 'center',
-            textStyle: {
-                fontSize: 14,
-                fontFamily: 'Microsoft YaHei, SimHei, sans-serif',
-                color: '#fff'
+        legend: [
+            {
+                // 外环图例（能耗）
+                orient: 'vertical',
+                right: '1%',
+                top: '1%',
+                textStyle: {
+                    fontSize: 13,
+                    fontFamily: 'Microsoft YaHei, SimHei, sans-serif',
+                    color: '#fff'
+                },
+                formatter: function(name) {
+                    const energyData = energyDataArray.find(d => d.name === name);
+                    const energy = energyData ? energyData.value.toLocaleString('zh-CN') : '0';
+                    const energyPercent = totalEnergy > 0 ? ((energyData.value / totalEnergy) * 100).toFixed(1) : '0.0';
+                    return `{energyTitle|能耗}  ${name}: ${energy} kWh (${energyPercent}%)`;
+                },
+                itemWidth: 15,
+                itemHeight: 15,
+                itemGap: 12,
+                icon: 'roundRect',
+                data: [
+                    { name: '直供电', icon: 'roundRect', itemStyle: { color: '#1565C0' } },
+                    { name: '转供电', icon: 'roundRect', itemStyle: { color: '#C62828' } }
+                ]
+            },
+            {
+                // 内环图例（电费）
+                orient: 'vertical',
+                right: '1%',
+                top: '35%',
+                textStyle: {
+                    fontSize: 13,
+                    fontFamily: 'Microsoft YaHei, SimHei, sans-serif',
+                    color: '#fff'
+                },
+                formatter: function(name) {
+                    const costData = costDataArray.find(d => d.name === name);
+                    const cost = costData ? costData.value.toLocaleString('zh-CN') : '0';
+                    const costPercent = totalCost > 0 ? ((costData.value / totalCost) * 100).toFixed(1) : '0.0';
+                    return `{costTitle|电费}  ${name}: ${cost}元 (${costPercent}%)`;
+                },
+                itemWidth: 15,
+                itemHeight: 15,
+                itemGap: 12,
+                icon: 'roundRect',
+                data: [
+                    { name: '直供电', icon: 'roundRect', itemStyle: { color: '#2E7D32' } },
+                    { name: '转供电', icon: 'roundRect', itemStyle: { color: '#F9A825' } }
+                ]
             }
-        },
+        ],
         series: [
             {
-                name: '电量',
+                name: '能耗',
                 type: 'pie',
                 radius: ['50%', '70%'],
-                center: ['50%', '50%'],
-                data: energyDataArray,
+                center: ['28%', '50%'],
+                avoidLabelOverlap: false,
+                minShowLabelAngle: 0,
                 label: {
                     show: true,
-                    formatter: '{b}\n{c}',
+                    formatter: function(params) {
+                        const percent = params.percent != null ? params.percent.toFixed(1) : '0.0';
+                        return `${params.name}\n${percent}%`;
+                    },
                     fontSize: 12,
                     fontFamily: 'Microsoft YaHei, SimHei, sans-serif',
+                    fontWeight: 'bold',
+                    position: 'outside',
                     color: '#fff',
-                    textBorderColor: 'transparent',
-                    textBorderWidth: 0
+                    textShadowBlur: 2,
+                    textShadowColor: 'rgba(0,0,0,0.5)'
                 },
-                itemStyle: {
-                    borderRadius: 6
+                labelLine: {
+                    show: true,
+                    length: 10,
+                    length2: 15,
+                    lineStyle: {
+                        color: 'rgba(255,255,255,0.6)',
+                        width: 1
+                    }
+                },
+                labelLayout: {
+                    hideOverlap: false
+                },
+                emphasis: {
+                    label: {
+                        show: true,
+                        fontSize: 16,
+                        fontWeight: 'bold',
+                        fontFamily: 'Microsoft YaHei, SimHei, sans-serif'
+                    },
+                    itemStyle: {
+                        shadowBlur: 15,
+                        shadowOffsetX: 0,
+                        shadowColor: 'rgba(0, 0, 0, 0.5)'
+                    }
+                },
+                data: energyDataArray
+            },
+            {
+                name: '电费',
+                type: 'pie',
+                radius: ['0%', '35%'],
+                center: ['28%', '50%'],
+                avoidLabelOverlap: true,
+                minShowLabelAngle: 0,
+                label: {
+                    show: true,
+                    overflow: 'none',
+                    textOverflow: 'none',
+                    lineHeight: 18,
+                    formatter: function(params) {
+                        const value = params.value.toLocaleString('zh-CN');
+                        return `${params.name}\n${value}元`;
+                    },
+                    fontSize: 11,
+                    fontFamily: 'Microsoft YaHei, SimHei, sans-serif',
+                    fontWeight: 'bold',
+                    position: 'inside',
+                    color: '#fff',
+                    textShadowBlur: 2,
+                    textShadowColor: 'rgba(0,0,0,0.5)'
                 },
                 emphasis: {
                     label: {
@@ -403,55 +562,24 @@ function updateElectricityTypeChart(data) {
                         fontFamily: 'Microsoft YaHei, SimHei, sans-serif'
                     },
                     itemStyle: {
-                        shadowBlur: 10,
+                        shadowBlur: 15,
                         shadowOffsetX: 0,
-                        shadowColor: 'rgba(0, 0, 0, 0.3)'
+                        shadowColor: 'rgba(0, 0, 0, 0.5)'
                     }
                 },
-                labelLine: {
-                    show: true,
-                    length: 8,
-                    length2: 8
-                },
-                color: outerColors
-            },
-            {
-                name: '电费',
-                type: 'pie',
-                radius: ['0%', '40%'],
-                center: ['50%', '50%'],
-                data: costDataArray,
-                label: {
-                    show: true,
-                    formatter: function(params) {
-                        return params.value.toLocaleString('zh-CN') + '元';
-                    },
-                    fontSize: 12,
-                    fontFamily: 'Microsoft YaHei, SimHei, sans-serif'
-                },
-                itemStyle: {
-                    borderRadius: 4
-                },
-                emphasis: {
-                    label: {
-                        show: true,
-                        fontSize: 11,
-                        fontWeight: 'bold',
-                        fontFamily: 'Microsoft YaHei, SimHei, sans-serif'
-                    },
-                    itemStyle: {
-                        shadowBlur: 10,
-                        shadowOffsetX: 0,
-                        shadowColor: 'rgba(0, 0, 0, 0.3)'
-                    }
-                },
-                color: innerColors
+                data: costDataArray
             }
         ]
     };
-    
-    charts.electricityTypeChart.setOption(option);
+
+    // 清除旧配置，避免合并
+    charts.electricityTypeChart.clear();
+    charts.electricityTypeChart.setOption(option, {
+        notMerge: true
+    });
     console.log('用电类型统计图表配置已设置');
+    console.log('外环颜色 (能耗):', ['#1565C0', '#C62828']);
+    console.log('内环颜色 (电费):', ['#2E7D32', '#F9A825']);
 }
 
 // 更新能耗趋势图
@@ -467,14 +595,15 @@ function updateEnergyTrendChart(data, timeType) {
     
     // 使用原始数据，不受时间选择器影响
     const rawData = data.rawData || [];
-    console.log('能耗趋势图原始数据条数:', rawData.length, '时间维度:', currentTrendTimeType);
+    const latestDate = data.latestDate; // 使用数据库中的最新日期
+    console.log('能耗趋势图原始数据条数:', rawData.length, '时间维度:', currentTrendTimeType, '最新日期:', latestDate);
     
     let labels = [];
     let energyValues = [];
     let costValues = [];
     
     if (currentTrendTimeType === '日') {
-        // 日维度：最近30天
+        // 日维度：最近30天（以数据库最新日期为准）
         const dailyData = {};
         rawData.forEach(item => {
             const dateStr = item['A'] || '';
@@ -489,11 +618,18 @@ function updateEnergyTrendChart(data, timeType) {
             }
         });
         
-        // 生成最近30天的日期列表
+        // 以数据库最新日期为准，生成最近30天的日期列表
         const days = [];
-        const now = new Date();
+        let baseDate;
+        if (latestDate) {
+            baseDate = parseDate(latestDate);
+        }
+        if (!baseDate) {
+            baseDate = new Date();
+        }
+        
         for (let i = 29; i >= 0; i--) {
-            const date = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
+            const date = new Date(baseDate.getTime() - i * 24 * 60 * 60 * 1000);
             days.push(`${date.getFullYear()}/${date.getMonth() + 1}/${date.getDate()}`);
         }
         
@@ -526,11 +662,18 @@ function updateEnergyTrendChart(data, timeType) {
             }
         });
         
-        // 生成最近12个月的月份列表
+        // 以数据库最新日期为准，生成最近12个月的月份列表
+        let baseDate;
+        if (latestDate) {
+            baseDate = parseDate(latestDate);
+        }
+        if (!baseDate) {
+            baseDate = new Date();
+        }
+        
         const months = [];
-        const now = new Date();
         for (let i = 11; i >= 0; i--) {
-            const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+            const date = new Date(baseDate.getFullYear(), baseDate.getMonth() - i, 1);
             months.push(`${date.getFullYear()}/${date.getMonth() + 1}`);
         }
         
@@ -560,11 +703,18 @@ function updateEnergyTrendChart(data, timeType) {
             }
         });
         
-        // 生成最近12年的年份列表
+        // 以数据库最新日期为准，生成最近12年的年份列表
+        let baseDate;
+        if (latestDate) {
+            baseDate = parseDate(latestDate);
+        }
+        if (!baseDate) {
+            baseDate = new Date();
+        }
+        
         const years = [];
-        const now = new Date();
         for (let i = 11; i >= 0; i--) {
-            years.push(now.getFullYear() - i);
+            years.push(baseDate.getFullYear() - i);
         }
         
         labels = years.map(y => y + '年');
@@ -747,10 +897,274 @@ function getCurrentTrendTimeType() {
     return currentTrendTimeType;
 }
 
+// 更新用电方分类饼图（双环：外环能耗，内环电费）
+function updateConsumerTypeChart(data) {
+    console.log('更新用电方分类饼图...');
+
+    if (!charts.consumerTypeChart) {
+        console.error('用电方分类饼图实例不存在');
+        return;
+    }
+
+    // 定义颜色系 (在此处统一管理，方便后续修改)
+    // ==========================================
+    const colors = {
+        // 外环 - 能耗 (保持现有颜色)
+        energy: [
+            '#5470c6', // 移动 - 蓝色
+            '#ee6666'  // 铁塔 - 红色
+        ],
+        // 内环 - 电费 (使用不同色系以区分)
+        fee: [
+            '#2E7D32', // 移动 - 深绿
+            '#F9A825'  // 铁塔 - 琥珀黄
+        ]
+    };
+
+    const energyData = data.energyData || [];
+    console.log('用电方分类数据条数:', energyData.length);
+
+    // 从数据中汇总移动和铁塔的能耗和电费
+    let mobileEnergy = 0;
+    let towerEnergy = 0;
+    let mobileFee = 0;
+    let towerFee = 0;
+
+    energyData.forEach(item => {
+        mobileEnergy += Number(item.mobile_cumulative_energy || 0) || 0;
+        towerEnergy += Number(item.tower_cumulative_energy || 0) || 0;
+        mobileFee += Number(item.mobile_electricity_fee || 0) || 0;
+        towerFee += Number(item.tower_electricity_fee || 0) || 0;
+    });
+
+    const energyDataArray = [
+        { name: '移动', value: Math.floor(mobileEnergy), itemStyle: { color: '#5470c6' } },
+        { name: '铁塔', value: Math.floor(towerEnergy), itemStyle: { color: '#ee6666' } }
+    ];
+
+    const feeDataArray = [
+        { name: '移动', value: Math.floor(mobileFee), itemStyle: { color: '#99CC66' } },
+        { name: '铁塔', value: Math.floor(towerFee), itemStyle: { color: '#CC9966' } }
+    ];
+
+    const totalEnergy = mobileEnergy + towerEnergy;
+    const totalFee = mobileFee + towerFee;
+    console.log('用电方分类数据 - 移动:', mobileEnergy.toFixed(2), 'kWh,', mobileFee.toFixed(2), '元');
+    console.log('用电方分类数据 - 铁塔:', towerEnergy.toFixed(2), 'kWh,', towerFee.toFixed(2), '元');
+
+    if (totalEnergy === 0) {
+        console.warn('没有用电方数据用于饼图显示');
+        charts.consumerTypeChart.setOption({
+            title: {
+                text: '暂无数据',
+                left: 'center',
+                top: 'center',
+                textStyle: {
+                    color: '#999',
+                    fontSize: 14,
+                    fontFamily: 'Microsoft YaHei, SimHei, sans-serif'
+                }
+            },
+            series: [{
+                type: 'pie',
+                radius: ['40%', '70%'],
+                data: [],
+                label: { show: false }
+            }]
+        });
+        return;
+    }
+
+    const option = {
+        tooltip: {
+            trigger: 'item',
+            formatter: function(params) {
+                const value = params.value.toLocaleString('zh-CN');
+                const unit = params.seriesName === '能耗' ? 'kWh' : '元';
+                const percent = params.percent.toFixed(1);
+                return `<div style="font-family: Microsoft YaHei, SimHei, sans-serif; font-size: 12px; color: #fff; background: rgba(0,0,0,0.8); padding: 8px 12px; border-radius: 4px;">
+                    <div style="font-weight: bold; margin-bottom: 4px;">${params.seriesName} - ${params.name}</div>
+                    <div>数值：${value} ${unit}</div>
+                    <div>占比：${percent}%</div>
+                </div>`;
+            },
+            backgroundColor: 'transparent',
+            borderColor: 'transparent',
+            borderWidth: 0,
+            padding: 0,
+            extraCssText: 'box-shadow: none; border: none;'
+        },
+        legend: [
+            {
+                // 外环图例（能耗）
+                orient: 'vertical',
+                right: '1%',
+                top: '1%',
+                textStyle: {
+                    fontSize: 13,
+                    fontFamily: 'Microsoft YaHei, SimHei, sans-serif',
+                    color: '#fff'
+                },
+                formatter: function(name) {
+                    const energyData = energyDataArray.find(d => d.name === name);
+                    const energy = energyData ? energyData.value.toLocaleString('zh-CN') : '0';
+                    const energyPercent = totalEnergy > 0 ? ((energyData.value / totalEnergy) * 100).toFixed(1) : '0.0';
+                    return `{energyTitle|能耗}  ${name}: ${energy} kWh (${energyPercent}%)`;
+                },
+                itemWidth: 15,
+                itemHeight: 15,
+                itemGap: 12,
+                icon: 'roundRect',
+                data: [
+                    { name: '移动', icon: 'roundRect', itemStyle: { color: '#5470c6' } },
+                    { name: '铁塔', icon: 'roundRect', itemStyle: { color: '#ee6666' } }
+                ]
+            },
+            {
+                // 内环图例（电费）
+                orient: 'vertical',
+                right: '1%',
+                top: '35%',
+                textStyle: {
+                    fontSize: 13,
+                    fontFamily: 'Microsoft YaHei, SimHei, sans-serif',
+                    color: '#fff'
+                },
+                formatter: function(name) {
+                    const feeData = feeDataArray.find(d => d.name === name);
+                    const fee = feeData ? feeData.value.toLocaleString('zh-CN') : '0';
+                    const feePercent = totalFee > 0 ? ((feeData.value / totalFee) * 100).toFixed(1) : '0.0';
+                    return `{feeTitle|电费}  ${name}: ${fee}元 (${feePercent}%)`;
+                },
+                itemWidth: 15,
+                itemHeight: 15,
+                itemGap: 12,
+                icon: 'roundRect',
+                data: [
+                    { name: '移动', icon: 'roundRect', itemStyle: { color: '#99CC66' } },
+                    { name: '铁塔', icon: 'roundRect', itemStyle: { color: '#CC9966' } }
+                ]
+            }
+        ],
+        // 富文本样式定义
+        textStyle: {
+            rich: {
+                energyTitle: {
+                    fontSize: 12,
+                    fontWeight: 'bold',
+                    color: '#90cdf4',
+                    padding: [0, 0, 4, 0],
+                    fontFamily: 'Microsoft YaHei, SimHei, sans-serif',
+                    overflow: 'none'
+                },
+                feeTitle: {
+                    fontSize: 12,
+                    fontWeight: 'bold',
+                    color: '#f6ad55',
+                    padding: [0, 0, 4, 0],
+                    fontFamily: 'Microsoft YaHei, SimHei, sans-serif',
+                    overflow: 'none'
+                }
+            }
+        },
+        series: [
+            {
+                name: '能耗',
+                type: 'pie',
+                radius: ['45%', '60%'],
+                center: ['30%', '50%'],
+                avoidLabelOverlap: true,
+                minShowLabelAngle: 5,
+                label: {
+                    show: true,
+                    formatter: function(params) {
+                        const percent = params.percent != null ? params.percent.toFixed(1) : '0.0';
+                        return `${params.name}\n${percent}%`;
+                    },
+                    fontSize: 12,
+                    fontFamily: 'Microsoft YaHei, SimHei, sans-serif',
+                    fontWeight: 'bold',
+                    position: 'outside',
+                    color: '#fff',
+                    textShadowBlur: 2,
+                    textShadowColor: 'rgba(0,0,0,0.5)'
+                },
+                labelLine: {
+                    show: true,
+                    length: 6,
+                    length2: 8,
+                    lineStyle: {
+                        color: 'rgba(255,255,255,0.6)',
+                        width: 1
+                    }
+                },
+                emphasis: {
+                    label: {
+                        show: true,
+                        fontSize: 16,
+                        fontWeight: 'bold',
+                        fontFamily: 'Microsoft YaHei, SimHei, sans-serif'
+                    },
+                    itemStyle: {
+                        shadowBlur: 15,
+                        shadowOffsetX: 0,
+                        shadowColor: 'rgba(0, 0, 0, 0.5)'
+                    }
+                },
+                data: energyDataArray
+            },
+            {
+                name: '电费',
+                type: 'pie',
+                radius: ['0%', '35%'],
+                center: ['30%', '50%'],
+                avoidLabelOverlap: true,
+                minShowLabelAngle: 0,
+                label: {
+                    show: true,
+                    formatter: function(params) {
+                        const value = params.value.toLocaleString('zh-CN');
+                        return `${params.name}\n${value}元`;
+                    },
+                    fontSize: 11,
+                    fontFamily: 'Microsoft YaHei, SimHei, sans-serif',
+                    fontWeight: 'bold',
+                    position: 'inside',
+                    color: '#fff',
+                    textShadowBlur: 2,
+                    textShadowColor: 'rgba(0,0,0,0.5)'
+                },
+                emphasis: {
+                    label: {
+                        show: true,
+                        fontSize: 14,
+                        fontWeight: 'bold',
+                        fontFamily: 'Microsoft YaHei, SimHei, sans-serif'
+                    },
+                    itemStyle: {
+                        shadowBlur: 15,
+                        shadowOffsetX: 0,
+                        shadowColor: 'rgba(0, 0, 0, 0.5)'
+                    }
+                },
+                data: feeDataArray
+            }
+        ]
+    };
+
+    // 清除旧配置，避免合并
+    charts.consumerTypeChart.clear();
+    charts.consumerTypeChart.setOption(option, {
+        notMerge: true
+    });
+    console.log('用电方分类饼图配置已设置');
+}
+
 // 导出图表函数
 window.initCharts = initCharts;
 window.updateElectricityChart = updateElectricityChart;
 window.updatePoiChart = updatePoiChart;
 window.updateElectricityTypeChart = updateElectricityTypeChart;
 window.updateEnergyTrendChart = updateEnergyTrendChart;
+window.updateConsumerTypeChart = updateConsumerTypeChart;
 window.getCurrentTrendTimeType = getCurrentTrendTimeType;
