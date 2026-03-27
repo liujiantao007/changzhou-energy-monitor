@@ -1,12 +1,17 @@
-# 常州能耗云驾驶舱 - 完整部署文档（GitHub源码拉取 → 公网构建 → 内网部署）
+# 常州能耗云驾驶舱 - 完整部署文档（GitHub 源码拉取 → 公网构建 → 内网部署）
 
 ## 📋 文档说明
 
-本文档详细描述了从GitHub拉取项目源码，在公网Linux环境构建Docker镜像，导出后传输到内网Linux系统部署的完整流程。
+本文档详细描述了从 GitHub 拉取项目源码，在公网 Linux 环境构建 Docker 镜像，导出后传输到内网 Linux 系统部署的完整流程。
 
 **适用场景**：
-- 公网环境：有互联网访问，可访问GitHub和Docker Hub
+- 公网环境：有互联网访问，可访问 GitHub 和 Docker Hub
 - 内网环境：无互联网访问，需要离线部署
+
+**重要提示**：
+- ✅ 项目已包含 CDN 资源文件（`js/libs/echarts.min.js` 和 `js/libs/xlsx.full.min.js`）
+- ✅ 无需额外下载，直接克隆即可使用
+- ✅ 支持公网构建镜像 → 内网导入部署的工作流
 
 ---
 
@@ -16,18 +21,18 @@
 ┌─────────────────────────────────────────────────────────────┐
 │              第一阶段：公网环境（有互联网）                    │
 ├─────────────────────────────────────────────────────────────┤
-│  1. 从GitHub拉取项目源码                                     │
-│  2. 安装Docker环境                                           │
+│  1. 从 GitHub 拉取项目源码                                     │
+│  2. 安装 Docker 环境                                           │
 │  3. 配置项目（数据库连接等）                                  │
-│  4. 构建Docker镜像                                           │
+│  4. 构建 Docker 镜像                                           │
 │  5. 测试运行并验证                                           │
-│  6. 导出镜像为tar文件                                         │
+│  6. 导出镜像为 tar 文件                                         │
 └─────────────────────────────────────────────────────────────┘
                               ↓ 传输（SCP/U盘/内网共享）
 ┌─────────────────────────────────────────────────────────────┐
 │              第二阶段：内网环境（无互联网）                    │
 ├─────────────────────────────────────────────────────────────┤
-│  1. 安装Docker环境（离线或内网源）                            │
+│  1. 安装 Docker 环境（离线或内网源）                            │
 │  2. 导入镜像文件                                              │
 │  3. 适配内网配置（数据库地址等）                              │
 │  4. 启动容器                                                  │
@@ -44,12 +49,12 @@
 | 项目 | 最低要求 | 推荐配置 |
 |------|---------|---------|
 | **操作系统** | Ubuntu 18.04 / CentOS 7 | Ubuntu 20.04 / CentOS 8 |
-| **CPU** | 1核 | 2核+ |
+| **CPU** | 1 核 | 2 核 + |
 | **内存** | 2GB | 4GB+ |
 | **磁盘空间** | 10GB | 20GB+ |
-| **网络** | 可访问GitHub和Docker Hub | 稳定互联网连接 |
+| **网络** | 可访问 GitHub 和 Docker Hub | 稳定互联网连接 |
 
-## 1.2 安装Git
+## 1.2 安装 Git
 
 ```bash
 # Ubuntu/Debian
@@ -63,9 +68,9 @@ sudo yum install -y git
 git --version
 ```
 
-## 1.3 从GitHub拉取项目源码
+## 1.3 从 GitHub 拉取项目源码
 
-### 方式A：HTTPS克隆（推荐）
+### 方式 A：HTTPS 克隆（推荐）
 
 ```bash
 # 创建工作目录（使用系统级应用目录）
@@ -78,33 +83,49 @@ git clone https://github.com/liujiantao007/changzhou-energy-monitor.git .
 
 # 查看项目文件
 ls -la
+
+# 验证 CDN 资源文件
+ls -lh js/libs/
+# 应显示：
+# -rw-r--r-- 1 user user 1.0M echarts.min.js
+# -rw-r--r-- 1 user user 862K xlsx.full.min.js
 ```
 
-### 方式B：SSH克隆（需配置SSH密钥）
+### 方式 B：SSH 克隆（需配置 SSH 密钥）
 
 ```bash
-# 生成SSH密钥（如果没有）
+# 生成 SSH 密钥（如果没有）
 ssh-keygen -t rsa -b 4096 -C "your_email@example.com"
 
 # 查看公钥
 cat ~/.ssh/id_rsa.pub
 
-# 将公钥添加到GitHub: Settings → SSH and GPG keys → New SSH key
+# 将公钥添加到 GitHub: Settings → SSH and GPG keys → New SSH key
+
+# 创建工作目录
+sudo mkdir -p /usr/local/energy-monitor
+sudo chown -R $USER:$USER /usr/local/energy-monitor
+cd /usr/local/energy-monitor
 
 # 克隆项目
-git clone git@github.com:liujiantao007/changzhou-energy-monitor.git
+git clone git@github.com:liujiantao007/changzhou-energy-monitor.git .
 ```
 
-### 方式C：国内加速（GitHub访问慢）
+### 方式 C：国内加速（GitHub 访问慢）
 
 ```bash
+# 创建工作目录
+sudo mkdir -p /usr/local/energy-monitor
+sudo chown -R $USER:$USER /usr/local/energy-monitor
+cd /usr/local/energy-monitor
+
 # 使用镜像加速
-git clone https://ghproxy.com/https://github.com/liujiantao007/changzhou-energy-monitor.git
+git clone https://ghproxy.com/https://github.com/liujiantao007/changzhou-energy-monitor.git .
 
 # 或使用代理
 git config --global http.proxy http://127.0.0.1:7890
 git config --global https.proxy http://127.0.0.1:7890
-git clone https://github.com/liujiantao007/changzhou-energy-monitor.git
+git clone https://github.com/liujiantao007/changzhou-energy-monitor.git .
 ```
 
 ### 验证源码完整性
@@ -113,17 +134,19 @@ git clone https://github.com/liujiantao007/changzhou-energy-monitor.git
 # 检查关键文件
 ls -la | grep -E "Dockerfile|app.py|requirements.txt|index.html"
 
-# 检查CDN资源
+# 检查 CDN 资源（已包含在 Git 仓库中）
 ls -lh js/libs/
-# 应显示：echarts.min.js (约1MB), xlsx.full.min.js (约800KB)
+# 应显示：
+# -rw-r--r-- 1 user user 1.0M echarts.min.js
+# -rw-r--r-- 1 user user 862K xlsx.full.min.js
 
 # 查看项目结构
 tree -L 2 -I '__pycache__|*.pyc|node_modules'
 ```
 
-## 1.4 安装Docker
+## 1.4 安装 Docker
 
-### Ubuntu/Debian安装Docker
+### Ubuntu/Debian 安装 Docker
 
 ```bash
 # 更新包索引
@@ -132,18 +155,18 @@ sudo apt update
 # 安装依赖
 sudo apt install -y ca-certificates curl gnupg lsb-release
 
-# 添加Docker官方GPG密钥
+# 添加 Docker 官方 GPG 密钥
 sudo mkdir -p /etc/apt/keyrings
 curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
 
-# 添加Docker仓库
+# 添加 Docker 仓库
 echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
 
-# 安装Docker
+# 安装 Docker
 sudo apt update
 sudo apt install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
 
-# 启动Docker
+# 启动 Docker
 sudo systemctl start docker
 sudo systemctl enable docker
 
@@ -152,19 +175,19 @@ docker --version
 sudo docker run hello-world
 ```
 
-### CentOS/RHEL安装Docker
+### CentOS/RHEL 安装 Docker
 
 ```bash
 # 安装依赖
 sudo yum install -y yum-utils
 
-# 添加Docker仓库
+# 添加 Docker 仓库
 sudo yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
 
-# 安装Docker
+# 安装 Docker
 sudo yum install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
 
-# 启动Docker
+# 启动 Docker
 sudo systemctl start docker
 sudo systemctl enable docker
 
@@ -172,10 +195,10 @@ sudo systemctl enable docker
 docker --version
 ```
 
-### 配置Docker用户权限
+### 配置 Docker 用户权限
 
 ```bash
-# 将当前用户添加到docker组（避免每次使用sudo）
+# 将当前用户添加到 docker 组（避免每次使用 sudo）
 sudo usermod -aG docker $USER
 
 # 重新登录或执行
@@ -201,7 +224,7 @@ vim app.py
 
 ```python
 db_config = {
-    'host': os.environ.get('DB_HOST', '10.38.78.217'),  # 数据库IP
+    'host': os.environ.get('DB_HOST', '10.38.78.217'),  # 数据库 IP
     'port': int(os.environ.get('DB_PORT', 3220)),       # 数据库端口
     'user': os.environ.get('DB_USER', 'liujiantao'),    # 用户名
     'password': os.environ.get('DB_PASSWORD', 'Liujt!@#'),  # 密码
@@ -215,7 +238,7 @@ db_config = {
 ### 测试数据库连接（可选）
 
 ```bash
-# 安装Python依赖
+# 安装 Python 依赖
 pip3 install pymysql
 
 # 测试连接
@@ -234,9 +257,9 @@ conn.close()
 "
 ```
 
-## 1.6 构建Docker镜像
+## 1.6 构建 Docker 镜像
 
-### 查看Dockerfile
+### 查看 Dockerfile
 
 ```bash
 cat Dockerfile
@@ -246,7 +269,7 @@ cat Dockerfile
 
 ```bash
 # 进入项目目录
-cd ~/projects/changzhou-energy-monitor
+cd /usr/local/energy-monitor
 
 # 构建镜像（设置标签）
 docker build -t changzhou-energy-monitor:latest .
@@ -294,7 +317,7 @@ docker ps | grep energy-monitor
 # 查看容器日志
 docker logs energy-monitor-test
 
-# 测试API健康检查
+# 测试 API 健康检查
 curl http://127.0.0.1:5000/api/health
 
 # 预期输出：
@@ -303,7 +326,7 @@ curl http://127.0.0.1:5000/api/health
 # 测试前端页面
 curl -I http://127.0.0.1/
 
-# 测试数据API
+# 测试数据 API
 curl "http://127.0.0.1:5000/api/summary_data?latest_date_only=true" | python3 -m json.tool | head -20
 ```
 
@@ -317,9 +340,9 @@ docker stop energy-monitor-test
 docker rm energy-monitor-test
 ```
 
-## 1.8 导出Docker镜像
+## 1.8 导出 Docker 镜像
 
-### 导出为tar文件
+### 导出为 tar 文件
 
 ```bash
 # 创建导出目录
@@ -336,7 +359,7 @@ ls -lh ~/docker-images/changzhou-energy-monitor.tar
 ### 压缩镜像文件（推荐）
 
 ```bash
-# 使用gzip压缩
+# 使用 gzip 压缩
 gzip ~/docker-images/changzhou-energy-monitor.tar
 
 # 查看压缩后大小
@@ -350,10 +373,10 @@ gzip -9 ~/docker-images/changzhou-energy-monitor.tar
 ### 计算文件校验和（用于传输验证）
 
 ```bash
-# 计算MD5
+# 计算 MD5
 md5sum ~/docker-images/changzhou-energy-monitor.tar.gz
 
-# 计算SHA256
+# 计算 SHA256
 sha256sum ~/docker-images/changzhou-energy-monitor.tar.gz
 
 # 保存校验和到文件
@@ -370,40 +393,40 @@ sha256sum changzhou-energy-monitor.tar.gz > changzhou-energy-monitor.tar.gz.sha2
 | 方式 | 适用场景 | 速度 | 安全性 |
 |------|---------|------|--------|
 | **SCP/SFTP** | 内网互通 | 快 | 高 |
-| **U盘/移动硬盘** | 完全隔离 | 中 | 中 |
+| **U 盘/移动硬盘** | 完全隔离 | 中 | 中 |
 | **内网文件共享** | 有文件服务器 | 快 | 中 |
-| **HTTP下载** | 有Web服务器 | 快 | 低 |
+| **HTTP 下载** | 有 Web 服务器 | 快 | 低 |
 
-## 2.2 SCP传输（推荐）
+## 2.2 SCP 传输（推荐）
 
 ```bash
 # 从公网服务器传输到内网服务器
 scp ~/docker-images/changzhou-energy-monitor.tar.gz \
-    user@内网IP:/home/user/docker-images/
+    user@内网 IP:/home/user/docker-images/
 
 # 传输校验和文件
 scp ~/docker-images/changzhou-energy-monitor.tar.gz.sha256 \
-    user@内网IP:/home/user/docker-images/
+    user@内网 IP:/home/user/docker-images/
 
 # 示例
 scp ~/docker-images/changzhou-energy-monitor.tar.gz \
     admin@192.168.1.100:/home/admin/
 ```
 
-## 2.3 U盘传输
+## 2.3 U 盘传输
 
 ```bash
-# 1. 在公网服务器上复制文件到U盘
-# 假设U盘挂载在 /media/usb
+# 1. 在公网服务器上复制文件到 U 盘
+# 假设 U 盘挂载在 /media/usb
 
 cp ~/docker-images/changzhou-energy-monitor.tar.gz /media/usb/
 cp ~/docker-images/changzhou-energy-monitor.tar.gz.sha256 /media/usb/
 
-# 2. 安全弹出U盘
+# 2. 安全弹出 U 盘
 sync
 umount /media/usb
 
-# 3. 在内网服务器上挂载U盘并复制
+# 3. 在内网服务器上挂载 U 盘并复制
 mount /dev/sdb1 /media/usb
 cp /media/usb/changzhou-energy-monitor.tar.gz ~/
 cp /media/usb/changzhou-energy-monitor.tar.gz.sha256 ~/
@@ -431,15 +454,15 @@ sha256sum -c changzhou-energy-monitor.tar.gz.sha256
 | **操作系统** | Ubuntu 18.04+ / CentOS 7+ |
 | **Docker** | 20.10+（需预装） |
 | **网络** | 内网互通，可访问数据库 |
-| **磁盘空间** | 至少5GB |
-| **内存** | 至少1GB |
+| **磁盘空间** | 至少 5GB |
+| **内存** | 至少 1GB |
 
-## 3.2 安装Docker（内网环境）
+## 3.2 安装 Docker（内网环境）
 
-### 方式A：内网有Docker安装源
+### 方式 A：内网有 Docker 安装源
 
 ```bash
-# 如果内网配置了Docker镜像源
+# 如果内网配置了 Docker 镜像源
 sudo apt update
 sudo apt install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
 
@@ -447,13 +470,13 @@ sudo systemctl start docker
 sudo systemctl enable docker
 ```
 
-### 方式B：完全离线安装
+### 方式 B：完全离线安装
 
 ```bash
-# 1. 在公网电脑下载Docker离线安装包
+# 1. 在公网电脑下载 Docker 离线安装包
 # 访问：https://download.docker.com/linux/ubuntu/dists/
 
-# 2. 下载以下deb包（Ubuntu 20.04示例）：
+# 2. 下载以下 deb 包（Ubuntu 20.04 示例）：
 # - docker-ce_20.10.24~3-0~ubuntu-focal_amd64.deb
 # - docker-ce-cli_20.10.24~3-0~ubuntu-focal_amd64.deb
 # - containerd.io_1.6.20-1_amd64.deb
@@ -468,7 +491,7 @@ sudo dpkg -i docker-compose-plugin_*.deb
 # 4. 修复依赖（如有问题）
 sudo apt-get install -f
 
-# 5. 启动Docker
+# 5. 启动 Docker
 sudo systemctl start docker
 sudo systemctl enable docker
 
@@ -476,7 +499,7 @@ sudo systemctl enable docker
 docker --version
 ```
 
-## 3.3 导入Docker镜像
+## 3.3 导入 Docker 镜像
 
 ```bash
 # 进入文件目录
@@ -504,19 +527,19 @@ docker image inspect changzhou-energy-monitor:latest
 
 | 配置项 | 公网环境 | 内网环境 | 是否需要修改 |
 |--------|---------|---------|-------------|
-| 数据库HOST | 10.38.78.217 | 内网数据库IP | **可能需要** |
-| 数据库PORT | 3220 | 根据实际 | 可能需要 |
-| 访问域名 | 可用域名 | 仅IP访问 | 否 |
-| SSL证书 | 可配置 | 一般不用 | 否 |
+| 数据库 HOST | 10.38.78.217 | 内网数据库 IP | **可能需要** |
+| 数据库 PORT | 3220 | 根据实际 | 可能需要 |
+| 访问域名 | 可用域名 | 仅 IP 访问 | 否 |
+| SSL 证书 | 可配置 | 一般不用 | 否 |
 
-### 方式A：重新构建镜像（推荐）
+### 方式 A：重新构建镜像（推荐）
 
 如果内网数据库地址不同：
 
 ```bash
 # 1. 修改 app.py 中的数据库配置
 vim app.py
-# 修改 DB_CONFIG 中的 host 为内网数据库IP
+# 修改 DB_CONFIG 中的 host 为内网数据库 IP
 
 # 2. 重新构建镜像
 docker build -t changzhou-energy-monitor:internal .
@@ -526,7 +549,7 @@ docker save -o changzhou-energy-monitor-internal.tar changzhou-energy-monitor:in
 gzip changzhou-energy-monitor-internal.tar
 ```
 
-### 方式B：使用环境变量（需代码支持）
+### 方式 B：使用环境变量（需代码支持）
 
 如果代码支持环境变量：
 
@@ -579,7 +602,7 @@ docker logs energy-monitor
 # 实时查看日志
 docker logs -f energy-monitor
 
-# 查看最近100行日志
+# 查看最近 100 行日志
 docker logs --tail 100 energy-monitor
 ```
 
@@ -594,22 +617,25 @@ docker ps --filter "name=energy-monitor" --format "table {{.Names}}\t{{.Status}}
 # 2. 端口监听
 netstat -tlnp | grep -E ':(80|5000)'
 
-# 3. API健康检查
+# 3. API 健康检查
 curl http://127.0.0.1:5000/api/health
 
-# 4. 数据API测试
+# 4. 数据 API 测试
 curl "http://127.0.0.1:5000/api/summary_data?latest_date_only=true" | python3 -m json.tool | head -20
 
 # 5. 前端页面访问
 curl -I http://127.0.0.1/
 
-# 6. CDN文件检查
+# 6. CDN 文件检查（已包含在镜像中）
 docker exec energy-monitor ls -lh /app/js/libs/
+# 应显示：
+# -rw-r--r-- 1 root root 1.0M echarts.min.js
+# -rw-r--r-- 1 root root 862K xlsx.full.min.js
 
 # 7. 数据库连接测试
 docker exec energy-monitor python3 -c "
 import pymysql
-pymysql.connect(host='数据库IP', port=3220, user='liujiantao', password='Liujt!@#', database='energy_management_2026')
+pymysql.connect(host='数据库 IP', port=3220, user='liujiantao', password='Liujt!@#', database='energy_management_2026')
 print('Database OK')
 "
 ```
@@ -617,8 +643,8 @@ print('Database OK')
 ### 浏览器访问
 
 ```
-前端页面：http://内网服务器IP/
-后端API：http://内网服务器IP/api/health
+前端页面：http://内网服务器 IP/
+后端 API：http://内网服务器 IP/api/health
 ```
 
 ---
@@ -641,7 +667,7 @@ docker restart energy-monitor
 docker stop energy-monitor
 docker rm energy-monitor
 
-# 进入容器Shell
+# 进入容器 Shell
 docker exec -it energy-monitor /bin/bash
 
 # 从容器复制文件
@@ -657,7 +683,7 @@ docker stats energy-monitor
 # 实时查看日志
 docker logs -f energy-monitor
 
-# 查看最近N行日志
+# 查看最近 N 行日志
 docker logs --tail 100 energy-monitor
 
 # 查看指定时间段日志
@@ -697,7 +723,7 @@ docker logs -f energy-monitor
 
 ## 5.1 常见问题与解决方案
 
-### 问题1：GitHub克隆失败
+### 问题 1：GitHub 克隆失败
 
 **症状**：
 ```
@@ -706,19 +732,19 @@ fatal: unable to access 'https://github.com/...': Connection timed out
 
 **解决方案**：
 ```bash
-# 方案A：使用镜像
+# 方案 A：使用镜像
 git clone https://ghproxy.com/https://github.com/liujiantao007/changzhou-energy-monitor.git
 
-# 方案B：使用代理
+# 方案 B：使用代理
 git config --global http.proxy http://127.0.0.1:7890
 git config --global https.proxy http://127.0.0.1:7890
 
-# 方案C：增加超时时间
+# 方案 C：增加超时时间
 git config --global http.lowSpeedLimit 0
 git config --global http.lowSpeedTime 999999
 ```
 
-### 问题2：Docker构建失败
+### 问题 2：Docker 构建失败
 
 **症状**：
 ```
@@ -727,18 +753,18 @@ ERROR: failed to solve: process "/bin/sh -c pip install" did not complete succes
 
 **排查步骤**：
 ```bash
-# 1. 检查Dockerfile语法
+# 1. 检查 Dockerfile 语法
 docker build -t test . --no-cache --progress=plain
 
 # 2. 检查网络连接
 ping -c 3 pypi.org
 
 # 3. 使用国内镜像源
-# 在Dockerfile中添加：
+# 在 Dockerfile 中添加：
 RUN pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
 ```
 
-### 问题3：镜像导入失败
+### 问题 3：镜像导入失败
 
 **症状**：
 ```
@@ -760,7 +786,7 @@ file changzhou-energy-monitor.tar
 docker load -i changzhou-energy-monitor.tar
 ```
 
-### 问题4：容器无法启动
+### 问题 4：容器无法启动
 
 **症状**：
 ```
@@ -785,7 +811,7 @@ docker run -it --name energy-monitor-debug \
 netstat -tlnp | grep -E ':(80|5000)'
 ```
 
-### 问题5：数据库连接失败
+### 问题 5：数据库连接失败
 
 **症状**：
 ```
@@ -795,16 +821,16 @@ netstat -tlnp | grep -E ':(80|5000)'
 **排查步骤**：
 ```bash
 # 1. 测试网络连通性
-docker exec energy-monitor ping -c 3 数据库IP
+docker exec energy-monitor ping -c 3 数据库 IP
 
 # 2. 测试端口开放
-docker exec energy-monitor nc -zv 数据库IP 3220
+docker exec energy-monitor nc -zv 数据库 IP 3220
 
 # 3. 测试数据库连接
 docker exec energy-monitor python3 -c "
 import pymysql
 try:
-    conn = pymysql.connect(host='数据库IP', port=3220, user='liujiantao', password='Liujt!@#', database='energy_management_2026', connect_timeout=5)
+    conn = pymysql.connect(host='数据库 IP', port=3220, user='liujiantao', password='Liujt!@#', database='energy_management_2026', connect_timeout=5)
     print('OK')
     conn.close()
 except Exception as e:
@@ -815,26 +841,27 @@ except Exception as e:
 sudo iptables -L -n | grep 3220
 ```
 
-### 问题6：前端页面空白
+### 问题 6：前端页面空白
 
 **症状**：浏览器显示空白页面
 
 **排查步骤**：
 ```bash
-# 1. 检查CDN文件
+# 1. 检查 CDN 文件（已包含在镜像中）
 docker exec energy-monitor ls -lh /app/js/libs/
+# 应显示 echarts.min.js 和 xlsx.full.min.js
 
-# 2. 检查Nginx配置
+# 2. 检查 Nginx 配置
 docker exec energy-monitor cat /etc/nginx/nginx.conf
 
-# 3. 查看Nginx错误日志
+# 3. 查看 Nginx 错误日志
 docker exec energy-monitor cat /var/log/nginx/error.log
 
 # 4. 测试静态文件访问
 curl http://127.0.0.1/js/libs/echarts.min.js | head -10
 ```
 
-### 问题7：端口被占用
+### 问题 7：端口被占用
 
 **症状**：
 ```
@@ -879,14 +906,14 @@ docker exec energy-monitor netstat -an
 
 ---
 
-# 附录A：项目文件结构
+# 附录 A：项目文件结构
 
 ```
 changzhou-energy-monitor/
-├── app.py                      # Flask后端API
-├── requirements.txt            # Python依赖
-├── Dockerfile                  # Docker构建文件
-├── nginx.conf                  # Nginx配置
+├── app.py                      # Flask 后端 API
+├── requirements.txt            # Python 依赖
+├── Dockerfile                  # Docker 构建文件
+├── nginx.conf                  # Nginx 配置
 ├── entrypoint.sh               # 容器启动脚本
 ├── index.html                  # 前端首页
 ├── css/
@@ -897,26 +924,31 @@ changzhou-energy-monitor/
 │   ├── data.js                # 数据处理
 │   ├── map.js                 # 地图模块
 │   ├── nav-config.js          # 导航配置
-│   └── libs/                  # CDN本地资源
-│       ├── echarts.min.js     # ECharts图表库
-│       └── xlsx.full.min.js   # Excel处理库
+│   └── libs/                  # CDN 本地资源（已包含在 Git 中）
+│       ├── echarts.min.js     # ECharts 图表库 (1.0MB)
+│       └── xlsx.full.min.js   # Excel 处理库 (862KB)
 ├── data/                       # 数据文件目录
-├── docker/                     # Docker配置目录
+├── docker/                     # Docker 配置目录
 │   └── all-in-one/            # 一体化部署
-├── DEPLOYMENT_PUBLIC_INTERNAL.md  # 本文档
+├── DEPLOYMENT_COMPLETE.md     # 本文档
 └── README.md                   # 项目说明
 ```
 
 ---
 
-# 附录B：快速命令参考
+# 附录 B：快速命令参考
 
 ## 公网环境
 
 ```bash
-# 克隆项目
-git clone https://github.com/liujiantao007/changzhou-energy-monitor.git
-cd changzhou-energy-monitor
+# 创建目录并克隆项目
+sudo mkdir -p /usr/local/energy-monitor
+sudo chown -R $USER:$USER /usr/local/energy-monitor
+cd /usr/local/energy-monitor
+git clone https://github.com/liujiantao007/changzhou-energy-monitor.git .
+
+# 验证 CDN 文件
+ls -lh js/libs/
 
 # 构建镜像
 docker build -t changzhou-energy-monitor:latest .
@@ -950,6 +982,7 @@ curl http://127.0.0.1:5000/api/health
 
 ---
 
-**文档版本**：v5.0
+**文档版本**：v6.0
 **最后更新**：2026-03-27
 **适用项目**：changzhou-energy-monitor 全部版本
+**重要说明**：CDN 资源文件已包含在 Git 仓库中，无需额外下载
