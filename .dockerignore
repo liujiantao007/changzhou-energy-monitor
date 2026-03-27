@@ -1,76 +1,68 @@
-# Git
-.git
-.gitignore
-.trae
-*.pyc
+# 常州能耗云驾驶舱 - Docker忽略文件
+
+# Python
 __pycache__/
 *.py[cod]
-.pyo
-.pyd
-.pyo
-.idea/
-.vscode/
-*.swp
-*.swo
-*.swn
-.env
-.env.local
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# 虚拟环境
+venv/
+env/
+ENV/
+
+# 测试脚本和临时文件
+check_*.py
+test_*.py
+diagnose_*.py
+analyze_*.py
+verify_*.py
+rebuild_*.py
+update_*.py
+sync_*.py
+find_*.py
+final_*.py
+add_*.py
+regenerate_*.py
+download_cdn.py
+
+# 临时文件
 *.log
-*.bak
 *.tmp
 *.bak
-*.old
+*.swp
 *~
-.DS_Store
-Thumbs.db
-ehthumbs.db
-Desktop.ini
 
-# Node modules
-node_modules/
-npm-debug.log*
-yarn-error.log
-yarn.lock
-package-lock.json
-
-# Build outputs
-dist/
-build/
-*.egg-info/
-.eggs/
-.eggs-info/
-.eggs-info.json
-
-# Test files
-test_*.py
-*_test.py
-tests/
-coverage/
-.nyc_output/
-.pytest_cache/
+# 文档和测试
+docs/
+test_homepage_data.html
+test_map.html
+*.md
+!README.md
 
 # IDE
+.vscode/
 .idea/
-*.iml
-.ipr
-*.iws
+*.sublime-project
+*.sublime-workspace
+.DS_Store
 
-.idea_modules.xml
-vsc.log
-
-# Project specific
-data/data*.csv
-data/data_gaojing.csv
-compare_fields.py
-test_mysql.py
-test_api.py
-check_db_fields.py
-
-# Docker
-docker/*/D
-docker/*/d
-docker/*/*.log
-
-# Documentation
-*.md
-!docs/
+# 数据目录（可选）
+data/
+scheduler_task/
