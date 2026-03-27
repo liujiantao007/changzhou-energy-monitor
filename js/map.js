@@ -52,11 +52,15 @@ function initMap() {
                 min: 0,
                 max: 2000,
                 left: 'left',
-                top: 'bottom',
+                bottom: 'bottom',
+                orient: 'vertical',
                 text: ['高', '低'],
                 calculable: true,
+                itemWidth: 20,
+                itemHeight: 200,
                 inRange: {
-                    color: ['#e0f2ff', '#91d5ff', '#69c0ff', '#40a9ff', '#1890ff', '#096dd9']
+                    // 蓝色渐变：低值为白色，高值为深蓝色
+                    color: ['#ffffff', '#e6f3ff', '#b3d9ff', '#80bfff', '#4da6ff', '#1a8cff', '#0073e6', '#0059b3', '#004080', '#00264d']
                 },
                 textStyle: {
                     fontSize: 12
@@ -113,9 +117,12 @@ function initMap() {
                     }
                 },
                 itemStyle: {
-                    areaColor: 'rgba(240, 245, 255, 0.8)',
-                    borderColor: 'rgba(24, 144, 255, 0.8)',
-                    borderWidth: 1
+                    // 基础区域颜色（无数据时的颜色）
+                    areaColor: 'rgba(240, 245, 255, 0.6)',
+                    // 边界线颜色 - 使用较深的蓝色增强层次感
+                    borderColor: 'rgba(24, 144, 255, 1)',
+                    // 边界线宽度 - 增加到 1.5 使网格边界更清晰
+                    borderWidth: 1.5
                 }
             }
         ]};
@@ -385,6 +392,12 @@ function updateMap(data) {
     
     const energyData = data.energyData || [];
     
+    console.log('=== updateMap 被调用 ===');
+    console.log('energyData 数据量:', energyData.length);
+    if (energyData.length > 0) {
+        console.log('前 3 条数据:', energyData.slice(0, 3));
+    }
+    
     // 按区域统计能耗（支持区县和网格）
     const regionEnergy = {};
     const regionLevel = {}; // 记录区域级别
@@ -395,6 +408,8 @@ function updateMap(data) {
         const district = item['J'] || '';
         const region = grid || district;
         const energy = Number(item['AB'] || item['ab'] || 0) || 0;
+        
+        console.log('处理数据项 - 区域:', region, '网格:', grid, '区县:', district, '能耗:', energy);
         
         if (region) {
             if (regionEnergy[region]) {
@@ -407,6 +422,9 @@ function updateMap(data) {
         }
     });
     
+    console.log('区域统计结果:', regionEnergy);
+    console.log('区域级别:', regionLevel);
+    
     // 保存当前选中的区域
     const currentDistrict = getCurrentDistrict();
     
@@ -417,16 +435,45 @@ function updateMap(data) {
         level: regionLevel[name] || 'unknown'
     }));
     
-    console.log('地图数据:', mapData);
+    console.log('最终地图数据:', mapData);
     console.log('当前选中区域:', currentDistrict);
     
     // 调试：打印地图数据详情
     if (mapData.length > 0) {
         console.log('地图数据详情:', JSON.stringify(mapData, null, 2));
+    } else {
+        console.warn('地图数据为空！请检查数据源');
     }
     
-    // 更新地图数据（只更新数据部分）
+    // 动态计算 visualMap 的数值范围
+    const values = mapData.map(item => item.value).filter(v => v > 0);
+    let min = 0;
+    let max = 2000; // 默认最大值
+    
+    if (values.length > 0) {
+        const dataMax = Math.max(...values);
+        const dataMin = Math.min(...values);
+        
+        // 根据数据范围动态设置 max 值，确保颜色分布合理
+        // 使用数据最大值的 1.2 倍作为 max，避免颜色过度集中
+        max = Math.ceil(dataMax * 1.2);
+        // 确保 max 至少为 100，避免过小的数值范围
+        max = Math.max(max, 100);
+        
+        // 如果数据范围很小，使用固定范围
+        if (dataMax - dataMin < 100) {
+            max = Math.ceil(dataMax / 100) * 100 + 100;
+        }
+    }
+    
+    console.log('visualMap 范围设置:', min, '-', max);
+    
+    // 更新地图数据和 visualMap
     mapChart.setOption({
+        visualMap: {
+            min: min,
+            max: max
+        },
         series: [{
             data: mapData
         }]
