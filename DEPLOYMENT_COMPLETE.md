@@ -68,15 +68,13 @@ git --version
 ### 方式A：HTTPS克隆（推荐）
 
 ```bash
-# 创建工作目录
-mkdir -p ~/projects
-cd ~/projects
+# 创建工作目录（使用系统级应用目录）
+sudo mkdir -p /usr/local/energy-monitor
+sudo chown -R $USER:$USER /usr/local/energy-monitor
+cd /usr/local/energy-monitor
 
 # 克隆项目
-git clone https://github.com/liujiantao007/changzhou-energy-monitor.git
-
-# 进入项目目录
-cd changzhou-energy-monitor
+git clone https://github.com/liujiantao007/changzhou-energy-monitor.git .
 
 # 查看项目文件
 ls -la
