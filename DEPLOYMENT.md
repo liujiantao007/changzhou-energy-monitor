@@ -4,6 +4,8 @@
 
 本项目为常州能耗云运营驾驶舱系统，包含前端静态页面（Nginx）和后端Flask API服务，支持内网无公网环境部署。
 
+**重要提示：本项目CDN资源已下载到 js/libs/ 目录，无需再次下载！
+
 ---
 
 ## 🔧 配置文件说明
@@ -15,40 +17,17 @@
 | `nginx.conf` | Nginx配置（静态文件+API反向代理） |
 | `entrypoint.sh` | 容器启动脚本 |
 | `.dockerignore` | Docker构建忽略文件 |
-| `download_cdn.py` | CDN资源下载脚本 |
 
 ---
 
-## 🚀 第一步：公网环境准备（有互联网连接的Ubuntu）
+## ✅ 前置条件确认
 
-### 1.1 下载CDN资源到本地
+### 确认CDN资源已存在
 
-由于内网环境无法访问公网CDN，需要在有公网的Ubuntu上先下载资源：
+在公网Ubuntu上，确认CDN文件已下载：
 
 ```bash
-# 创建libs目录
-mkdir -p js/libs
-
-# 下载 echarts.min.js
-curl -o js/libs/echarts.min.js https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js
-
-# 下载 xlsx.full.min.js
-curl -o js/libs/xlsx.full.min.js https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js
-
-# 验证文件
-ls -lh js/libs/
-```
-
-或者使用Python脚本下载：
-```bash
-python3 download_cdn.py
-```
-
-### 1.2 验证文件
-
-检查文件是否下载成功：
-```bash
-# 检查文件大小
+# 检查文件是否存在
 ls -lh js/libs/
 
 # 预期输出：
@@ -56,24 +35,26 @@ ls -lh js/libs/
 # - xlsx.full.min.js (约 800KB+)
 ```
 
+如果文件不存在，请参考文档末尾的补充说明。
+
 ---
 
-## 🔨 第二步：构建Docker镜像（公网Ubuntu）
+## 🚀 第一步：构建Docker镜像（公网Ubuntu）
 
-### 2.1 构建镜像
+### 1.1 构建镜像
 
 ```bash
 # 在项目根目录执行
 docker build -t changzhou-energy-monitor:latest .
 ```
 
-### 2.2 查看镜像
+### 1.2 查看镜像
 
 ```bash
 docker images | grep changzhou-energy-monitor
 ```
 
-### 2.3 导出镜像文件
+### 1.3 导出镜像文件
 
 ```bash
 # 导出为tar文件（约300MB-500MB）
@@ -86,9 +67,9 @@ gzip changzhou-energy-monitor.tar
 
 ---
 
-## 📦 第三步：传输镜像到内网Ubuntu
+## 📦 第二步：传输镜像到内网Ubuntu
 
-### 3.1 传输方式
+### 2.1 传输方式
 
 根据网络环境选择：
 
@@ -98,7 +79,7 @@ gzip changzhou-energy-monitor.tar
 | **U盘/移动硬盘** | 直接复制文件 |
 | **内网共享** | 通过内网文件共享传输 |
 
-### 3.2 传输示例（SCP）
+### 2.2 传输示例（SCP）
 
 ```bash
 # 从公网Ubuntu传输到内网Ubuntu
@@ -108,9 +89,9 @@ scp changzhou-energy-monitor.tar.gz \
 
 ---
 
-## 🏁 第四步：内网Ubuntu部署（无互联网连接）
+## 🏁 第三步：内网Ubuntu部署（无互联网连接）
 
-### 4.1 导入Docker镜像
+### 3.1 导入Docker镜像
 
 ```bash
 # 进入文件目录
@@ -126,7 +107,7 @@ docker load -i changzhou-energy-monitor.tar
 docker images | grep changzhou-energy-monitor
 ```
 
-### 4.2 配置数据库连接
+### 3.2 配置数据库连接
 
 根据实际环境修改 `app.py` 中的数据库配置：
 
@@ -144,7 +125,7 @@ DB_CONFIG = {
 
 **注意**：修改配置后需要重新构建镜像！
 
-### 4.3 启动容器
+### 3.3 启动容器
 
 ```bash
 # 启动容器（前台运行）
@@ -161,7 +142,7 @@ docker run -d --name energy-monitor \
     changzhou-energy-monitor:latest
 ```
 
-### 4.4 验证服务
+### 3.4 验证服务
 
 ```bash
 # 查看容器状态
@@ -179,9 +160,9 @@ curl http://127.0.0.1:5000/api/health
 
 ---
 
-## 🌐 第五步：访问系统
+## 🌐 第四步：访问系统
 
-### 5.1 浏览器访问
+### 4.1 浏览器访问
 
 在内网环境的任意机器浏览器中打开：
 
@@ -190,7 +171,7 @@ curl http://127.0.0.1:5000/api/health
 | **前端页面** | `http://内网UbuntuIP` |
 | **后端API** | `http://内网UbuntuIP/api` |
 
-### 5.2 端口说明
+### 4.2 端口说明
 
 | 端口 | 用途 |
 |-----|------|
@@ -238,6 +219,9 @@ docker exec -it energy-monitor /bin/bash
 
 # 进入容器后查看文件
 ls -la /app
+
+# 验证CDN文件
+ls -la /app/js/libs/
 ```
 
 ---
@@ -337,15 +321,39 @@ project_dianfeiv2/
 │   ├── data.js               # 数据
 │   ├── map.js                # 地图
 │   ├── nav-config.js         # 导航配置
-│   └── libs/                # CDN本地资源（需下载）
+│   └── libs/                # CDN本地资源（已下载）
 │       ├── echarts.min.js
 │       └── xlsx.full.min.js
 ├── Dockerfile                # Docker构建文件
 ├── nginx.conf                # Nginx配置
 ├── entrypoint.sh             # 启动脚本
 ├── .dockerignore             # Docker忽略文件
-├── download_cdn.py           # CDN下载脚本
 └── DEPLOYMENT.md             # 本文档
+```
+
+---
+
+## 📋 补充说明：如果CDN文件未下载
+
+如果在公网Ubuntu上 js/libs/ 目录为空，请执行以下步骤：
+
+```bash
+# 创建目录
+mkdir -p js/libs
+
+# 下载 echarts.min.js
+curl -o js/libs/echarts.min.js https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js
+
+# 下载 xlsx.full.min.js
+curl -o js/libs/xlsx.full.min.js https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js
+
+# 验证文件
+ls -lh js/libs/
+```
+
+或者使用Python脚本下载：
+```bash
+python3 download_cdn.py
 ```
 
 ---
@@ -359,5 +367,5 @@ project_dianfeiv2/
 
 ---
 
-**文档版本**：v1.0  
+**文档版本**：v2.0  
 **最后更新**：2026-03-27
