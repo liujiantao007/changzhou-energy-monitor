@@ -171,12 +171,12 @@ function initNavigation() {
 // 加载能耗分析 iframe
 function loadEnergyAnalysisFrame() {
     console.log('loadEnergyAnalysisFrame 被调用');
-    
+
     // 延迟一点执行，确保 DOM 已完全准备好
     setTimeout(() => {
         const iframe = document.getElementById('energy-analysis-frame');
         const loadingDiv = document.getElementById('energy-iframe-loading');
-        const targetUrl = 'http://10.38.78.217:8516/';
+        const targetUrl = NAV_CONFIG.baseURL + NAV_CONFIG.pages['能耗分析'].path;
         
         if (!iframe) {
             console.error('未找到 iframe 元素');
