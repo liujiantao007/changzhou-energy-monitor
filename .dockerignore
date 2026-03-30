@@ -63,6 +63,11 @@ test_map.html
 *.sublime-workspace
 .DS_Store
 
-# 数据目录（可选）
-data/
+# 数据目录（排除大型数据文件，但保留地图 JSON 文件）
+data/*.csv
+data/*.xlsx
+data/*.xls
+data/*.sql
+data/*.txt
+data/*.docx
 scheduler_task/
