@@ -12,6 +12,7 @@
 - ✅ 项目已包含 CDN 资源文件（`js/libs/echarts.min.js` 和 `js/libs/xlsx.full.min.js`）
 - ✅ 无需额外下载，直接克隆即可使用
 - ✅ 支持公网构建镜像 → 内网导入部署的工作流
+- ✅ 已修复 Flask 依赖和 Nginx 配置问题
 
 ---
 
@@ -885,7 +886,57 @@ docker run -d --name energy-monitor \
     changzhou-energy-monitor:latest
 ```
 
-## 5.2 性能问题排查
+## 5.2 已知问题修复
+
+### 修复 1：Flask 依赖缺失
+
+**问题**：容器启动时报 `ModuleNotFoundError: No module named 'flask_cors'`
+
+**原因**：`requirements.txt` 中缺少 `flask-cors` 依赖
+
+**修复**：已在 `requirements.txt` 中添加 `flask-cors>=3.0.0`
+
+**验证**：
+```bash
+# 重新构建镜像
+docker build -t changzhou-energy-monitor:latest .
+
+# 启动容器
+docker run -d --name energy-monitor -p 80:80 -p 5000:5000 changzhou-energy-monitor:latest
+
+# 查看日志
+docker logs energy-monitor
+
+# 应显示服务正常启动，无模块缺失错误
+```
+
+### 修复 2：Nginx 用户配置错误
+
+**问题**：容器启动时报 `nginx: [emerg] getpwnam("nginx") failed`
+
+**原因**：Ubuntu 系统中 Nginx 默认用户是 `www-data`，不是 `nginx`
+
+**修复**：已将 `nginx.conf` 中的 `user nginx;` 改为 `user www-data;`
+
+**验证**：
+```bash
+# 查看 Nginx 配置
+grep "^user" nginx.conf
+# 应显示：user www-data;
+
+# 重新构建镜像
+docker build -t changzhou-energy-monitor:latest .
+
+# 启动容器
+docker run -d --name energy-monitor -p 80:80 -p 5000:5000 changzhou-energy-monitor:latest
+
+# 查看日志
+docker logs energy-monitor
+
+# 应显示 Nginx 正常启动，无用户错误
+```
+
+## 5.3 性能问题排查
 
 ```bash
 # 查看容器资源使用
@@ -911,9 +962,9 @@ docker exec energy-monitor netstat -an
 ```
 changzhou-energy-monitor/
 ├── app.py                      # Flask 后端 API
-├── requirements.txt            # Python 依赖
+├── requirements.txt            # Python 依赖（已包含 flask-cors）
 ├── Dockerfile                  # Docker 构建文件
-├── nginx.conf                  # Nginx 配置
+├── nginx.conf                  # Nginx 配置（用户：www-data）
 ├── entrypoint.sh               # 容器启动脚本
 ├── index.html                  # 前端首页
 ├── css/
@@ -980,9 +1031,25 @@ docker ps
 curl http://127.0.0.1:5000/api/health
 ```
 
+## 故障修复
+
+```bash
+# 如果遇到 flask_cors 模块缺失
+# 1. 更新 requirements.txt（添加 flask-cors>=3.0.0）
+# 2. 重新构建镜像
+docker build -t changzhou-energy-monitor:latest .
+
+# 如果遇到 Nginx 用户错误
+# 1. 更新 nginx.conf（user www-data;）
+# 2. 重新构建镜像
+docker build -t changzhou-energy-monitor:latest .
+```
+
 ---
 
-**文档版本**：v6.0
+**文档版本**：v7.0
 **最后更新**：2026-03-27
 **适用项目**：changzhou-energy-monitor 全部版本
-**重要说明**：CDN 资源文件已包含在 Git 仓库中，无需额外下载
+**重要说明**：
+- CDN 资源文件已包含在 Git 仓库中，无需额外下载
+- 已修复 Flask 依赖（flask-cors）和 Nginx 用户配置（www-data）问题
