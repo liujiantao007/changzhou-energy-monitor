@@ -302,10 +302,11 @@ docker run -it --name energy-monitor-test \
     -p 5000:5000 \
     changzhou-energy-monitor:latest
 
-# 或后台运行
-docker run -d --name energy-monitor-test \
-    -p 80:80 \
+# 或后台运行（生产环境推荐）
+docker run -d --name energy-monitor-prod \
+    -p 65080:80 \
     -p 5000:5000 \
+    --restart always \
     changzhou-energy-monitor:latest
 ```
 
