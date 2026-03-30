@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>测试首页数据</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test-result { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        pre { background: #f5f5f5; padding: 10px; border-radius: 3px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>首页数据加载测试</h1>
+    <div id="output"></div>
+    
+    <script src="js/data.js"></script>
+    <script>
+        const output = document.getElementById('output');
+        
+        output.innerHTML = '<div class="test-result">开始加载数据...</div>';
+        
+        loadExcelData().then(data => {
+            console.log('数据加载成功:', data);
+            
+            const energyData = data.energyData || [];
+            const rawData = data.rawData || [];
+            
+            output.innerHTML = `
+                <div class="test-result success">
+                    <h2>✅ 数据加载成功</h2>
+                    <p><strong>原始数据条数:</strong> ${rawData.length}</p>
+                    <p><strong>过滤后数据条数:</strong> ${energyData.length}</p>
+                    <p><strong>最新日期:</strong> ${data.latestDate || 'N/A'}</p>
+                </div>
+            `;
+            
+            if (energyData.length > 0) {
+                // 计算统计数据
+                const totalEnergy = energyData.reduce((sum, item) => {
+                    return sum + Number(item['AB'] || 0);
+                }, 0);
+                
+                const totalCost = energyData.reduce((sum, item) => {
+                    return sum + Number(item['AC'] || 0);
+                }, 0);
+                
+                const poiSet = new Set(energyData.map(item => item['L'] || '').filter(v => v !== ''));
+                const deviceSet = new Set(energyData.map(item => item['B'] || '').filter(v => v !== ''));
+                
+                output.innerHTML += `
+                    <div class="test-result success">
+                        <h3>统计数据</h3>
+                        <ul>
+                            <li><strong>总度数:</strong> ${totalEnergy.toLocaleString('zh-CN')} kWh</li>
+                            <li><strong>总电费:</strong> ${totalCost.toLocaleString('zh-CN')} 元</li>
+                            <li><strong>POI 数量:</strong> ${poiSet.size}</li>
+                            <li><strong>设备数量:</strong> ${deviceSet.size}</li>
+                        </ul>
+                    </div>
+                `;
+                
+                output.innerHTML += `
+                    <div class="test-result">
+                        <h3>前 3 条数据示例</h3>
+                        <pre>${JSON.stringify(energyData.slice(0, 3), null, 2)}</pre>
+                    </div>
+                `;
+            } else {
+                output.innerHTML += `
+                    <div class="test-result error">
+                        <h3>⚠️ 警告：energyData 为空</h3>
+                        <p>请检查数据源或过滤条件</p>
+                    </div>
+                `;
+            }
+            
+        }).catch(error => {
+            console.error('数据加载失败:', error);
+            output.innerHTML = `
+                <div class="test-result error">
+                    <h2>❌ 数据加载失败</h2>
+                    <p>${error.message || error}</p>
+                </div>
+            `;
+        });
+    </script>
+</body>
+</html>

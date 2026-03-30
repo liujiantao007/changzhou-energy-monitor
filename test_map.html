@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Map Data</title>
+</head>
+<body>
+    <h1>地图数据测试</h1>
+    <div id="output"></div>
+    
+    <script src="js/data.js"></script>
+    <script>
+        // 模拟地图 updateMap 函数
+        window.updateMap = function(data) {
+            const output = document.getElementById('output');
+            const energyData = data.energyData || [];
+            
+            output.innerHTML += '<h2>updateMap 被调用</h2>';
+            output.innerHTML += '<p>energyData 数据量：' + energyData.length + '</p>';
+            
+            if (energyData.length > 0) {
+                output.innerHTML += '<h3>前 3 条数据:</h3><pre>' + JSON.stringify(energyData.slice(0, 3), null, 2) + '</pre>';
+                
+                // 统计区域
+                const regionEnergy = {};
+                energyData.forEach(item => {
+                    const grid = item['GRID'] || '';
+                    const district = item['J'] || '';
+                    const region = grid || district;
+                    const energy = Number(item['AB'] || 0) || 0;
+                    
+                    if (region) {
+                        if (!regionEnergy[region]) regionEnergy[region] = 0;
+                        regionEnergy[region] += energy;
+                    }
+                });
+                
+                output.innerHTML += '<h3>区域统计 (前 10):</h3><ul>';
+                Object.entries(regionEnergy)
+                    .sort((a, b) => b[1] - a[1])
+                    .slice(0, 10)
+                    .forEach(([region, energy]) => {
+                        output.innerHTML += '<li>' + region + ': ' + energy.toFixed(2) + ' kWh</li>';
+                    });
+                output.innerHTML += '</ul>';
+            } else {
+                output.innerHTML += '<p style="color:red;">energyData 为空!</p>';
+            }
+        };
+        
+        // 加载数据
+        loadExcelData().then(data => {
+            console.log('数据加载成功:', data);
+            updateMap(data);
+        }).catch(error => {
+            console.error('数据加载失败:', error);
+            document.getElementById('output').innerHTML += '<p style="color:red;">错误：' + error + '</p>';
+        });
+    </script>
+</body>
+</html>

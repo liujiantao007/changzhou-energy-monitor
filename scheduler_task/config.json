@@ -1,0 +1,24 @@
+{
+    "database": {
+        "host": "10.38.78.217",
+        "port": 3220,
+        "user": "liujiantao",
+        "password": "Liujt!@#",
+        "database": "energy_management_2026",
+        "charset": "utf8mb4",
+        "connect_timeout": 30,
+        "read_timeout": 300,
+        "write_timeout": 300
+    },
+    "task": {
+        "interval": 600,
+        "batch_size": 50000,
+        "max_retries": 3,
+        "retry_delay": 60
+    },
+    "source_table": "energy_charge",
+    "target_table": "energy_charge_daily_summary",
+    "summary_table": "summary_metadata",
+    "log_file": "logs/daily_summary.log",
+    "log_level": "INFO"
+}
