@@ -719,6 +719,114 @@ docker run -d --name energy-monitor \
 docker logs -f energy-monitor
 ```
 
+## 4.4 Docker Compose 一键部署（推荐）
+
+项目提供了 Docker Compose 配置文件和启动脚本，支持一键部署、自动清理端口占用、自动重启等功能。
+
+### 文件说明
+
+| 文件 | 说明 |
+|------|------|
+| `docker-compose.yml` | Docker Compose 配置文件 |
+| `start.sh` | 一键部署启动脚本 |
+
+### docker-compose.yml 配置
+
+```yaml
+version: '3.8'
+
+services:
+  energy-monitor:
+    image: changzhou-energy-monitor:latest
+    container_name: energy-monitor-prod
+    restart: always
+    ports:
+      - "65080:80"      # 前端页面端口
+      - "5000:5000"     # 后端 API 端口
+    volumes:
+      - ./data:/app/data:ro
+    environment:
+      - TZ=Asia/Shanghai
+    networks:
+      - energy-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+networks:
+  energy-network:
+    driver: bridge
+```
+
+### start.sh 脚本功能
+
+**自动处理以下内容**：
+- ✅ 检查 Docker 和 Docker Compose 是否安装
+- ✅ 检查并自动清理占用端口（65080、5000）的进程
+- ✅ 检查并删除已存在的容器
+- ✅ 重新构建 Docker 镜像
+- ✅ 使用 Docker Compose 启动服务
+
+### 一键部署命令
+
+```bash
+# 1. 进入项目目录
+cd /usr/local/energy-monitor
+
+# 2. 拉取最新代码
+git pull origin main
+
+# 3. 给脚本添加执行权限
+chmod +x start.sh
+
+# 4. 执行启动脚本（会自动处理端口占用）
+./start.sh
+```
+
+### 脚本执行流程
+
+```
+1. 检查 Docker 和 Docker Compose
+2. 检查并清理占用端口的进程 (65080, 5000)
+   - 如果是 Docker 容器 → 自动停止并删除
+   - 如果是其他进程 → 自动 kill
+3. 检查并删除已存在的容器
+4. 构建 Docker 镜像
+5. 启动 Docker Compose 服务
+```
+
+### 常用命令
+
+```bash
+# 查看日志
+docker-compose logs -f
+
+# 停止服务
+docker-compose down
+
+# 重启服务
+docker-compose restart
+
+# 查看容器状态
+docker ps | grep energy-monitor
+
+# 强制重启（重新构建）
+docker-compose down
+./start.sh
+```
+
+### 访问地址
+
+部署成功后，通过以下地址访问：
+
+| 服务 | 地址 |
+|------|------|
+| **前端页面** | http://localhost:65080/ |
+| **后端 API** | http://localhost:65080/api/health |
+
 ---
 
 # 第五阶段：故障排除
