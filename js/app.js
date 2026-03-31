@@ -1,5 +1,8 @@
 // 应用主逻辑
 
+// API 基础路径（使用相对路径，通过 Nginx 反向代理）
+const API_BASE = '/api';
+
 // 页面加载完成后执行
 window.onload = function() {
     // 初始化响应式缩放
@@ -386,7 +389,7 @@ async function reloadDataWithoutLoading() {
             }
 
             // 构建 API URL，包含区域筛选参数
-            let summaryUrl = `http://127.0.0.1:5000/api/summary?date_from=${dateFrom}&date_to=${dateTo}`;
+            let summaryUrl = API_BASE + `/summary?date_from=${dateFrom}&date_to=${dateTo}`;
             if (currentDistrict) {
                 // 判断是区县还是网格：如果包含"网格"则是网格级别，否则是区县级别
                 if (currentDistrict.includes('网格')) {
@@ -458,7 +461,7 @@ async function reloadDataWithoutLoading() {
                         prevDayForPoiDevice = null;
                     }
 
-                    let prevSummaryUrl = `http://127.0.0.1:5000/api/summary?date_from=${prevDateFrom}&date_to=${prevDateTo}`;
+                    let prevSummaryUrl = API_BASE + `/summary?date_from=${prevDateFrom}&date_to=${prevDateTo}`;
                     if (currentDistrict) {
                         if (currentDistrict.includes('网格')) {
                             prevSummaryUrl += `&grid=${encodeURIComponent(currentDistrict)}`;
@@ -488,7 +491,7 @@ async function reloadDataWithoutLoading() {
                                 const prevMonth = prevMonthDate.getMonth() + 1;
                                 const prevDayUrl = `${prevYear}-${String(prevMonth).padStart(2, '0')}-${String(prevDayForPoiDevice).padStart(2, '0')}`;
 
-                                let poiDeviceUrl = `http://127.0.0.1:5000/api/summary?date_from=${prevDayUrl}&date_to=${prevDayUrl}`;
+                                let poiDeviceUrl = API_BASE + `/summary?date_from=${prevDayUrl}&date_to=${prevDayUrl}`;
                                 if (currentDistrict) {
                                     if (currentDistrict.includes('网格')) {
                                         poiDeviceUrl += `&grid=${encodeURIComponent(currentDistrict)}`;
@@ -537,7 +540,7 @@ async function reloadDataWithoutLoading() {
 
                                 // POI和设备：获取去年12月31日的数据
                                 const prevYearDec31 = `${currentYear - 1}-12-31`;
-                                let poiDeviceUrl = `http://127.0.0.1:5000/api/summary?date_from=${prevYearDec31}&date_to=${prevYearDec31}`;
+                                let poiDeviceUrl = API_BASE + `/summary?date_from=${prevYearDec31}&date_to=${prevYearDec31}`;
                                 if (currentDistrict) {
                                     if (currentDistrict.includes('网格')) {
                                         poiDeviceUrl += `&grid=${encodeURIComponent(currentDistrict)}`;
@@ -655,7 +658,7 @@ async function reloadDataWithoutLoading() {
         const currentMonthEnd = `${currentYear}-${String(currentMonth).padStart(2, '0')}-20`;
 
         // 构建 API URL，包含区域筛选参数
-        let apiUrl = `http://127.0.0.1:5000/api/summary_data?date_from=${prevMonthStart}&date_to=${currentMonthEnd}`;
+        let apiUrl = API_BASE + `/summary_data?date_from=${prevMonthStart}&date_to=${currentMonthEnd}`;
         if (currentDistrict) {
             if (currentDistrict.includes('网格')) {
                 apiUrl += `&grid=${encodeURIComponent(currentDistrict)}`;
@@ -872,7 +875,7 @@ function loadAlarms() {
     alarmList.innerHTML = '<div class="alarm-loading"><div class="spinner"></div><span>正在加载告警数据...</span></div>';
 
     // 从新的 API 获取 meter_alarm 表中最新一天的告警数据
-    fetch('http://127.0.0.1:5000/api/alarms/latest_day')
+    fetch(API_BASE + '/alarms/latest_day')
         .then(response => {
             if (!response.ok) {
                 throw new Error('网络响应失败: ' + response.status);
@@ -1345,7 +1348,7 @@ function loadEvents() {
     eventList.innerHTML = '<div class="alarm-loading"><div class="spinner"></div><span>正在加载事件数据...</span></div>';
 
     // 从 API 获取 meter_event 表中最新一天的事件数据
-    fetch('http://127.0.0.1:5000/api/events/latest_day')
+    fetch(API_BASE + '/events/latest_day')
         .then(response => {
             if (!response.ok) {
                 throw new Error('网络响应失败: ' + response.status);

@@ -1,5 +1,8 @@
 // 数据处理模块
 
+// API 基础路径（使用相对路径，通过 Nginx 反向代理）
+const API_BASE = '/api';
+
 // 全局数据缓存
 let dataCache = null;
 let rawDataCache = null; // 原始数据缓存
@@ -54,17 +57,17 @@ function loadExcelData() {
         const currentYear = now.getFullYear();
         const currentMonth = now.getMonth() + 1;
         
-        let apiUrl = 'http://127.0.0.1:5000/api/summary_data?latest_date_only=true';
+        let apiUrl = API_BASE + '/summary_data?latest_date_only=true';
         
         if (currentTimeRange === '月') {
             const monthStart = `${currentYear}-${String(currentMonth).padStart(2, '0')}-01`;
             const monthEnd = `${currentYear}-${String(currentMonth).padStart(2, '0')}-31`;
-            apiUrl = `http://127.0.0.1:5000/api/summary_data?date_from=${monthStart}&date_to=${monthEnd}`;
+            apiUrl = API_BASE + `/summary_data?date_from=${monthStart}&date_to=${monthEnd}`;
             console.log('月视图：加载', monthStart, '至', monthEnd, '数据');
         } else if (currentTimeRange === '年') {
             const yearStart = `${currentYear}-01-01`;
             const yearEnd = `${currentYear}-12-31`;
-            apiUrl = `http://127.0.0.1:5000/api/summary_data?date_from=${yearStart}&date_to=${yearEnd}`;
+            apiUrl = API_BASE + `/summary_data?date_from=${yearStart}&date_to=${yearEnd}`;
             console.log('年视图：加载', yearStart, '至', yearEnd, '数据');
         } else {
             // 日视图：加载包含上月同天的数据范围以支持环比计算
@@ -73,7 +76,7 @@ function loadExcelData() {
             const prevMonth = prevMonthDate.getMonth() + 1;
             const prevMonthStart = `${prevMonthYear}-${String(prevMonth).padStart(2, '0')}-20`;
             const currentMonthEnd = `${currentYear}-${String(currentMonth).padStart(2, '0')}-20`;
-            apiUrl = `http://127.0.0.1:5000/api/summary_data?date_from=${prevMonthStart}&date_to=${currentMonthEnd}`;
+            apiUrl = API_BASE + `/summary_data?date_from=${prevMonthStart}&date_to=${currentMonthEnd}`;
             console.log('日视图：加载', prevMonthStart, '至', currentMonthEnd, '数据（用于环比计算）');
         }
         
@@ -635,7 +638,7 @@ async function fetchSummaryDataFromAPI() {
     }
     
     try {
-        const url = `http://127.0.0.1:5000/api/summary?date_from=${dateFrom}&date_to=${dateTo}`;
+        const url = API_BASE + `/summary?date_from=${dateFrom}&date_to=${dateTo}`;
         console.log('从 API 获取汇总数据:', url);
         
         const response = await fetch(url);
