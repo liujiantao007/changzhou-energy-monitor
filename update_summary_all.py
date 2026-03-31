@@ -48,9 +48,14 @@ def update_basic_fields(conn, date_str: str) -> dict:
     """更新基本汇总字段"""
     cursor = conn.cursor()
 
+    # 设置 GROUP_CONCAT 长度限制
+    cursor.execute("SET SESSION group_concat_max_len = 102400")
+
     insert_sql = f"""
     INSERT INTO {TARGET_TABLE} (
         stat_date, district, grid,
+        poi_name, electricity_type, electricity_attr, meter_number,
+        total_energy, total_cost,
         overview_total_energy, overview_total_cost,
         overview_poi_count, overview_device_count,
         electricity_by_district_energy, electricity_by_grid_energy,
@@ -65,6 +70,12 @@ def update_basic_fields(conn, date_str: str) -> dict:
         日期 as stat_date,
         COALESCE(归属单元, '') as district,
         COALESCE(归属网格, '') as grid,
+        SUBSTRING(GROUP_CONCAT(DISTINCT poi名称 SEPARATOR ','), 1, 255) as poi_name,
+        SUBSTRING(GROUP_CONCAT(DISTINCT 用电类型 SEPARATOR ','), 1, 50) as electricity_type,
+        SUBSTRING(GROUP_CONCAT(DISTINCT 用电属性 SEPARATOR ','), 1, 50) as electricity_attr,
+        SUBSTRING(GROUP_CONCAT(DISTINCT 电表 SEPARATOR ','), 1, 50) as meter_number,
+        COALESCE(SUM(度数), 0) as total_energy,
+        COALESCE(SUM(电费), 0) as total_cost,
         COALESCE(SUM(度数), 0) as overview_total_energy,
         COALESCE(SUM(电费), 0) as overview_total_cost,
         COUNT(DISTINCT poi名称) as overview_poi_count,
@@ -292,10 +303,14 @@ def update_single_date(conn, date_str: str) -> dict:
 
     conn.commit()
 
-    # 插入新数据
+    # 插入新数据（先设置 GROUP_CONCAT 长度限制）
+    cursor.execute("SET SESSION group_concat_max_len = 102400")
+
     insert_sql = f"""
     INSERT INTO {TARGET_TABLE} (
         stat_date, district, grid,
+        poi_name, electricity_type, electricity_attr, meter_number,
+        total_energy, total_cost,
         overview_total_energy, overview_total_cost,
         overview_poi_count, overview_device_count,
         electricity_by_district_energy, electricity_by_grid_energy,
@@ -310,6 +325,12 @@ def update_single_date(conn, date_str: str) -> dict:
         日期 as stat_date,
         COALESCE(归属单元, '') as district,
         COALESCE(归属网格, '') as grid,
+        SUBSTRING(GROUP_CONCAT(DISTINCT poi名称 SEPARATOR ','), 1, 255) as poi_name,
+        SUBSTRING(GROUP_CONCAT(DISTINCT 用电类型 SEPARATOR ','), 1, 50) as electricity_type,
+        SUBSTRING(GROUP_CONCAT(DISTINCT 用电属性 SEPARATOR ','), 1, 50) as electricity_attr,
+        SUBSTRING(GROUP_CONCAT(DISTINCT 电表 SEPARATOR ','), 1, 50) as meter_number,
+        COALESCE(SUM(度数), 0) as total_energy,
+        COALESCE(SUM(电费), 0) as total_cost,
         COALESCE(SUM(度数), 0) as overview_total_energy,
         COALESCE(SUM(电费), 0) as overview_total_cost,
         COUNT(DISTINCT poi名称) as overview_poi_count,
