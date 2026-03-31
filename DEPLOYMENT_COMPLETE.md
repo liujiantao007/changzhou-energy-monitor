@@ -578,6 +578,22 @@ services:
     ports:
       - "65080:80"
       - "5000:5000"
+    volumes:
+      - ./data:/app/data:ro
+    environment:
+      - TZ=Asia/Shanghai
+    networks:
+      - energy-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+networks:
+  energy-network:
+    driver: bridge
 EOF
 
 # 2. 启动服务
@@ -1476,7 +1492,7 @@ docker exec energy-monitor-prod cat /var/log/nginx/error.log
 
 ---
 
-**文档版本**：v8.1
+**文档版本**：v8.2
 **最后更新**：2026-03-31
 **适用项目**：changzhou-energy-monitor 全部版本
 **重要说明**：
