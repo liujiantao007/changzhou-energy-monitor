@@ -402,17 +402,11 @@ sha256sum changzhou-energy-monitor.tar.gz > changzhou-energy-monitor.tar.gz.sha2
 ## 2.2 SCP 传输（推荐）
 
 ```bash
-# 从公网服务器传输到内网服务器
-scp ~/docker-images/changzhou-energy-monitor.tar.gz \
-    user@内网 IP:/home/user/docker-images/
+# 从公网服务器传输镜像文件到内网服务器（使用端口 2202）
+scp -P 2202 ~/docker-images/changzhou-energy-monitor.tar.gz root@10.38.78.228:/home/user/docker-images/
 
 # 传输校验和文件
-scp ~/docker-images/changzhou-energy-monitor.tar.gz.sha256 \
-    user@内网 IP:/home/user/docker-images/
-
-# 示例
-scp ~/docker-images/changzhou-energy-monitor.tar.gz \
-    admin@192.168.1.100:/home/admin/
+scp -P 2202 ~/docker-images/changzhou-energy-monitor.tar.gz.sha256 root@10.38.78.228:/home/user/docker-images/
 ```
 
 ## 2.3 U 盘传输
