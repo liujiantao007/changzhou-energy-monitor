@@ -1156,9 +1156,275 @@ docker build -t changzhou-energy-monitor:latest .
 
 ---
 
-**文档版本**：v7.0
-**最后更新**：2026-03-27
+# 附录 C：互联网 Linux 快速部署指南（推荐）
+
+本文档提供在可访问互联网的 Linux 服务器上一键部署常州能耗云驾驶舱的完整流程。
+
+## 🚀 快速开始
+
+### 环境要求
+
+| 项目 | 要求 |
+|------|------|
+| **操作系统** | Ubuntu 18.04+ / CentOS 7+ |
+| **Docker** | 20.10+ |
+| **Docker Compose** | 2.0+ |
+| **网络** | 可访问 GitHub 和 Docker Hub |
+| **磁盘空间** | 至少 10GB |
+
+### 前置检查
+
+在开始之前，请确认服务器满足以下条件：
+
+```bash
+# 1. 检查系统版本
+cat /etc/os-release
+
+# 2. 检查 Docker 是否安装
+docker --version
+
+# 3. 检查 Docker Compose 是否安装
+docker-compose --version
+
+# 4. 检查网络连接
+curl -I https://github.com
+```
+
+## 📦 部署步骤
+
+### 步骤 1：安装必要软件
+
+如果服务器上没有 Docker 和 Docker Compose，执行以下命令安装：
+
+**Ubuntu/Debian：**
+
+```bash
+# 更新系统
+sudo apt update && sudo apt upgrade -y
+
+# 安装 Docker
+curl -fsSL https://get.docker.com | sh
+
+# 安装 Docker Compose
+sudo curl -L "https://github.com/docker/compose/releases/download/v2.17.3/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+sudo chmod +x /usr/local/bin/docker-compose
+
+# 添加当前用户到 docker 组（避免每次使用 sudo）
+sudo usermod -aG docker $USER
+newgrp docker
+```
+
+**CentOS/RHEL：**
+
+```bash
+# 安装 Docker
+sudo yum install -y yum-utils
+sudo yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+sudo yum install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
+sudo systemctl start docker
+sudo systemctl enable docker
+
+# 添加当前用户到 docker 组
+sudo usermod -aG docker $USER
+newgrp docker
+```
+
+### 步骤 2：创建项目目录并拉取代码
+
+```bash
+# 创建项目目录
+sudo mkdir -p /usr/local/energy-monitor
+sudo chown -R $USER:$USER /usr/local/energy-monitor
+cd /usr/local/energy-monitor
+
+# 克隆项目代码
+git clone https://github.com/liujiantao007/changzhou-energy-monitor.git .
+
+# 验证代码已下载
+ls -la
+# 应看到：Dockerfile, docker-compose.yml, start.sh, app.py 等文件
+```
+
+### 步骤 3：一键部署
+
+```bash
+# 给部署脚本添加执行权限
+chmod +x start.sh
+
+# 执行一键部署（包含镜像构建和容器启动）
+./start.sh
+```
+
+**或者分步执行：**
+
+```bash
+# 1. 构建 Docker 镜像
+docker build --no-cache -t changzhou-energy-monitor:latest .
+
+# 2. 启动容器
+chmod +x deploy.sh
+./deploy.sh
+```
+
+### 步骤 4：验证部署
+
+```bash
+# 检查容器状态
+docker ps | grep energy-monitor
+
+# 查看容器日志
+docker logs -f energy-monitor-prod
+
+# 测试 API 健康检查
+curl http://localhost:65080/api/health
+
+# 测试前端页面
+curl -I http://localhost:65080/
+```
+
+### 步骤 5：访问应用
+
+部署成功后，通过以下地址访问：
+
+| 服务 | 地址 | 说明 |
+|------|------|------|
+| **前端页面** | http://服务器IP:65080/ | 能耗监控主页面 |
+| **后端 API** | http://服务器IP:65080/api/health | API 健康检查 |
+
+## 🔧 常用运维命令
+
+```bash
+# 进入项目目录
+cd /usr/local/energy-monitor
+
+# 查看日志
+docker-compose logs -f
+
+# 停止服务
+docker-compose down
+
+# 重启服务
+docker-compose restart
+
+# 查看容器状态
+docker ps | grep energy-monitor
+
+# 更新部署（拉取最新代码并重新部署）
+git pull origin main
+./start.sh
+```
+
+## 🆘 故障排除
+
+### 问题 1：端口被占用
+
+**错误信息：**
+```
+Bind for 0.0.0.0:65080 failed: port is already allocated
+```
+
+**解决方案：**
+
+```bash
+# 查看端口占用
+sudo lsof -i :65080
+sudo lsof -i :5000
+
+# 如果是被其他服务占用，停止它
+sudo systemctl stop <服务名>
+
+# 如果是被 Docker 容器占用，重新部署
+docker-compose down
+./deploy.sh
+```
+
+### 问题 2：Docker 镜像构建失败
+
+**解决方案：**
+
+```bash
+# 清理 Docker 缓存
+docker system prune -a
+
+# 重新构建
+docker build --no-cache -t changzhou-energy-monitor:latest .
+```
+
+### 问题 3：数据库连接失败
+
+**解决方案：**
+
+```bash
+# 检查容器是否能访问数据库
+docker exec energy-monitor-prod ping -c 3 10.38.78.217
+
+# 检查数据库配置
+docker exec energy-monitor-prod env | grep DB_
+
+# 查看数据库连接日志
+docker logs energy-monitor-prod | grep -i database
+```
+
+### 问题 4：前端页面空白
+
+**解决方案：**
+
+```bash
+# 检查 Nginx 是否正常运行
+docker exec energy-monitor-prod nginx -t
+
+# 检查静态文件是否存在
+docker exec energy-monitor-prod ls -la /app/index.html
+
+# 查看 Nginx 错误日志
+docker exec energy-monitor-prod cat /var/log/nginx/error.log
+```
+
+## 📊 部署检查清单
+
+在完成部署后，使用以下清单验证系统是否正常运行：
+
+- [ ] 容器状态为 `Up`
+- [ ] API 健康检查返回 `{"status":"healthy","database":"connected"}`
+- [ ] 前端页面可以正常加载
+- [ ] 地图数据可以正常显示
+- [ ] 数据库连接正常
+- [ ] 所有图表数据正常显示
+
+## 🔐 安全建议
+
+### 生产环境建议
+
+1. **修改默认端口**：将 65080 改为其他非标准端口
+2. **配置防火墙**：只开放必要端口
+   ```bash
+   sudo firewall-cmd --permanent --add-port=65080/tcp
+   sudo firewall-cmd --reload
+   ```
+3. **配置 SSL 证书**：使用 Nginx 反向代理配置 HTTPS
+4. **定期更新**：定期执行 `git pull` 和 `./start.sh` 更新系统
+
+### 数据库连接安全
+
+当前配置使用数据库地址 `10.38.78.217:3220`，请确保：
+- 内网环境安全
+- 数据库密码足够复杂
+- 定期更换密码
+
+## 📞 技术支持
+
+如遇到问题，请提供以下信息：
+
+1. 执行 `docker logs energy-monitor-prod` 的完整输出
+2. 执行 `docker ps -a` 的输出
+3. 浏览器开发者工具（F12）的 Console 错误信息
+
+---
+
+**文档版本**：v8.0
+**最后更新**：2026-03-31
 **适用项目**：changzhou-energy-monitor 全部版本
 **重要说明**：
 - CDN 资源文件已包含在 Git 仓库中，无需额外下载
 - 已修复 Flask 依赖（flask-cors）和 Nginx 用户配置（www-data）问题
+- 支持一键部署，自动处理端口占用
