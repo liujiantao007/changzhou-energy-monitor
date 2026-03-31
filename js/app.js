@@ -1,7 +1,11 @@
 // 应用主逻辑
 
-// API 基础路径（使用相对路径，通过 Nginx 反向代理）
-const API_BASE = '/api';
+// API 基础路径配置
+// 本地开发环境：http://127.0.0.1:5000/api
+// Docker 部署环境：/api（通过 Nginx 反向代理）
+const API_BASE = (window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost')
+    ? 'http://127.0.0.1:5000/api'
+    : '/api';
 
 // 页面加载完成后执行
 window.onload = function() {
@@ -309,7 +313,6 @@ function initTimeSelectors() {
     
     timeBtns.forEach(btn => {
         btn.addEventListener('click', function() {
-            // 获取点击的时间维度
             const timeRange = this.textContent;
             
             console.log('时间维度切换为:', timeRange);
@@ -328,17 +331,15 @@ function initTimeSelectors() {
             const parent = this.closest('.time-selector');
             const parentId = parent ? parent.id : '';
             
-            // 如果是能耗趋势图的时间选择器，只更新能耗趋势图
+            // 如果是能耗趋势图的时间选择器，重新加载对应时间范围的数据
             if (parentId === 'trend-time-selector') {
-                // 更新能耗趋势图
-                if (typeof updateEnergyTrendChart === 'function') {
-                    const cachedData = {
-                        rawData: window.originalDataCache || window.rawDataCache || [],
-                        latestDate: window.latestDate || null
-                    };
-                    updateEnergyTrendChart(cachedData, timeRange);
+                // 先更新时间维度
+                if (typeof setTimeRange === 'function') {
+                    setTimeRange(timeRange);
                 }
-                return;  // 不继续执行后面的逻辑
+                // 重新加载数据（会根据新的时间维度加载正确的数据范围）
+                reloadDataForTrendChart(timeRange);
+                return;
             }
             
             // 设置时间维度
@@ -361,6 +362,62 @@ function initTimeSelectors() {
     });
     
     console.log('时间选择器初始化完成，共', timeBtns.length, '个按钮');
+}
+
+// 为能耗趋势图重新加载对应时间范围的数据
+async function reloadDataForTrendChart(timeRange) {
+    try {
+        const now = new Date();
+        const currentYear = now.getFullYear();
+        const currentMonth = now.getMonth() + 1;
+        
+        let dateFrom, dateTo;
+        
+        if (timeRange === '月') {
+            // 月视图：加载最近12个月的数据
+            const startDate = new Date(currentYear, currentMonth - 12, 1);
+            dateFrom = `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, '0')}-01`;
+            dateTo = `${currentYear}-${String(currentMonth).padStart(2, '0')}-31`;
+            console.log('月视图：加载最近12个月数据', dateFrom, '至', dateTo);
+        } else if (timeRange === '年') {
+            // 年视图：加载最近12年的数据
+            dateFrom = `${currentYear - 11}-01-01`;
+            dateTo = `${currentYear}-12-31`;
+            console.log('年视图：加载最近12年数据', dateFrom, '至', dateTo);
+        } else {
+            // 日视图：加载最近2个月的数据
+            const startDate = new Date(currentYear, currentMonth - 2, 1);
+            dateFrom = `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, '0')}-01`;
+            dateTo = `${currentYear}-${String(currentMonth).padStart(2, '0')}-31`;
+            console.log('日视图：加载最近2个月数据', dateFrom, '至', dateTo);
+        }
+        
+        const apiUrl = API_BASE + `/summary_data?date_from=${dateFrom}&date_to=${dateTo}`;
+        console.log('API 地址：', apiUrl);
+        
+        const response = await fetch(apiUrl);
+        const result = await response.json();
+        
+        if (result.data) {
+            // 更新缓存
+            window.rawDataCache = result.data;
+            window.originalDataCache = result.data;
+            window.latestDate = result.latest_date;
+            
+            console.log('数据加载完成，条数:', result.data.length);
+            
+            // 更新能耗趋势图
+            if (typeof updateEnergyTrendChart === 'function') {
+                const cachedData = {
+                    rawData: result.data,
+                    latestDate: result.latest_date
+                };
+                updateEnergyTrendChart(cachedData, timeRange);
+            }
+        }
+    } catch (error) {
+        console.error('加载数据失败:', error);
+    }
 }
 
 // 重新加载数据（不显示加载提示框）
