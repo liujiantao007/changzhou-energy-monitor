@@ -563,19 +563,49 @@ docker run -d --name energy-monitor \
 
 ## 3.5 启动容器
 
-### 启动命令
+### 方式一：使用 docker-compose（推荐）
 
 ```bash
-# 后台运行（推荐）
+# 1. 创建 docker-compose.yml
+cat > docker-compose.yml << 'EOF'
+version: '3.8'
+
+services:
+  energy-monitor:
+    image: changzhou-energy-monitor:latest
+    container_name: energy-monitor-prod
+    restart: always
+    ports:
+      - "65080:80"
+      - "5000:5000"
+EOF
+
+# 2. 启动服务
+docker-compose up -d
+
+# 3. 查看状态
+docker-compose ps
+
+# 4. 测试 API
+curl http://localhost:65080/api/health
+
+# 5. 查看日志
+docker-compose logs -f
+```
+
+### 方式二：使用 docker run 命令
+
+```bash
+# 后台运行
 docker run -d --name energy-monitor \
-    -p 80:80 \
+    -p 65080:80 \
     -p 5000:5000 \
     --restart=always \
     changzhou-energy-monitor:latest
 
 # 或指定资源限制
 docker run -d --name energy-monitor \
-    -p 80:80 \
+    -p 65080:80 \
     -p 5000:5000 \
     --restart=always \
     --memory=1g \
