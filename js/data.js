@@ -53,14 +53,16 @@ function loadExcelData() {
         const now = new Date();
         const currentYear = now.getFullYear();
         const currentMonth = now.getMonth() + 1;
-        
+
         let apiUrl = API_BASE + '/summary_data?latest_date_only=true';
-        
+
         if (currentTimeRange === '月') {
-            const monthStart = `${currentYear}-${String(currentMonth).padStart(2, '0')}-01`;
+            // 月视图：加载最近12个月的数据，用于展示月度趋势
+            const startDate = new Date(currentYear, currentMonth - 12, 1);
+            const monthStart = `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, '0')}-01`;
             const monthEnd = `${currentYear}-${String(currentMonth).padStart(2, '0')}-31`;
             apiUrl = API_BASE + `/summary_data?date_from=${monthStart}&date_to=${monthEnd}`;
-            console.log('月视图：加载', monthStart, '至', monthEnd, '数据');
+            console.log('月视图：加载最近12个月', monthStart, '至', monthEnd, '数据');
         } else if (currentTimeRange === '年') {
             const yearStart = `${currentYear}-01-01`;
             const yearEnd = `${currentYear}-12-31`;
