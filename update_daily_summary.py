@@ -258,6 +258,7 @@ def verify_daily_data(conn: pymysql.connections.Connection, date: datetime) -> D
 
 def print_verification_report(date_str: str, verification_result: Dict[str, Any]):
     """打印数据一致性验证报告"""
+    check_ok = "[OK]" if verification_result['count_match'] else "[FAIL]"
     print("\n" + "-" * 60)
     print(f"数据一致性验证报告 - {date_str}")
     print("-" * 60)
@@ -265,9 +266,9 @@ def print_verification_report(date_str: str, verification_result: Dict[str, Any]
     print("-" * 60)
 
     result = verification_result
-    print(f"{'记录数':<15} {result['source_count']:<20,} {result['target_count']:<20,} {result['count_diff']:<12,} {'✅' if result['count_match'] else '❌'}")
-    print(f"{'总度数':<15} {result['source_energy']:<20,.2f} {result['target_energy']:<20,.2f} {result['energy_diff']:<12,.2f} {'✅' if result['energy_match'] else '❌'}")
-    print(f"{'总电费':<15} {result['source_cost']:<20,.2f} {result['target_cost']:<20,.2f} {result['cost_diff']:<12,.2f} {'✅' if result['cost_match'] else '❌'}")
+    print(f"{'记录数':<15} {result['source_count']:<20,} {result['target_count']:<20,} {result['count_diff']:<12,} {check_ok}")
+    print(f"{'总度数':<15} {result['source_energy']:<20,.2f} {result['target_energy']:<20,.2f} {result['energy_diff']:<12,.2f} {check_ok}")
+    print(f"{'总电费':<15} {result['source_cost']:<20,.2f} {result['target_cost']:<20,.2f} {result['cost_diff']:<12,.2f} {check_ok}")
     print("-" * 60)
 
 
@@ -367,7 +368,7 @@ def update_daily(date_str: str) -> Dict[str, Any]:
     logger.info(f"  删除: {result['deleted_count']} 条")
     logger.info(f"  插入: {result['inserted_count']} 条")
     logger.info(f"  耗时: {result['duration_seconds']:.2f} 秒")
-    logger.info(f"  状态: {'✅ 成功' if result['success'] else '❌ 数据不一致'}")
+    logger.info(f"  状态: {'[OK]' if result['success'] else '[FAIL]'}")
     logger.info("=" * 60)
 
     return result
@@ -430,10 +431,10 @@ def main():
 
                 if result['success']:
                     success_count += 1
-                    logger.info(f"[{i}/{len(dates)}] {date_str} 更新成功 ✅")
+                    logger.info(f"[{i}/{len(dates)}] {date_str} 更新成功 [OK]")
                 else:
                     fail_count += 1
-                    logger.error(f"[{i}/{len(dates)}] {date_str} 更新失败 ❌")
+                    logger.error(f"[{i}/{len(dates)}] {date_str} 更新失败 [FAIL]")
 
             logger.info("\n" + "=" * 60)
             logger.info(f"批量更新完成!")
@@ -454,7 +455,7 @@ def main():
 
     print("\n" + "=" * 60)
     print("执行结果:")
-    print(f"  状态: {'✅ 成功' if result['success'] else '❌ 失败'}")
+    print(f"  状态: {'[OK]' if result['success'] else '[FAIL]'}")
     print(f"  源表记录: {result['source_count']} 条")
     print(f"  删除: {result['deleted_count']} 条")
     print(f"  插入: {result['inserted_count']} 条")

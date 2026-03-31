@@ -244,8 +244,73 @@ python update_daily_summary.py 2026-03-01
 |------|---------|
 | **首次部署** | `python update_daily_summary.py`（批量更新所有日期） |
 | **修复某一天** | `python update_daily_summary.py 2026-03-20` |
-| **定期同步** | 配合 cron 使用 `python update_daily_summary.py` |
+| **补充用电方字段** | `python update_consumer_fields.py 2026-03-20` |
+| **定期同步** | 配合 cron 使用定时任务 |
 | **测试验证** | `python update_daily_summary.py 2026-03-20` |
+
+---
+
+## 🔧 补充用电方维度字段
+
+`update_daily_summary.py` 只更新基本的汇总字段，需要运行 `update_consumer_fields.py` 来补充用电方和供电类型维度的字段。
+
+### 补充字段列表
+
+| 字段 | 说明 |
+|------|------|
+| `mobile_cumulative_energy` | 移动用户日累计用电量 (kWh) |
+| `mobile_poi_count` | 移动用户 POI 数量 |
+| `tower_cumulative_energy` | 电塔用户日累计用电量 (kWh) |
+| `tower_poi_count` | 电塔用户 POI 数量 |
+| `direct_power_supply_energy` | 直供电用电量 (kWh) |
+| `direct_power_supply_cost` | 直供电电费 (元) |
+| `indirect_power_supply_energy` | 转供电用电量 (kWh) |
+| `indirect_power_supply_cost` | 转供电电费 (元) |
+| `mobile_electricity_fee` | 移动用户日累计电费 (元) |
+| `tower_electricity_fee` | 铁塔用户日累计电费 (元) |
+
+### 使用方法
+
+```bash
+# 补充所有日期的用电方字段
+python update_consumer_fields.py
+
+# 补充指定日期的用电方字段
+python update_consumer_fields.py 2026-03-20
+```
+
+### 完整更新流程
+
+```bash
+# 1. 先更新基本汇总字段
+python update_daily_summary.py 2026-03-20
+
+# 2. 再补充用电方维度字段
+python update_consumer_fields.py 2026-03-20
+
+# 或者一次性更新所有日期（两个脚本都要运行）
+python update_daily_summary.py
+python update_consumer_fields.py
+```
+
+### 完整更新脚本
+
+为了方便，可以创建一个批处理脚本 `update_all.sh`：
+
+```bash
+#!/bin/bash
+# 更新所有日期的所有字段
+
+echo ">>> 开始更新所有日期..."
+
+echo "[1/2] 更新基本汇总字段..."
+python update_daily_summary.py
+
+echo "[2/2] 补充用电方维度字段..."
+python update_consumer_fields.py
+
+echo ">>> 更新完成!"
+```
 
 ---
 
