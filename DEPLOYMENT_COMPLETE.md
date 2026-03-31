@@ -48,7 +48,7 @@
 ## 1.1 环境要求（公网）
 
 | 项目 | 最低要求 | 推荐配置 |
-|------|---------|---------|
+|------|---------|----------|
 | **操作系统** | Ubuntu 18.04 / CentOS 7 | Ubuntu 20.04 / CentOS 8 |
 | **CPU** | 1 核 | 2 核 + |
 | **内存** | 2GB | 4GB+ |
@@ -866,7 +866,7 @@ fatal: unable to access 'https://github.com/...': Connection timed out
 
 **解决方案**：
 ```bash
-# 方案 A：使用镜像
+# 方案 A：使用镜像加速
 git clone https://ghproxy.com/https://github.com/liujiantao007/changzhou-energy-monitor.git
 
 # 方案 B：使用代理
@@ -876,6 +876,15 @@ git config --global https.proxy http://127.0.0.1:7890
 # 方案 C：增加超时时间
 git config --global http.lowSpeedLimit 0
 git config --global http.lowSpeedTime 999999
+
+# 方案 D：使用 SSH 方式（推荐）
+# 1. 生成 SSH 密钥
+ssh-keygen -t rsa -b 4096 -C "your_email@example.com"
+# 2. 查看公钥并添加到 GitHub
+cat ~/.ssh/id_rsa.pub
+# 3. 修改 remote
+git remote set-url origin git@github.com:liujiantao007/changzhou-energy-monitor.git
+git pull
 ```
 
 ### 问题 2：Docker 构建失败
@@ -1017,6 +1026,28 @@ docker run -d --name energy-monitor \
     -p 8080:80 \
     -p 5001:5000 \
     changzhou-energy-monitor:latest
+```
+
+### 问题 8：Docker Compose 未安装
+
+**症状**：
+```
+Command 'docker-compose' not found, but can be installed with:
+apt install docker-compose
+```
+
+**解决方案**：
+```bash
+# 方法 1：使用 apt 安装
+sudo apt update
+sudo apt install -y docker-compose
+
+# 方法 2：安装最新版本
+sudo curl -L "https://github.com/docker/compose/releases/download/v2.24.5/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+sudo chmod +x /usr/local/bin/docker-compose
+
+# 方法 3：使用 docker compose 命令（Docker 20.10+）
+docker compose up -d
 ```
 
 ## 5.2 已知问题修复
@@ -1445,7 +1476,7 @@ docker exec energy-monitor-prod cat /var/log/nginx/error.log
 
 ---
 
-**文档版本**：v8.0
+**文档版本**：v8.1
 **最后更新**：2026-03-31
 **适用项目**：changzhou-energy-monitor 全部版本
 **重要说明**：
