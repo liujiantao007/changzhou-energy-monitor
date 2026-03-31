@@ -373,6 +373,23 @@ def update_daily(date_str: str) -> Dict[str, Any]:
     return result
 
 
+def get_all_available_dates(conn) -> list:
+    """
+    获取源表中所有可用的日期列表
+
+    Returns:
+        List of datetime objects
+    """
+    cursor = conn.cursor()
+    cursor.execute(f"""
+        SELECT DISTINCT 日期 FROM {SOURCE_TABLE}
+        ORDER BY 日期 DESC
+    """)
+    dates = [row[0] for row in cursor.fetchall()]
+    cursor.close()
+    return dates
+
+
 def main():
     """主入口"""
     if len(sys.argv) < 2:
@@ -380,17 +397,54 @@ def main():
         print("能源汇总表每日增量更新脚本")
         print("=" * 60)
         print("\n使用方法:")
-        print("  python update_daily_summary.py 2026-03-20")
+        print("  python update_daily_summary.py              # 更新所有日期")
+        print("  python update_daily_summary.py 2026-03-20   # 更新指定日期")
         print("\n日期格式:")
         print("  - YYYY-MM-DD: 2026-03-20")
         print("  - YYYY/MM/DD: 2026/03/20")
         print("  - YYYYMMDD:   20260320")
         print("\n功能说明:")
-        print("  1. 删除 energy_charge_daily_summary 表中指定日期的数据")
-        print("  2. 从 energy_charge 表重新生成并插入该日期的汇总数据")
-        print("  3. 验证数据一致性")
+        print("  1. 不带参数：遍历源表中所有日期，逐日更新汇总表")
+        print("  2. 带参数：仅更新指定日期的汇总数据")
         print("=" * 60)
-        sys.exit(1)
+
+        logger.info("\n>>> 无日期参数，开始遍历所有可用日期...")
+
+        conn = get_connection()
+        try:
+            dates = get_all_available_dates(conn)
+            logger.info(f"找到 {len(dates)} 个可用日期")
+
+            if not dates:
+                logger.warning("源表中没有找到任何数据")
+                return
+
+            success_count = 0
+            fail_count = 0
+
+            for i, date in enumerate(dates, 1):
+                date_str = date.strftime('%Y-%m-%d')
+                logger.info(f"\n[{i}/{len(dates)}] 正在处理 {date_str}...")
+
+                result = update_daily(date_str)
+
+                if result['success']:
+                    success_count += 1
+                    logger.info(f"[{i}/{len(dates)}] {date_str} 更新成功 ✅")
+                else:
+                    fail_count += 1
+                    logger.error(f"[{i}/{len(dates)}] {date_str} 更新失败 ❌")
+
+            logger.info("\n" + "=" * 60)
+            logger.info(f"批量更新完成!")
+            logger.info(f"  总日期数: {len(dates)}")
+            logger.info(f"  成功: {success_count} 个")
+            logger.info(f"  失败: {fail_count} 个")
+            logger.info("=" * 60)
+
+        finally:
+            conn.close()
+        return
 
     date_str = sys.argv[1]
 
