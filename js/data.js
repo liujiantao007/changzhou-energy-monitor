@@ -1,8 +1,5 @@
 // 数据处理模块
 
-// API 基础路径（使用相对路径，通过 Nginx 反向代理）
-const API_BASE = '/api';
-
 // 全局数据缓存
 let dataCache = null;
 let rawDataCache = null; // 原始数据缓存
