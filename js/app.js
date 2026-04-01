@@ -367,6 +367,12 @@ function initTimeSelectors() {
 // 为能耗趋势图重新加载对应时间范围的数据
 async function reloadDataForTrendChart(timeRange) {
     try {
+        // 检查是否有原始完整数据缓存
+        if (!window.originalDataCache || window.originalDataCache.length === 0) {
+            console.log('原始完整数据缓存未设置，跳过趋势图数据重新加载');
+            return;
+        }
+        
         const now = new Date();
         const currentYear = now.getFullYear();
         const currentMonth = now.getMonth() + 1;
@@ -386,14 +392,19 @@ async function reloadDataForTrendChart(timeRange) {
             dateTo = `${currentYear}-12-31`;
             console.log('年视图：加载最近 12 年数据', dateFrom, '至', dateTo);
         } else {
-            // 日视图：加载最近 60 天的数据，确保覆盖图表显示的 30 天范围
-            // 重要：不要覆盖 window.originalDataCache，它应该保持首次加载的完整数据
-            const now = new Date();
-            const startDate = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
-            dateFrom = `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, '0')}-${String(startDate.getDate()).padStart(2, '0')}`;
-            dateTo = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-            console.log('日视图：加载最近 60 天数据', dateFrom, '至', dateTo);
-            console.log('当前时间:', now.toISOString(), '60 天前:', startDate.toISOString());
+            // 日视图：使用原始完整数据缓存，不需要重新加载
+            console.log('日视图：使用原始完整数据缓存，数据量:', window.originalDataCache.length);
+            
+            // 更新能耗趋势图 - 使用原始完整数据缓存
+            if (typeof updateEnergyTrendChart === 'function') {
+                const cachedData = {
+                    rawData: window.originalDataCache,
+                    latestDate: window.latestDate
+                };
+                console.log('传递给 updateEnergyTrendChart 的数据条数:', cachedData.rawData.length);
+                updateEnergyTrendChart(cachedData, timeRange);
+            }
+            return;
         }
         
         const apiUrl = API_BASE + `/summary_data?date_from=${dateFrom}&date_to=${dateTo}`;
