@@ -536,28 +536,34 @@ function processData(data) {
     // 保存当前使用的数据
     window.rawDataCache = data.rawData || [];
     console.log('当前数据缓存，数据量:', window.rawDataCache.length);
-    
+
     // 保存最新日期到全局变量（用于趋势图）
     if (data.latestDate) {
         window.latestDate = data.latestDate;
         console.log('保存最新日期:', window.latestDate);
     }
-    
+
     // 更新能耗总览
     updateEnergyOverview(data);
-    
+
     // 更新报账总览
     updateReportOverview(data);
-    
-    // 更新图表
-    updateCharts(data);
-    
+
+    // 更新图表（使用深拷贝的数据，确保不会被修改）
+    const chartData = {
+        energyData: data.energyData,
+        rawData: JSON.parse(JSON.stringify(data.rawData || [])),
+        reportData: data.reportData,
+        latestDate: data.latestDate
+    };
+    updateCharts(chartData);
+
     // 更新地图
     if (typeof updateMap === 'function') {
-        updateMap(data);
+        updateMap(chartData);
     }
-    
-    // 加载告警和事件信息
+
+    // 加载告警和事件信息（异步，不影响主流程）
     loadAlarms();
     loadEvents();
 }
