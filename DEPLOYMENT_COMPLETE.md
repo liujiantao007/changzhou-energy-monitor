@@ -1493,9 +1493,27 @@ docker exec energy-monitor-prod cat /var/log/nginx/error.log
 ---
 
 **文档版本**：v8.3
-**最后更新**：2026-03-31
+**最后更新**：2026-04-01
 **适用项目**：changzhou-energy-monitor 全部版本
 **重要说明**：
 - CDN 资源文件已包含在 Git 仓库中，无需额外下载
 - 已修复 Flask 依赖（flask-cors）和 Nginx 用户配置（www-data）问题
 - 支持一键部署，自动处理端口占用
+
+---
+
+# 快速部署指南（简洁版）
+
+## 部署步骤
+
+# 1. 进入项目目录 
+ cd /usr/local/energy-monitor 
+ 
+ # 2. 拉取最新代码 
+ git pull origin main 
+ 
+ # 3. 给脚本添加执行权限 
+ chmod +x start.sh 
+ 
+ # 4. 执行启动脚本 
+ ./start.sh
