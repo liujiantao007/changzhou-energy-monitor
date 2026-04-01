@@ -592,16 +592,26 @@ function updateEnergyTrendChart(data, timeType) {
     if (timeType) {
         currentTrendTimeType = timeType;
     }
-    
+
     // 使用原始数据，不受时间选择器影响
-    const rawData = data.rawData || [];
-    const latestDate = data.latestDate; // 使用数据库中的最新日期
+    // 如果传入数据为空或无效，使用缓存数据
+    let rawData = data.rawData || [];
+    if (rawData.length === 0 && window.rawDataCache && window.rawDataCache.length > 0) {
+        console.log('使用缓存的原始数据，条数:', window.rawDataCache.length);
+        rawData = window.rawDataCache;
+    }
+
+    let latestDate = data.latestDate;
+    if (!latestDate && window.latestDate) {
+        latestDate = window.latestDate;
+    }
+
     console.log('能耗趋势图原始数据条数:', rawData.length, '时间维度:', currentTrendTimeType, '最新日期:', latestDate);
-    
+
     let labels = [];
     let energyValues = [];
     let costValues = [];
-    
+
     if (currentTrendTimeType === '日') {
         // 日维度：最近30天（以数据库最新日期为准）
         const dailyData = {};
