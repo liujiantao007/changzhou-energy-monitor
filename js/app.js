@@ -374,19 +374,20 @@ async function reloadDataForTrendChart(timeRange) {
         let dateFrom, dateTo;
         
         if (timeRange === '月') {
-            // 月视图：加载最近12个月的数据
+            // 月视图：加载最近 12 个月的数据
             const startDate = new Date(currentYear, currentMonth - 12, 1);
             dateFrom = `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, '0')}-01`;
             const lastDayOfMonth = new Date(currentYear, currentMonth, 0).getDate();
             dateTo = `${currentYear}-${String(currentMonth).padStart(2, '0')}-${String(lastDayOfMonth).padStart(2, '0')}`;
-            console.log('月视图：加载最近12个月数据', dateFrom, '至', dateTo);
+            console.log('月视图：加载最近 12 个月数据', dateFrom, '至', dateTo);
         } else if (timeRange === '年') {
-            // 年视图：加载最近12年的数据
+            // 年视图：加载最近 12 年的数据
             dateFrom = `${currentYear - 11}-01-01`;
             dateTo = `${currentYear}-12-31`;
-            console.log('年视图：加载最近12年数据', dateFrom, '至', dateTo);
+            console.log('年视图：加载最近 12 年数据', dateFrom, '至', dateTo);
         } else {
             // 日视图：加载最近 60 天的数据，确保覆盖图表显示的 30 天范围
+            // 重要：不要覆盖 window.originalDataCache，它应该保持首次加载的完整数据
             const now = new Date();
             const startDate = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
             dateFrom = `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, '0')}-${String(startDate.getDate()).padStart(2, '0')}`;
@@ -405,11 +406,11 @@ async function reloadDataForTrendChart(timeRange) {
         
         if (result.data) {
             console.log('API 返回数据条数:', result.data.length);
-            console.log('API 返回数据示例（前3条）:', result.data.slice(0, 3).map(item => ({ date: item['A'], energy: item['AB'] })));
+            console.log('API 返回数据示例（前 3 条）:', result.data.slice(0, 3).map(item => ({ date: item['A'], energy: item['AB'] })));
             
-            // 更新当前数据缓存，但不覆盖原始完整数据缓存
+            // 只更新当前数据缓存，不覆盖原始完整数据缓存
             window.rawDataCache = result.data;
-            // 注意：不覆盖 window.originalDataCache，它应该保持首次加载的完整数据
+            // 重要：不覆盖 window.originalDataCache，它应该保持首次加载的完整数据
             window.latestDate = result.latest_date;
             
             console.log('趋势图数据加载完成，条数:', result.data.length);
