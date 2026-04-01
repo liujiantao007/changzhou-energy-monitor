@@ -459,9 +459,23 @@ async function reloadDataWithoutLoading() {
         if (currentTimeRangeValue === '月' || currentTimeRangeValue === '年') {
             let dateFrom, dateTo;
             if (currentTimeRangeValue === '月') {
-                dateFrom = `${currentYear}-${String(currentMonth).padStart(2, '0')}-01`;
-                const lastDayOfMonth = new Date(currentYear, currentMonth, 0).getDate();
-                dateTo = `${currentYear}-${String(currentMonth).padStart(2, '0')}-${String(lastDayOfMonth).padStart(2, '0')}`;
+                // 月视图：使用数据库最新日期所在的月份
+                const latestDate = window.latestDate;
+                if (latestDate) {
+                    const latestDateObj = new Date(latestDate);
+                    const latestYear = latestDateObj.getFullYear();
+                    const latestMonth = latestDateObj.getMonth() + 1;
+                    dateFrom = `${latestYear}-${String(latestMonth).padStart(2, '0')}-01`;
+                    const lastDayOfMonth = new Date(latestYear, latestMonth, 0).getDate();
+                    dateTo = `${latestYear}-${String(latestMonth).padStart(2, '0')}-${String(lastDayOfMonth).padStart(2, '0')}`;
+                    console.log('月视图：使用数据库最新日期所在的月份', latestDate, '→', dateFrom, '至', dateTo);
+                } else {
+                    // 如果没有最新日期，使用当前月份
+                    dateFrom = `${currentYear}-${String(currentMonth).padStart(2, '0')}-01`;
+                    const lastDayOfMonth = new Date(currentYear, currentMonth, 0).getDate();
+                    dateTo = `${currentYear}-${String(currentMonth).padStart(2, '0')}-${String(lastDayOfMonth).padStart(2, '0')}`;
+                    console.log('月视图：使用当前月份', dateFrom, '至', dateTo);
+                }
             } else {
                 dateFrom = `${currentYear}-01-01`;
                 dateTo = `${currentYear}-12-31`;
