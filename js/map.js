@@ -571,18 +571,29 @@ function filterDataByRegion(regionName, regionLevel) {
     if (regionLevel === 'grid') {
         // 网格级别：根据 GRID 列进行筛选
         console.log('网格级别筛选:', regionName);
+        console.log('数据源数据量:', dataSource.length);
         
         // 提取网格名称关键词（如"西湖网格" -> "西湖"）
         const gridKeyword = regionName.replace(/网格/g, '');
         console.log('筛选关键词:', gridKeyword);
         
+        // 打印前5条数据的网格信息
+        console.log('前5条数据网格信息:', dataSource.slice(0, 5).map(item => ({ grid: item['GRID'], unit: item['J'] })));
+        
         filteredData = dataSource.filter(item => {
             const grid = item['GRID'] || ''; // 归属网格
             // 模糊匹配：包含关键词即可
-            return grid.includes(gridKeyword) || grid.includes(regionName);
+            const match = grid.includes(gridKeyword) || grid.includes(regionName);
+            return match;
         });
         
         console.log('网格筛选后数据量:', filteredData.length);
+        if (filteredData.length === 0) {
+            console.warn('网格筛选后数据为空，可能的原因：');
+            console.warn('1. 数据源中没有该网格的数据');
+            console.warn('2. 网格名称格式不匹配');
+            console.warn('3. GRID 列数据为空');
+        }
         
         // 更新图表和地图
         if (typeof reloadDataWithFilter === 'function') {
