@@ -692,8 +692,14 @@ function updateEnergyTrendChart(data, timeType) {
         
         const months = [];
         for (let i = 11; i >= 0; i--) {
-            const date = new Date(baseDate.getFullYear(), baseDate.getMonth() - i, 1);
-            months.push(`${date.getFullYear()}/${date.getMonth() + 1}`);
+            // 正确计算月份，避免负数月份导致的年份调整
+            let year = baseDate.getFullYear();
+            let month = baseDate.getMonth() - i;
+            while (month < 0) {
+                year--;
+                month += 12;
+            }
+            months.push(`${year}/${month + 1}`);
         }
         
         labels = months.map(m => m.split('/')[1] + '月');
