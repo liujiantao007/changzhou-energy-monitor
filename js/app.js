@@ -386,16 +386,17 @@ async function reloadDataForTrendChart(timeRange) {
             dateTo = `${currentYear}-12-31`;
             console.log('年视图：加载最近12年数据', dateFrom, '至', dateTo);
         } else {
-            // 日视图：加载最近60天的数据，确保覆盖图表显示的30天范围
+            // 日视图：加载最近 60 天的数据，确保覆盖图表显示的 30 天范围
             const now = new Date();
             const startDate = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
             dateFrom = `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, '0')}-${String(startDate.getDate()).padStart(2, '0')}`;
             dateTo = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-            console.log('日视图：加载最近60天数据', dateFrom, '至', dateTo);
+            console.log('日视图：加载最近 60 天数据', dateFrom, '至', dateTo);
+            console.log('当前时间:', now.toISOString(), '60 天前:', startDate.toISOString());
         }
         
         const apiUrl = API_BASE + `/summary_data?date_from=${dateFrom}&date_to=${dateTo}`;
-        console.log('API 地址：', apiUrl);
+        console.log('API 完整地址：', apiUrl);
         
         const response = await fetch(apiUrl);
         const result = await response.json();
