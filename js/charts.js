@@ -593,12 +593,18 @@ function updateEnergyTrendChart(data, timeType) {
         currentTrendTimeType = timeType;
     }
 
-    // 使用原始数据，不受时间选择器影响
-    // 如果传入数据为空或无效，使用缓存数据
-    let rawData = data.rawData || [];
-    if (rawData.length === 0 && window.rawDataCache && window.rawDataCache.length > 0) {
-        console.log('使用缓存的原始数据，条数:', window.rawDataCache.length);
+    // 使用原始完整数据，不受时间选择器影响
+    // 优先使用 window.originalDataCache（首次加载的完整数据）
+    let rawData = [];
+    if (window.originalDataCache && window.originalDataCache.length > 0) {
+        rawData = window.originalDataCache;
+        console.log('使用原始完整数据缓存，条数:', rawData.length);
+    } else if (data.rawData && data.rawData.length > 0) {
+        rawData = data.rawData;
+        console.log('使用传入的原始数据，条数:', rawData.length);
+    } else if (window.rawDataCache && window.rawDataCache.length > 0) {
         rawData = window.rawDataCache;
+        console.log('使用当前数据缓存，条数:', rawData.length);
     }
 
     let latestDate = data.latestDate;

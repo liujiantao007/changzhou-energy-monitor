@@ -401,14 +401,14 @@ async function reloadDataForTrendChart(timeRange) {
         const result = await response.json();
         
         if (result.data) {
-            // 更新缓存
+            // 更新当前数据缓存，但不覆盖原始完整数据缓存
             window.rawDataCache = result.data;
-            window.originalDataCache = result.data;
+            // 注意：不覆盖 window.originalDataCache，它应该保持首次加载的完整数据
             window.latestDate = result.latest_date;
             
-            console.log('数据加载完成，条数:', result.data.length);
+            console.log('趋势图数据加载完成，条数:', result.data.length);
             
-            // 更新能耗趋势图
+            // 更新能耗趋势图 - 使用新加载的数据
             if (typeof updateEnergyTrendChart === 'function') {
                 const cachedData = {
                     rawData: result.data,
