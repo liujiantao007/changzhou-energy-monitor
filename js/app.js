@@ -377,7 +377,8 @@ async function reloadDataForTrendChart(timeRange) {
             // 月视图：加载最近12个月的数据
             const startDate = new Date(currentYear, currentMonth - 12, 1);
             dateFrom = `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, '0')}-01`;
-            dateTo = `${currentYear}-${String(currentMonth).padStart(2, '0')}-31`;
+            const lastDayOfMonth = new Date(currentYear, currentMonth, 0).getDate();
+            dateTo = `${currentYear}-${String(currentMonth).padStart(2, '0')}-${String(lastDayOfMonth).padStart(2, '0')}`;
             console.log('月视图：加载最近12个月数据', dateFrom, '至', dateTo);
         } else if (timeRange === '年') {
             // 年视图：加载最近12年的数据
@@ -388,7 +389,8 @@ async function reloadDataForTrendChart(timeRange) {
             // 日视图：加载最近2个月的数据
             const startDate = new Date(currentYear, currentMonth - 2, 1);
             dateFrom = `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, '0')}-01`;
-            dateTo = `${currentYear}-${String(currentMonth).padStart(2, '0')}-31`;
+            const lastDayOfMonth = new Date(currentYear, currentMonth, 0).getDate();
+            dateTo = `${currentYear}-${String(currentMonth).padStart(2, '0')}-${String(lastDayOfMonth).padStart(2, '0')}`;
             console.log('日视图：加载最近2个月数据', dateFrom, '至', dateTo);
         }
         
@@ -439,7 +441,8 @@ async function reloadDataWithoutLoading() {
             let dateFrom, dateTo;
             if (currentTimeRangeValue === '月') {
                 dateFrom = `${currentYear}-${String(currentMonth).padStart(2, '0')}-01`;
-                dateTo = `${currentYear}-${String(currentMonth).padStart(2, '0')}-31`;
+                const lastDayOfMonth = new Date(currentYear, currentMonth, 0).getDate();
+                dateTo = `${currentYear}-${String(currentMonth).padStart(2, '0')}-${String(lastDayOfMonth).padStart(2, '0')}`;
             } else {
                 dateFrom = `${currentYear}-01-01`;
                 dateTo = `${currentYear}-12-31`;

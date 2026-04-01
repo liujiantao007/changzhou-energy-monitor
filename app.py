@@ -21,6 +21,16 @@ db_config = {
 def get_db_connection():
     return pymysql.connect(**db_config)
 
+def validate_date(date_str):
+    """验证日期格式是否有效"""
+    if not date_str:
+        return True, None
+    try:
+        parsed_date = datetime.strptime(date_str, '%Y-%m-%d')
+        return True, parsed_date
+    except ValueError as e:
+        return False, str(e)
+
 @app.route('/api/data', methods=['GET'])
 def get_data():
     try:
@@ -135,6 +145,25 @@ def get_summary_data():
         district = request.args.get('district', None, type=str)
         grid = request.args.get('grid', None, type=str)
         latest_date_only = request.args.get('latest_date_only', 'false', type=str).lower() == 'true'
+
+        # 验证日期参数
+        if date_from:
+            is_valid, result = validate_date(date_from)
+            if not is_valid:
+                return jsonify({
+                    'success': False,
+                    'error': f'Invalid date_from: {result}',
+                    'message': f'日期参数 date_from 无效: {result}'
+                }), 400
+        
+        if date_to:
+            is_valid, result = validate_date(date_to)
+            if not is_valid:
+                return jsonify({
+                    'success': False,
+                    'error': f'Invalid date_to: {result}',
+                    'message': f'日期参数 date_to 无效: {result}'
+                }), 400
 
         conn = get_db_connection()
         cursor = conn.cursor(pymysql.cursors.DictCursor)

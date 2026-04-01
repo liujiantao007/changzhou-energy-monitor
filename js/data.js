@@ -60,7 +60,9 @@ function loadExcelData() {
             // 月视图：加载最近12个月的数据，用于展示月度趋势
             const startDate = new Date(currentYear, currentMonth - 12, 1);
             const monthStart = `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, '0')}-01`;
-            const monthEnd = `${currentYear}-${String(currentMonth).padStart(2, '0')}-31`;
+            // 正确计算当前月份的最后一天（使用下个月第0天获取当前月最后一天）
+            const lastDayOfMonth = new Date(currentYear, currentMonth, 0).getDate();
+            const monthEnd = `${currentYear}-${String(currentMonth).padStart(2, '0')}-${String(lastDayOfMonth).padStart(2, '0')}`;
             apiUrl = API_BASE + `/summary_data?date_from=${monthStart}&date_to=${monthEnd}`;
             console.log('月视图：加载最近12个月', monthStart, '至', monthEnd, '数据');
         } else if (currentTimeRange === '年') {
@@ -627,7 +629,8 @@ async function fetchSummaryDataFromAPI() {
     
     if (currentTimeRange === '月') {
         dateFrom = `${currentYear}-${String(currentMonth).padStart(2, '0')}-01`;
-        dateTo = `${currentYear}-${String(currentMonth).padStart(2, '0')}-31`;
+        const lastDayOfMonth = new Date(currentYear, currentMonth, 0).getDate();
+        dateTo = `${currentYear}-${String(currentMonth).padStart(2, '0')}-${String(lastDayOfMonth).padStart(2, '0')}`;
     } else if (currentTimeRange === '年') {
         dateFrom = `${currentYear}-01-01`;
         dateTo = `${currentYear}-12-31`;
