@@ -606,7 +606,10 @@ function updateEnergyTrendChart(data, timeType) {
         latestDate = window.latestDate;
     }
 
-    console.log('能耗趋势图原始数据条数:', rawData.length, '时间维度:', currentTrendTimeType, '最新日期:', latestDate);
+    console.log('能耗趋势图接收数据 - rawData 条数:', rawData.length, '时间维度:', currentTrendTimeType, '最新日期:', latestDate);
+    if (rawData.length > 0 && rawData.length <= 10) {
+        console.log('能耗趋势图原始数据内容:', rawData.map(item => ({ date: item['A'], energy: item['AB'], cost: item['AC'] })));
+    }
 
     let labels = [];
     let energyValues = [];

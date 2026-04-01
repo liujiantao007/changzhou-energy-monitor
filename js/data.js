@@ -536,6 +536,7 @@ function processData(data) {
     // 保存当前使用的数据
     window.rawDataCache = data.rawData || [];
     console.log('当前数据缓存，数据量:', window.rawDataCache.length);
+    console.log('数据示例（前3条）:', window.rawDataCache.slice(0, 3).map(item => ({ date: item['A'], energy: item['AB'] })));
 
     // 保存最新日期到全局变量（用于趋势图）
     if (data.latestDate) {
@@ -550,12 +551,15 @@ function processData(data) {
     updateReportOverview(data);
 
     // 更新图表（使用深拷贝的数据，确保不会被修改）
+    const rawDataArray = data.rawData || [];
+    console.log('创建深拷贝前，原始数据量:', rawDataArray.length);
     const chartData = {
         energyData: data.energyData,
-        rawData: JSON.parse(JSON.stringify(data.rawData || [])),
+        rawData: JSON.parse(JSON.stringify(rawDataArray)),
         reportData: data.reportData,
         latestDate: data.latestDate
     };
+    console.log('创建深拷贝后，chartData.rawData 量:', chartData.rawData.length);
     updateCharts(chartData);
 
     // 更新地图
