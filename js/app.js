@@ -686,11 +686,19 @@ async function reloadDataWithoutLoading() {
 
                     // 更新趋势图
                     if (typeof updateEnergyTrendChart === 'function') {
-                        const cachedData = {
-                            rawData: window.rawDataCache || [],
-                            latestDate: summaryResult.last_date || null // 传递数据库最新日期
-                        };
-                        updateEnergyTrendChart(cachedData, currentTimeRangeValue);
+                        // 月视图/年视图：重新加载对应时间范围的数据
+                        if (currentTimeRangeValue === '月' || currentTimeRangeValue === '年') {
+                            console.log('月/年视图：重新加载趋势图数据，时间维度:', currentTimeRangeValue);
+                            // 调用 reloadDataForTrendChart 重新加载正确的数据范围
+                            reloadDataForTrendChart(currentTimeRangeValue);
+                        } else {
+                            // 日视图：使用当前缓存
+                            const cachedData = {
+                                rawData: window.rawDataCache || [],
+                                latestDate: summaryResult.last_date || null
+                            };
+                            updateEnergyTrendChart(cachedData, currentTimeRangeValue);
+                        }
                     }
 
                     // 更新用电方分类饼图（双环：外环能耗，内环电费）
