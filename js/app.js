@@ -400,7 +400,12 @@ async function reloadDataForTrendChart(timeRange) {
         const response = await fetch(apiUrl);
         const result = await response.json();
         
+        console.log('API 响应结果:', result);
+        
         if (result.data) {
+            console.log('API 返回数据条数:', result.data.length);
+            console.log('API 返回数据示例（前3条）:', result.data.slice(0, 3).map(item => ({ date: item['A'], energy: item['AB'] })));
+            
             // 更新当前数据缓存，但不覆盖原始完整数据缓存
             window.rawDataCache = result.data;
             // 注意：不覆盖 window.originalDataCache，它应该保持首次加载的完整数据
@@ -414,6 +419,7 @@ async function reloadDataForTrendChart(timeRange) {
                     rawData: result.data,
                     latestDate: result.latest_date
                 };
+                console.log('传递给 updateEnergyTrendChart 的数据条数:', cachedData.rawData.length);
                 updateEnergyTrendChart(cachedData, timeRange);
             }
         }
