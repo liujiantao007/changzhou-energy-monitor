@@ -71,16 +71,18 @@ function loadExcelData() {
             apiUrl = API_BASE + `/summary_data?date_from=${yearStart}&date_to=${yearEnd}`;
             console.log('年视图：加载', yearStart, '至', yearEnd, '数据');
         } else {
-            // 日视图：加载最近60天的数据，确保覆盖图表显示的30天范围
+            // 日视图：加载最近 60 天的数据，确保覆盖图表显示的 30 天范围
             const now = new Date();
             const startDate = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
             const startDateStr = `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, '0')}-${String(startDate.getDate()).padStart(2, '0')}`;
             const endDateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
             apiUrl = API_BASE + `/summary_data?date_from=${startDateStr}&date_to=${endDateStr}`;
-            console.log('日视图：加载最近60天数据', startDateStr, '至', endDateStr);
+            console.log('日视图（初始加载）：加载最近 60 天数据', startDateStr, '至', endDateStr);
+            console.log('当前时间:', now.toISOString(), '60 天前:', startDate.toISOString());
         }
         
-        console.log('API 地址：', apiUrl);
+        console.log('loadExcelData - API 完整地址：', apiUrl);
+        console.log('currentTimeRange:', currentTimeRange);
 
         // 从 API 加载数据
         fetch(apiUrl)
