@@ -408,9 +408,23 @@ async function reloadDataForTrendChart(timeRange) {
         }
         
         const apiUrl = API_BASE + `/summary_data?date_from=${dateFrom}&date_to=${dateTo}`;
-        console.log('API 完整地址：', apiUrl);
         
-        const response = await fetch(apiUrl);
+        // 添加当前的区域筛选条件
+        const currentDistrict = (typeof getCurrentDistrict === 'function') ? getCurrentDistrict() : null;
+        let apiUrlWithFilter = apiUrl;
+        if (currentDistrict) {
+            if (currentDistrict.includes('网格')) {
+                apiUrlWithFilter += `&grid=${encodeURIComponent(currentDistrict)}`;
+                console.log('月/年视图：使用网格筛选', currentDistrict);
+            } else {
+                apiUrlWithFilter += `&district=${encodeURIComponent(currentDistrict)}`;
+                console.log('月/年视图：使用区县筛选', currentDistrict);
+            }
+        }
+        
+        console.log('API 完整地址（带筛选）：', apiUrlWithFilter);
+        
+        const response = await fetch(apiUrlWithFilter);
         const result = await response.json();
         
         console.log('API 响应结果:', result);
