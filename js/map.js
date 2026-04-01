@@ -623,6 +623,10 @@ function filterDataByRegion(regionName, regionLevel) {
         // 提取区域名称关键词（如"武进区" -> "武进"）
         const districtKeyword = regionName.replace(/区|市|县/g, '');
         console.log('筛选关键词:', districtKeyword);
+        console.log('数据源数据量:', dataSource.length);
+        
+        // 打印前5条数据的归属单元信息
+        console.log('前5条数据归属单元信息:', dataSource.slice(0, 5).map(item => ({ unit: item['J'], grid: item['GRID'] })));
         
         filteredData = dataSource.filter(item => {
             const unit = item['J'] || ''; // 归属单元
@@ -631,6 +635,12 @@ function filterDataByRegion(regionName, regionLevel) {
         });
         
         console.log('区县筛选后数据量:', filteredData.length);
+        if (filteredData.length === 0) {
+            console.warn('区县筛选后数据为空，可能的原因：');
+            console.warn('1. 数据源中没有该区县的数据');
+            console.warn('2. 归属单元名称格式不匹配');
+            console.warn('3. 归属单元列为空');
+        }
     } else {
         // 未知级别，尝试两种匹配方式
         console.log('未知级别，尝试匹配:', regionName);
