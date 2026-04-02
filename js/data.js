@@ -112,6 +112,35 @@ function loadExcelData() {
                 // 缓存原始数据
                 rawDataCache = processedData;
                 
+                // 保存原始完整数据到全局缓存（只在首次加载时保存)
+                if (!window.originalDataCache || window.originalDataCache.length === 0) {
+                    window.originalDataCache = processedData;
+                    console.log('保存原始完整数据缓存,数据量:', window.originalDataCache.length);
+                    
+                    // 检查是否包含 GRID 字段
+                    if (window.originalDataCache.length > 0) {
+                        const firstItem = window.originalDataCache[0];
+                        console.log('第一条数据检查:', {
+                            date: firstItem['A'],
+                            district: firstItem['J'],
+                            grid: firstItem['GRID'],
+                            energy: firstItem['AB'],
+                            cost: firstItem['AC']
+                        });
+                    }
+                }
+                
+                // 保存当前使用的数据（用于其他图表）
+                window.rawDataCache = processedData;
+                console.log('当前数据缓存，数据量:', window.rawDataCache.length);
+                console.log('数据示例（前3条):', window.rawDataCache.slice(0, 3).map(item => ({ date: item['A'], energy: item['AB'] })));
+                
+                // 保存最新日期到全局变量（用于趋势图）
+                if (latestDate) {
+                    window.latestDate = latestDate;
+                    console.log('保存最新日期:', window.latestDate);
+                }
+                
                 // 根据当前时间维度过滤数据
                 const filteredData = filterDataByTimeRange(processedData);
 
@@ -319,13 +348,27 @@ function processExcelDataArray(rows) {
 
 // 根据时间维度过滤数据
 function filterDataByTimeRange(data) {
-    const now = new Date();
-    const currentYear = now.getFullYear(); // 2026
-    const currentMonth = now.getMonth() + 1; // 3
+    // 始终从当前数据中计算最新日期，不使用 window.latestDate
+    // 这样可以避免维度切换时 window.latestDate 被错误修改导致过滤失败
+    let latestDateStr = findLatestDate(data);
+    
+    const latestDate = parseDate(latestDateStr);
+    
+    // 确定过滤时使用的年份和月份
+    let filterYear, filterMonth;
+    if (latestDate) {
+        filterYear = latestDate.getFullYear();
+        filterMonth = latestDate.getMonth() + 1;
+    } else {
+        const now = new Date();
+        filterYear = now.getFullYear();
+        filterMonth = now.getMonth() + 1;
+    }
     
     console.log('=== 时间维度过滤 ===');
     console.log('当前时间维度:', currentTimeRange);
-    console.log('当前年份:', currentYear, '当前月份:', currentMonth);
+    console.log('使用最新日期:', latestDateStr);
+    console.log('过滤年份:', filterYear, '过滤月份:', filterMonth);
     console.log('输入数据量:', data.length);
     
     if (data.length > 0) {
@@ -340,8 +383,8 @@ function filterDataByTimeRange(data) {
     let filteredData;
     
     if (currentTimeRange === '年') {
-        // 年：获取 2026 年所有数据
-        console.log('年过滤：获取', currentYear, '年数据');
+        // 年：获取最新日期所在年份的所有数据
+        console.log('年过滤：获取', filterYear, '年数据');
         let debugCount = 0;
         filteredData = data.filter(item => {
             const dateStr = getItemDate(item);
@@ -355,12 +398,12 @@ function filterDataByTimeRange(data) {
                 return false;
             }
             const year = date.getFullYear();
-            const match = year === currentYear;
+            const match = year === filterYear;
             return match;
         });
         console.log('年过滤结果：', filteredData.length, '条');
     } else if (currentTimeRange === '月') {
-        // 月：获取 2026 年 3 月数据
+        // 月：获取最新日期所在月份的数据
         console.log('开始月过滤...');
         let debugCount = 0;
         filteredData = data.filter(item => {
@@ -373,7 +416,7 @@ function filterDataByTimeRange(data) {
             }
             const year = date.getFullYear();
             const month = date.getMonth() + 1;
-            const match = year === currentYear && month === currentMonth;
+            const match = year === filterYear && month === filterMonth;
             
             // 调试：打印前 5 条数据的日期信息
             if (debugCount < 5) {
@@ -385,15 +428,46 @@ function filterDataByTimeRange(data) {
         });
         console.log('月过滤结果：', filteredData.length, '条');
     } else if (currentTimeRange === '日') {
-        // 日：获取最新一天的数据（2026 年 3 月 6 日）
-        // 先找到最新的日期
-        const latestDate = findLatestDate(data);
-        console.log('最新日期:', latestDate);
+        // 日：获取最新一天的数据
+        // 注意：如果数据中没有最新日期的记录，则返回所有数据（用于区域筛选后的情况）
+        console.log('最新日期:', latestDateStr);
+        
+        // 标准化日期格式（将 - 替换为 /，确保格式一致）
+        const normalizedLatestDate = latestDateStr ? latestDateStr.replace(/-/g, '/') : null;
+        console.log('标准化后的最新日期:', normalizedLatestDate);
+        
         filteredData = data.filter(item => {
             const dateStr = getItemDate(item);
             if (!dateStr) return false;
-            return dateStr === latestDate;
+            // 标准化数据中的日期格式后再比较
+            const normalizedDateStr = dateStr.replace(/-/g, '/');
+            return normalizedDateStr === normalizedLatestDate;
         });
+        
+        // 如果过滤后数据为空，说明筛选后的数据不包含最新日期
+        // 此时返回所有筛选后的数据，而不是空数组
+        if (filteredData.length === 0 && data.length > 0) {
+            console.warn('筛选后的数据不包含最新日期，返回所有筛选数据');
+            const availableDates = [...new Set(data.map(item => getItemDate(item)))].sort();
+            console.log('筛选数据中的日期范围:', availableDates);
+            console.log('期望的日期格式:', normalizedLatestDate, '实际日期格式示例:', availableDates[0]);
+            
+            // 尝试从筛选后的数据中找到最新日期
+            const latestInFiltered = findLatestDate(data);
+            console.log('筛选数据中的最新日期:', latestInFiltered);
+            
+            if (latestInFiltered) {
+                const normalizedLatestInFiltered = latestInFiltered.replace(/-/g, '/');
+                filteredData = data.filter(item => {
+                    const dateStr = getItemDate(item);
+                    if (!dateStr) return false;
+                    return dateStr.replace(/-/g, '/') === normalizedLatestInFiltered;
+                });
+                console.log('使用筛选数据中的最新日期重新过滤，结果:', filteredData.length, '条');
+            } else {
+                filteredData = data;
+            }
+        }
     } else {
         // 默认返回所有数据
         filteredData = data;
@@ -473,19 +547,58 @@ function generateTrendData(data) {
 
 // 生成模拟数据（备用）
 function generateMockData() {
+    // 生成与API格式一致的模拟数据
+    // 日期范围：2026-03-01 到 2026-03-20
+    const mockData = [];
+    const districts = ['天宁区', '钟楼区', '新北区', '武进区', '经开区'];
+    const meters = ['电表1', '电表2', '电表3', '电表4', '电表5'];
+    const usageTypes = ['直供电', '转供电'];
+    const owners = ['自有', '移动', '铁塔'];
+    
+    for (let day = 1; day <= 20; day++) {
+        for (let i = 0; i < 2; i++) { // 每天每个区县2条记录
+            const district = districts[Math.floor(Math.random() * districts.length)];
+            const meter = meters[Math.floor(Math.random() * meters.length)];
+            const usageType = usageTypes[Math.floor(Math.random() * usageTypes.length)];
+            const owner = owners[Math.floor(Math.random() * owners.length)];
+            const energy = Math.floor(Math.random() * 1000) + 500; // 500-1500 kWh
+            const cost = Math.round(energy * 0.5); // 电费约为能耗的一半
+            
+            mockData.push({
+                'A': `2026-03-${String(day).padStart(2, '0')}`, // 日期
+                'AB': energy, // 能耗（度数）
+                'AC': cost, // 电费
+                'J': district, // 区县
+                'B': meter, // 电表
+                'K': usageType, // 用电类型
+                'I': owner, // 归属
+                'overview_poi_count': Math.floor(Math.random() * 50) + 10, // POI数量：10-60
+                'overview_device_count': Math.floor(Math.random() * 30) + 5, // 设备数量：5-35
+                'mobile_cumulative_energy': Math.random() > 0.5 ? Math.floor(energy * 0.6) : 0,
+                'mobile_electricity_fee': Math.random() > 0.5 ? Math.round(cost * 0.6) : 0,
+                'tower_cumulative_energy': Math.random() > 0.5 ? Math.floor(energy * 0.4) : 0,
+                'tower_electricity_fee': Math.random() > 0.5 ? Math.round(cost * 0.4) : 0,
+                'direct_power_supply_energy': Math.random() > 0.5 ? Math.floor(energy * 0.7) : 0,
+                'direct_power_supply_cost': Math.random() > 0.5 ? Math.round(cost * 0.7) : 0,
+                'indirect_power_supply_energy': Math.random() > 0.5 ? Math.floor(energy * 0.3) : 0,
+                'indirect_power_supply_cost': Math.random() > 0.5 ? Math.round(cost * 0.3) : 0,
+                'mobile_poi_count': Math.floor(Math.random() * 30) + 5,
+                'tower_poi_count': Math.floor(Math.random() * 20) + 3
+            });
+        }
+    }
+    
+    // 计算总体POI和设备数量（取最新日期的所有记录的汇总值）
+    const latestDateRecords = mockData.filter(item => item['A'] === '2026-03-20');
+    const totalPoiCount = latestDateRecords.reduce((sum, item) => sum + (item['overview_poi_count'] || 0), 0);
+    const totalDeviceCount = latestDateRecords.reduce((sum, item) => sum + (item['overview_device_count'] || 0), 0);
+    
     return {
-        energyData: [
-            { ab: 1200, ac: 600, l: '天宁区', b: '电表 1', type: '直供电' },
-            { ab: 800, ac: 400, l: '天宁区', b: '电表 2', type: '转供电' },
-            { ab: 1500, ac: 750, l: '钟楼区', b: '电表 3', type: '直供电' },
-            { ab: 900, ac: 450, l: '钟楼区', b: '电表 4', type: '新能源' },
-            { ab: 1800, ac: 900, l: '新北区', b: '电表 5', type: '直供电' },
-            { ab: 1100, ac: 550, l: '新北区', b: '电表 6', type: '转供电' },
-            { ab: 1300, ac: 650, l: '武进区', b: '电表 7', type: '直供电' },
-            { ab: 700, ac: 350, l: '武进区', b: '电表 8', type: '新能源' },
-            { ab: 1600, ac: 800, l: '经开区', b: '电表 9', type: '直供电' },
-            { ab: 1000, ac: 500, l: '经开区', b: '电表 10', type: '转供电' }
-        ],
+        rawData: mockData,
+        energyData: mockData,
+        latestDate: '2026-03-20',
+        totalPoiCount: totalPoiCount,
+        totalDeviceCount: totalDeviceCount,
         reportData: {
             rent: {
                 total: 120,
@@ -499,18 +612,18 @@ function generateMockData() {
             }
         },
         trendData: [
-            { month: '1 月', cost: 5000 },
-            { month: '2 月', cost: 5200 },
-            { month: '3 月', cost: 4800 },
-            { month: '4 月', cost: 5500 },
-            { month: '5 月', cost: 6000 },
-            { month: '6 月', cost: 6500 },
-            { month: '7 月', cost: 7000 },
-            { month: '8 月', cost: 7200 },
-            { month: '9 月', cost: 6800 },
-            { month: '10 月', cost: 6200 },
-            { month: '11 月', cost: 5800 },
-            { month: '12 月', cost: 5500 }
+            { month: '1月', cost: 5000, energy: 10000 },
+            { month: '2月', cost: 5200, energy: 10400 },
+            { month: '3月', cost: 4800, energy: 9600 },
+            { month: '4月', cost: 5500, energy: 11000 },
+            { month: '5月', cost: 6000, energy: 12000 },
+            { month: '6月', cost: 6500, energy: 13000 },
+            { month: '7月', cost: 7000, energy: 14000 },
+            { month: '8月', cost: 7200, energy: 14400 },
+            { month: '9月', cost: 6800, energy: 13600 },
+            { month: '10月', cost: 6200, energy: 12400 },
+            { month: '11月', cost: 5800, energy: 11600 },
+            { month: '12月', cost: 5500, energy: 11000 }
         ]
     };
 }
@@ -613,21 +726,53 @@ function updateEnergyOverview(data) {
     console.log('设置 total-cost-display 元素文本为:', roundedCost.toLocaleString('zh-CN'));
     
     // 计算 POI 总数（使用 API 返回的 overview_poi_count）
-    const totalPoi = energyData.reduce((sum, item) => {
-        return sum + Number(item['overview_poi_count'] || 0);
-    }, 0);
-    console.log('POI 总数 (overview_poi_count):', totalPoi);
+    // 日维度：对最新日期的所有记录的 overview_poi_count 字段进行求和
+    // 月维度和年维度：取第一条记录的值（因为这是汇总数据）
+    const timeRange = getTimeRange();
+    const overviewCounts = calculateOverviewCountsByTimeRange(energyData, timeRange);
+    const totalPoi = overviewCounts.totalPoi;
+    console.log('POI 总数 (overview_poi_count):', totalPoi, '时间维度:', timeRange);
     document.getElementById('total-poi').textContent = totalPoi;
 
     // 计算设备总数（使用 API 返回的 overview_device_count）
-    const totalDevice = energyData.reduce((sum, item) => {
-        return sum + Number(item['overview_device_count'] || 0);
-    }, 0);
-    console.log('设备总数 (overview_device_count):', totalDevice);
+    // 日维度：对最新日期的所有记录的 overview_device_count 字段进行求和
+    // 月维度和年维度：取第一条记录的值（因为这是汇总数据）
+    const totalDevice = overviewCounts.totalDevice;
+    console.log('设备总数 (overview_device_count):', totalDevice, '时间维度:', timeRange);
     document.getElementById('total-device').textContent = totalDevice;
     
     // 计算环比数据
     calculateAndDisplayChanges(rawData, totalEnergy, totalCost, totalPoi, totalDevice);
+}
+
+function calculateOverviewCountsByTimeRange(energyData, timeRange) {
+    if (!Array.isArray(energyData) || energyData.length === 0) {
+        return { totalPoi: 0, totalDevice: 0 };
+    }
+
+    if (timeRange === '日') {
+        const totalPoi = energyData.reduce((sum, item) => sum + Number(item['overview_poi_count'] || 0), 0);
+        const totalDevice = energyData.reduce((sum, item) => sum + Number(item['overview_device_count'] || 0), 0);
+        return { totalPoi, totalDevice };
+    }
+
+    const latestDate = findLatestDate(energyData);
+    if (!latestDate) {
+        const totalPoi = energyData.reduce((sum, item) => sum + Number(item['overview_poi_count'] || 0), 0);
+        const totalDevice = energyData.reduce((sum, item) => sum + Number(item['overview_device_count'] || 0), 0);
+        return { totalPoi, totalDevice };
+    }
+
+    const latestDateNormalized = latestDate.replace(/-/g, '/');
+    const latestRows = energyData.filter(item => {
+        const itemDate = getItemDate(item);
+        return itemDate && itemDate.replace(/-/g, '/') === latestDateNormalized;
+    });
+
+    const sourceRows = latestRows.length > 0 ? latestRows : energyData;
+    const totalPoi = sourceRows.reduce((sum, item) => sum + Number(item['overview_poi_count'] || 0), 0);
+    const totalDevice = sourceRows.reduce((sum, item) => sum + Number(item['overview_device_count'] || 0), 0);
+    return { totalPoi, totalDevice };
 }
 
 // 从 API 获取汇总数据（用于快速更新总览数据）
@@ -680,13 +825,51 @@ function calculateAndDisplayChanges(rawData, currentEnergy, currentCost, current
 
     // 获取完整日期范围数据（用于环比计算）
     const fullDateRangeData = window.originalDataCache || window.rawDataCache || rawData || [];
+    console.log('fullDateRangeData 数据条数:', fullDateRangeData.length);
+    console.log('rawData 数据条数:', rawData ? rawData.length : 0);
+    console.log('window.rawDataCache 数据条数数:', window.rawDataCache ? window.rawDataCache.length : 0);
+    console.log('window.originalDataCache 数据条数:', window.originalDataCache ? window.originalDataCache.length : 0);
+    
+    // 打印 fullDateRangeData 的日期范围
+    if (fullDateRangeData.length > 0) {
+        const dates = fullDateRangeData.map(item => item['A']).filter(d => d);
+        const minDate = dates.reduce((a, b) => a < b ? a : b);
+        const maxDate = dates.reduce((a, b) => a > b ? a : b);
+        console.log('fullDateRangeData 日期范围:', minDate, '至', maxDate);
+    }
 
     // 获取当前筛选的区域信息
     const currentRegion = currentSelectedDistrict || '';
     const isGridFilter = currentRegion.includes('网格');
 
     if (timeRange === '年') {
-        // 年维度：计算2026年与2025年的数据对比
+        // 年维度：计算最新日期所在年份与上年的数据对比
+        // 找到最新日期
+        let latestDate = null;
+        let latestDateObj = null;
+        
+        rawData.forEach(item => {
+            const dateStr = item['A'] || '';
+            if (dateStr) {
+                const dateObj = parseDate(dateStr);
+                if (dateObj && (!latestDateObj || dateObj > latestDateObj)) {
+                    latestDateObj = dateObj;
+                    latestDate = dateStr;
+                }
+            }
+        });
+        
+        if (!latestDateObj) {
+            console.warn('无法找到最新日期');
+            return;
+        }
+        
+        const currentYear = latestDateObj.getFullYear();
+        const previousYear = currentYear - 1;
+        
+        console.log('当前年份:', currentYear);
+        console.log('上年年份:', previousYear);
+        
         const filterByRegion = (data) => {
             if (!isGridFilter) return data;
             return data.filter(item => {
@@ -697,52 +880,167 @@ function calculateAndDisplayChanges(rawData, currentEnergy, currentCost, current
 
         const currentYearData = filterByRegion(rawData.filter(item => {
             const dateStr = item['A'] || '';
-            return dateStr.startsWith('2026');
+            return dateStr.startsWith(String(currentYear));
         }));
 
         const previousYearData = filterByRegion(fullDateRangeData.filter(item => {
             const dateStr = item['A'] || '';
-            return dateStr.startsWith('2025');
+            return dateStr.startsWith(String(previousYear));
         }));
 
-        console.log('2026 年数据条数:', currentYearData.length, '2025 年数据条数:', previousYearData.length);
+        console.log(`${currentYear}年数据条数:`, currentYearData.length, `${previousYear}年数据条数:`, previousYearData.length);
 
         previousEnergy = previousYearData.reduce((sum, item) => sum + Number(item['AB'] || item['ab'] || 0), 0);
         previousCost = previousYearData.reduce((sum, item) => sum + Number(item['AC'] || item['ac'] || 0), 0);
-        previousPoi = previousYearData.reduce((sum, item) => sum + Number(item['overview_poi_count'] || 0), 0);
-        previousDevice = previousYearData.reduce((sum, item) => sum + Number(item['overview_device_count'] || 0), 0);
+        
+        // POI 和设备数量是汇总值，不应该累加，应该取第一条记录的值
+        if (previousYearData.length > 0) {
+            previousPoi = Number(previousYearData[0]['overview_poi_count'] || 0);
+            previousDevice = Number(previousYearData[0]['overview_device_count'] || 0);
+        } else {
+            previousPoi = 0;
+            previousDevice = 0;
+        }
 
     } else if (timeRange === '月') {
-        // 月维度：计算2026年3月与2026年2月的数据对比
-        const filterByRegion = (data) => {
-            if (!isGridFilter) return data;
-            return data.filter(item => {
-                const grid = item['GRID'] || '';
-                return grid.includes(currentRegion.replace(/网格/g, '')) || grid.includes(currentRegion);
+        // 月维度：计算当月1日到最新日期的累计 vs 上月1日到上月对应日期的累计
+        // 例如：3月1日-3月20日 vs 2月1日-2月20日
+        // 找到最新日期
+        let latestDate = null;
+        let latestDateObj = null;
+        
+        rawData.forEach(item => {
+            const dateStr = item['A'] || '';
+            if (dateStr) {
+                const dateObj = parseDate(dateStr);
+                if (dateObj && (!latestDateObj || dateObj > latestDateObj)) {
+                    latestDateObj = dateObj;
+                    latestDate = dateStr;
+                }
+            }
+        });
+        
+        if (!latestDateObj) {
+            console.warn('无法找到最新日期');
+            return;
+        }
+        
+        const currentYear = latestDateObj.getFullYear();
+        const currentMonth = latestDateObj.getMonth() + 1;
+        const currentDay = latestDateObj.getDate();
+        
+        // 计算上月对应日期
+        const previousMonthDate = new Date(latestDateObj);
+        previousMonthDate.setMonth(previousMonthDate.getMonth() - 1);
+        const previousYear = previousMonthDate.getFullYear();
+        const previousMonth = previousMonthDate.getMonth() + 1;
+        const previousDay = Math.min(currentDay, new Date(previousYear, previousMonth, 0).getDate());
+        
+        console.log('月维度环比：当月累计 vs 上月同期累计');
+        console.log('当月范围:', currentYear + '年' + String(currentMonth).padStart(2, '0') + '月01日 至 ' + currentYear + '年' + String(currentMonth).padStart(2, '0') + '月' + String(currentDay).padStart(2, '0') + '日');
+        console.log('上月同期范围:', previousYear + '年' + String(previousMonth).padStart(2, '0') + '月01日 至 ' + previousYear + '年' + String(previousMonth).padStart(2, '0') + '月' + String(previousDay).padStart(2, '0') + '日');
+        console.log('当前区域筛选:', currentRegion);
+        
+        if (rawData.length > 0) {
+            const sample = rawData[0];
+            console.log('rawData 示例数据:', {
+                date: sample['A'],
+                district: sample['J'],
+                grid: sample['GRID'],
+                energy: sample['AB']
             });
+        }
+        
+        const filterByRegion = (data) => {
+            if (!currentRegion) return data;
+            const filtered = data.filter(item => {
+                const grid = item['GRID'] || '';
+                const district = item['J'] || '';
+                const match = grid.includes(currentRegion.replace(/网格/g, '')) || 
+                             grid.includes(currentRegion) ||
+                             district.includes(currentRegion);
+                return match;
+            });
+            console.log('filterByRegion 结果:', '输入', data.length, '条', '输出', filtered.length, '条');
+            return filtered;
         };
 
-        const currentMonthData = filterByRegion(rawData.filter(item => {
+        // 获取当月1日到最新日期的累计数据
+        // 使用 fullDateRangeData 而不是 rawData，确保包含完整数据
+        const currentMonthCumulativeData = filterByRegion(fullDateRangeData.filter(item => {
             const dateStr = item['A'] || '';
             const dateObj = parseDate(dateStr);
-            return dateObj && dateObj.getFullYear() === 2026 && (dateObj.getMonth() + 1) === 3;
+            return dateObj && 
+                   dateObj.getFullYear() === currentYear && 
+                   (dateObj.getMonth() + 1) === currentMonth &&
+                   dateObj.getDate() <= currentDay;
         }));
 
-        const previousMonthData = filterByRegion(fullDateRangeData.filter(item => {
+        // 获取上月1日到上月对应日期的累计数据
+        const previousPeriodData = filterByRegion(fullDateRangeData.filter(item => {
             const dateStr = item['A'] || '';
             const dateObj = parseDate(dateStr);
-            return dateObj && dateObj.getFullYear() === 2026 && (dateObj.getMonth() + 1) === 2;
+            return dateObj && 
+                   dateObj.getFullYear() === previousYear && 
+                   (dateObj.getMonth() + 1) === previousMonth &&
+                   dateObj.getDate() <= previousDay;
         }));
 
-        console.log('3 月数据条数:', currentMonthData.length, '2 月数据条数:', previousMonthData.length);
+        console.log('当月累计数据条数:', currentMonthCumulativeData.length, '上月同期累计数据条数:', previousPeriodData.length);
 
-        previousEnergy = previousMonthData.reduce((sum, item) => sum + Number(item['AB'] || item['ab'] || 0), 0);
-        previousCost = previousMonthData.reduce((sum, item) => sum + Number(item['AC'] || item['ac'] || 0), 0);
-        previousPoi = previousMonthData.reduce((sum, item) => sum + Number(item['overview_poi_count'] || 0), 0);
-        previousDevice = previousMonthData.reduce((sum, item) => sum + Number(item['overview_device_count'] || 0), 0);
+        // 计算当期值：当月1日到最新日期的累计
+        currentEnergy = currentMonthCumulativeData.reduce((sum, item) => sum + Number(item['AB'] || item['ab'] || 0), 0);
+        currentCost = currentMonthCumulativeData.reduce((sum, item) => sum + Number(item['AC'] || item['ac'] || 0), 0);
+        
+        // 当期 POI 和设备数量：取最新日期的汇总值
+        if (currentMonthCumulativeData.length > 0) {
+            const latestDateRecords = currentMonthCumulativeData.filter(item => {
+                return item['A'] === latestDate;
+            });
+            currentPoi = latestDateRecords.reduce((sum, item) => sum + Number(item['overview_poi_count'] || 0), 0);
+            currentDevice = latestDateRecords.reduce((sum, item) => sum + Number(item['overview_device_count'] || 0), 0);
+        } else {
+            currentPoi = 0;
+            currentDevice = 0;
+        }
+        
+        // 计算上期值：上月1日到上月对应日期的累计
+        previousEnergy = previousPeriodData.reduce((sum, item) => sum + Number(item['AB'] || item['ab'] || 0), 0);
+        previousCost = previousPeriodData.reduce((sum, item) => sum + Number(item['AC'] || item['ac'] || 0), 0);
+        
+        // 上期 POI 和设备数量：取上月对应日期的汇总值
+        if (previousPeriodData.length > 0) {
+            // 找到上月数据中的最大日期（不超过对应日期）
+            let maxPreviousDate = null;
+            previousPeriodData.forEach(item => {
+                const dateStr = item['A'] || '';
+                if (dateStr && (!maxPreviousDate || dateStr > maxPreviousDate)) {
+                    maxPreviousDate = dateStr;
+                }
+            });
+            
+            if (maxPreviousDate) {
+                const maxDateRecords = previousPeriodData.filter(item => {
+                    return item['A'] === maxPreviousDate;
+                });
+                previousPoi = maxDateRecords.reduce((sum, item) => sum + Number(item['overview_poi_count'] || 0), 0);
+                previousDevice = maxDateRecords.reduce((sum, item) => sum + Number(item['overview_device_count'] || 0), 0);
+            } else {
+                previousPoi = 0;
+                previousDevice = 0;
+            }
+        } else {
+            previousPoi = 0;
+            previousDevice = 0;
+        }
+        
+        console.log('当月累计能耗:', currentEnergy, '上月同期累计能耗:', previousEnergy);
+        console.log('当月累计电费:', currentCost, '上月同期累计电费:', previousCost);
+        console.log('当月 POI:', currentPoi, '上月同期 POI:', previousPoi);
+        console.log('当月设备:', currentDevice, '上月同期设备:', previousDevice);
 
     } else if (timeRange === '日') {
-        // 日维度：计算当天与上月同一天的数据对比
+        // 日维度：计算当日值 vs 上月当日值（单日对比单日）
         // 找到最新日期
         let latestDate = null;
         let latestDateObj = null;
@@ -771,51 +1069,76 @@ function calculateAndDisplayChanges(rawData, currentEnergy, currentCost, current
             const currentMonth = latestDateObj.getMonth() + 1;
             const currentDay = latestDateObj.getDate();
 
-            // 计算上月同一天
+            // 计算上月对应日期
             const previousMonthDate = new Date(latestDateObj);
             previousMonthDate.setMonth(previousMonthDate.getMonth() - 1);
             const previousYear = previousMonthDate.getFullYear();
             const previousMonth = previousMonthDate.getMonth() + 1;
+            const previousDay = Math.min(currentDay, new Date(previousYear, previousMonth, 0).getDate());
 
-            console.log('对比日期:', previousYear + '-' + String(previousMonth).padStart(2, '0') + '-' + String(currentDay).padStart(2, '0'));
+            const previousDayStr = `${previousYear}-${String(previousMonth).padStart(2, '0')}-${String(previousDay).padStart(2, '0')}`;
+            
+            console.log('日维度环比：当日 vs 上月当日');
+            console.log('当日:', latestDate);
+            console.log('上月当日:', previousDayStr);
 
-            // 获取当天数据（3 月 20 日）
-            const currentDayData = rawData.filter(item => {
+            // 获取当日数据
+            const currentDayData = fullDateRangeData.filter(item => {
                 const dateStr = item['A'] || '';
-                const dateObj = parseDate(dateStr);
-                return dateObj &&
-                       dateObj.getFullYear() === currentYear &&
-                       (dateObj.getMonth() + 1) === currentMonth &&
-                       dateObj.getDate() === currentDay;
+                const grid = item['GRID'] || '';
+                const district = item['J'] || '';
+                
+                const dateMatch = dateStr === latestDate;
+                
+                // 检查是否匹配区域（区县或网格）
+                const regionMatch = !currentRegion || 
+                                   grid.includes(currentRegion.replace(/网格/g, '')) || 
+                                   grid.includes(currentRegion) ||
+                                   district.includes(currentRegion);
+                
+                return dateMatch && regionMatch;
             });
 
-            // 获取上月同一天的数据（2 月 20 日），使用完整日期范围数据
-            // 注意：也需要按区域过滤，保持与当期数据的一致性
+            // 获取上月当日数据
             const previousDayData = fullDateRangeData.filter(item => {
                 const dateStr = item['A'] || '';
-                const dateObj = parseDate(dateStr);
                 const grid = item['GRID'] || '';
-
-                const dateMatch = dateObj &&
-                       dateObj.getFullYear() === previousYear &&
-                       (dateObj.getMonth() + 1) === previousMonth &&
-                       dateObj.getDate() === currentDay;
-
-                // 如果当期数据有网格筛选，上期数据也要应用相同的筛选
-                if (isGridFilter && currentRegion) {
-                    return dateMatch && (grid.includes(currentRegion.replace(/网格/g, '')) || grid.includes(currentRegion));
-                }
-                return dateMatch;
+                const district = item['J'] || '';
+                
+                const dateMatch = dateStr === previousDayStr;
+                
+                // 检查是否匹配区域（区县或网格）
+                const regionMatch = !currentRegion || 
+                                   grid.includes(currentRegion.replace(/网格/g, '')) || 
+                                   grid.includes(currentRegion) ||
+                                   district.includes(currentRegion);
+                
+                return dateMatch && regionMatch;
             });
 
-            console.log('当天数据条数:', currentDayData.length);
-            console.log('上月同天数据条数:', previousDayData.length);
+            console.log('当日数据条数:', currentDayData.length);
+            console.log('上月当日数据条数:', previousDayData.length);
 
-            // 计算上月同天的各项总计
+            // 计算当日值
+            currentEnergy = currentDayData.reduce((sum, item) => sum + Number(item['AB'] || item['ab'] || 0), 0);
+            currentCost = currentDayData.reduce((sum, item) => sum + Number(item['AC'] || item['ac'] || 0), 0);
+            
+            // 当日 POI 和设备数量
+            currentPoi = currentDayData.reduce((sum, item) => sum + Number(item['overview_poi_count'] || 0), 0);
+            currentDevice = currentDayData.reduce((sum, item) => sum + Number(item['overview_device_count'] || 0), 0);
+            
+            // 计算上月当日值
             previousEnergy = previousDayData.reduce((sum, item) => sum + Number(item['AB'] || item['ab'] || 0), 0);
             previousCost = previousDayData.reduce((sum, item) => sum + Number(item['AC'] || item['ac'] || 0), 0);
+            
+            // 上月当日 POI 和设备数量
             previousPoi = previousDayData.reduce((sum, item) => sum + Number(item['overview_poi_count'] || 0), 0);
             previousDevice = previousDayData.reduce((sum, item) => sum + Number(item['overview_device_count'] || 0), 0);
+            
+            console.log('当期能耗:', currentEnergy, '上期能耗:', previousEnergy);
+            console.log('当期电费:', currentCost, '上期电费:', previousCost);
+            console.log('当期 POI:', currentPoi, '上期 POI:', previousPoi);
+            console.log('当期设备:', currentDevice, '上期设备:', previousDevice);
         }
     }
     
@@ -830,6 +1153,18 @@ function calculateAndDisplayChanges(rawData, currentEnergy, currentCost, current
     const poiChange = calculateChangePercent(currentPoi, previousPoi);
     const deviceChange = calculateChangePercent(currentDevice, previousDevice);
     
+    console.log('=== 环比计算结果 ===');
+    console.log('能耗环比:', energyChange, '类型:', typeof energyChange);
+    console.log('电费环比:', costChange, '类型:', typeof costChange);
+    console.log('POI环比:', poiChange, '类型:', typeof poiChange);
+    console.log('设备环比:', deviceChange, '类型:', typeof deviceChange);
+    
+    // 测试手动计算
+    if (previousEnergy > 0) {
+        const manualEnergyChange = ((currentEnergy - previousEnergy) / previousEnergy * 100).toFixed(2);
+        console.log('手动计算能耗环比:', manualEnergyChange);
+    }
+    
     // 更新显示
     updateChangeDisplay('energy-change', energyChange);
     updateChangeDisplay('cost-change', costChange);
@@ -839,10 +1174,17 @@ function calculateAndDisplayChanges(rawData, currentEnergy, currentCost, current
 
 // 计算变化百分比
 function calculateChangePercent(current, previous) {
-    if (previous === 0 || previous === null || previous === undefined) {
+    console.log('calculateChangePercent 被调用，current:', current, '类型:', typeof current, 'previous:', previous, '类型:', typeof previous);
+    
+    if (previous === 0 || previous === null || previous === undefined || isNaN(previous)) {
+        console.log('返回 null，因为 previous 无效');
         return null; // 没有上期数据，返回 null
     }
-    return ((current - previous) / previous * 100).toFixed(2);
+    
+    const change = (current - previous) / previous * 100;
+    const result = change.toFixed(2);
+    console.log('计算结果:', result);
+    return result;
 }
 
 // 更新环比显示
@@ -896,9 +1238,6 @@ function updateReportOverview(data) {
 
 // 更新图表
 function updateCharts(data) {
-    // 更新用电量分项统计图表
-    updateElectricityChart(data);
-
     // 更新用电方分类饼图（移动/铁塔）
     if (typeof updateConsumerTypeChart === 'function') {
         updateConsumerTypeChart(data);
@@ -926,3 +1265,5 @@ window.generateMockData = generateMockData;
 window.clearDataCache = clearDataCache;
 window.filterDataByTimeRange = filterDataByTimeRange;
 window.generateTrendData = generateTrendData;
+window.calculateOverviewCountsByTimeRange = calculateOverviewCountsByTimeRange;
+window.calculateAndDisplayChanges = calculateAndDisplayChanges;
