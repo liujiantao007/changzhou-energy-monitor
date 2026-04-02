@@ -98,6 +98,29 @@ function initNavigation() {
     // 导航点击事件
     navItems.forEach(item => {
         item.addEventListener('click', function(e) {
+            const href = this.getAttribute('href');
+            
+            // 外部链接：在 iframe 中加载
+            if (this.classList.contains('external-link')) {
+                e.preventDefault();
+                
+                // 移除所有导航项的 active 类
+                navItems.forEach(nav => nav.classList.remove('active'));
+                this.classList.add('active');
+                
+                // 隐藏所有页面
+                pages.forEach(page => page.classList.remove('active'));
+                
+                // 显示报账管理页面
+                const targetPage = document.getElementById('报账管理');
+                if (targetPage) {
+                    targetPage.classList.add('active');
+                    // 在 iframe 中加载外部 URL
+                    loadIframePage('baozhang-frame', href);
+                }
+                return;
+            }
+            
             e.preventDefault();
             
             // 移除所有导航项的 active 类
@@ -337,9 +360,9 @@ function initTimeSelectors() {
                 if (typeof setTimeRange === 'function') {
                     setTimeRange(timeRange);
                 }
-                // 重新加载数据（会根据新的时间维度加载正确的数据范围）
+                // 重新加载趋势图专用数据（会根据新的时间维度加载正确的数据范围）
                 reloadDataForTrendChart(timeRange);
-                return;
+                // 注意：这里不再直接 return，而是继续执行后面的全局数据加载逻辑
             }
             
             // 设置时间维度
@@ -515,189 +538,89 @@ async function reloadDataWithoutLoading() {
 
                 if (summaryResult.success) {
                     console.log('汇总数据获取成功:', summaryResult);
-
-                    // 直接更新总览显示
-                    const roundedEnergy = Math.round(summaryResult.total_energy);
-                    const roundedCost = Math.round(summaryResult.total_cost);
-
-                    document.getElementById('total-energy').textContent = roundedEnergy.toLocaleString('zh-CN');
-                    document.getElementById('total-cost-display').textContent = roundedCost.toLocaleString('zh-CN');
-
-                    console.log('设置总能耗:', roundedEnergy.toLocaleString('zh-CN'));
-                    console.log('设置总电费:', roundedCost.toLocaleString('zh-CN'));
-
-                    // 从 summaryResult 获取 POI 和设备数量
-                    if (summaryResult.total_poi_count !== undefined) {
-                        document.getElementById('total-poi').textContent = summaryResult.total_poi_count;
-                    }
-                    if (summaryResult.total_device_count !== undefined) {
-                        document.getElementById('total-device').textContent = summaryResult.total_device_count;
-                    }
-
-                    // 计算并更新环比数据
-                    const currentEnergy = summaryResult.total_energy;
-                    const currentCost = summaryResult.total_cost;
-                    const currentPoi = summaryResult.total_poi_count || 0;
-                    const currentDevice = summaryResult.total_device_count || 0;
-                    const lastDate = summaryResult.last_date; // 当前月份的最后一天
-
-                    // 计算上期日期范围
-                    let prevDateFrom, prevDateTo;
-                    let prevDayForPoiDevice; // 用于 POI/设备 环比的日期
-
+                    
+                    // 对于月视图，我们不应该直接更新DOM，而是应该：
+                    // 1. 从 API 获取详细数据 (summary_data)
+                    // 2. 过滤数据
+                    // 3. 使用 processData 处理数据
+                    // 这样可以确保与日视图的处理方式一致
+                    
+                    // 重新构建日期范围：月视图需要加载上月和当月的数据，才能计算环比
+                    // 例如：3月视图应该加载2月和3月的数据
+                    let extendedDateFrom = dateFrom;
                     if (currentTimeRangeValue === '月') {
-                        // 上月日期范围（用于能耗和电费的环比 - 这些是累计值，需要完整月份对比）
-                        const prevMonthDate = new Date(currentYear, currentMonth - 2, 1);
-                        const prevYear = prevMonthDate.getFullYear();
-                        const prevMonth = prevMonthDate.getMonth() + 1;
-                        const lastDayOfPrevMonth = new Date(prevYear, prevMonth, 0).getDate();
-
-                        prevDateFrom = `${prevYear}-${String(prevMonth).padStart(2, '0')}-01`;
-                        prevDateTo = `${prevYear}-${String(prevMonth).padStart(2, '0')}-${String(lastDayOfPrevMonth).padStart(2, '0')}`;
-
-                        // 对于 POI/设备 环比，使用上月同一天（或上月最后一天）
-                        let currentDay = 1;
-                        if (lastDate) {
-                            currentDay = parseInt(lastDate.split('-')[2], 10);
-                        }
-                        prevDayForPoiDevice = Math.min(currentDay, lastDayOfPrevMonth);
-                    } else {
-                        // 上年日期范围
-                        prevDateFrom = `${currentYear - 1}-01-01`;
-                        prevDateTo = `${currentYear - 1}-12-31`;
-                        prevDayForPoiDevice = null;
+                        const startDateObj = new Date(dateFrom);
+                        startDateObj.setMonth(startDateObj.getMonth() - 1); // 再提前一个月
+                        const extYear = startDateObj.getFullYear();
+                        const extMonth = startDateObj.getMonth() + 1;
+                        extendedDateFrom = `${extYear}-${String(extMonth).padStart(2, '0')}-01`;
+                        console.log('月视图：扩展数据范围，从上月开始', extendedDateFrom, '至', dateTo);
                     }
-
-                    let prevSummaryUrl = API_BASE + `/summary?date_from=${prevDateFrom}&date_to=${prevDateTo}`;
+                    let detailedApiUrl = API_BASE + `/summary_data?date_from=${extendedDateFrom}&date_to=${dateTo}`;
                     if (currentDistrict) {
                         if (currentDistrict.includes('网格')) {
-                            prevSummaryUrl += `&grid=${encodeURIComponent(currentDistrict)}`;
+                            detailedApiUrl += `&grid=${encodeURIComponent(currentDistrict)}`;
                         } else {
-                            prevSummaryUrl += `&district=${encodeURIComponent(currentDistrict)}`;
+                            detailedApiUrl += `&district=${encodeURIComponent(currentDistrict)}`;
                         }
                     }
-                    console.log('获取上期数据用于环比:', prevSummaryUrl);
-
-                    try {
-                        const prevResponse = await fetch(prevSummaryUrl);
-                        const prevResult = await prevResponse.json();
-
-                        if (prevResult.success) {
-                            let previousEnergy, previousCost, previousPoi, previousDevice;
-
-                            if (currentTimeRangeValue === '月' && prevDayForPoiDevice) {
-                                // 对于月视图，需要分别获取：
-                                // 1. 上月完整月份的能耗和电费（累计值）
-                                // 2. 上月同一天（或最后一天）的 POI 和设备数量（时点值）
-                                previousEnergy = prevResult.total_energy;
-                                previousCost = prevResult.total_cost;
-
-                                // 获取上月同天的 POI/设备 数据
-                                const prevMonthDate = new Date(currentYear, currentMonth - 2, 1);
-                                const prevYear = prevMonthDate.getFullYear();
-                                const prevMonth = prevMonthDate.getMonth() + 1;
-                                const prevDayUrl = `${prevYear}-${String(prevMonth).padStart(2, '0')}-${String(prevDayForPoiDevice).padStart(2, '0')}`;
-
-                                let poiDeviceUrl = API_BASE + `/summary?date_from=${prevDayUrl}&date_to=${prevDayUrl}`;
-                                if (currentDistrict) {
-                                    if (currentDistrict.includes('网格')) {
-                                        poiDeviceUrl += `&grid=${encodeURIComponent(currentDistrict)}`;
-                                    } else {
-                                        poiDeviceUrl += `&district=${encodeURIComponent(currentDistrict)}`;
-                                    }
-                                }
-
-                                try {
-                                    const poiDeviceResponse = await fetch(poiDeviceUrl);
-                                    const poiDeviceResult = await poiDeviceResponse.json();
-                                    if (poiDeviceResult.success) {
-                                        previousPoi = poiDeviceResult.total_poi_count || 0;
-                                        previousDevice = poiDeviceResult.total_device_count || 0;
-                                    }
-                                } catch (e) {
-                                    console.error('获取上月同日POI/设备数据失败:', e);
-                                    previousPoi = 0;
-                                    previousDevice = 0;
-                                }
-                            } else {
-                                previousEnergy = prevResult.total_energy;
-                                previousCost = prevResult.total_cost;
-                                previousPoi = prevResult.total_poi_count || 0;
-                                previousDevice = prevResult.total_device_count || 0;
-                            }
-
-                            console.log('上期能耗:', previousEnergy, '本期能耗:', currentEnergy);
-                            console.log('上期电费:', previousCost, '本期电费:', currentCost);
-                            console.log('上期POI:', previousPoi, '本期POI:', currentPoi);
-                            console.log('上期设备:', previousDevice, '本期设备:', currentDevice);
-
-                            // 计算环比百分比
-                            // 对于年视图：
-                            // - 能耗和电费：使用完整年份对比
-                            // - POI和设备：使用去年12月31日与今年最后一天的数据对比（时点值）
-                            let energyChange, costChange, poiChange, deviceChange;
-
-                            if (currentTimeRangeValue === '年') {
-                                const currentRecordCount = summaryResult.record_count || 0;
-                                const prevRecordCount = prevResult.record_count || 0;
-
-                                // 能量和电费：使用完整年份对比
-                                energyChange = calculateChangePercent(currentEnergy, previousEnergy);
-                                costChange = calculateChangePercent(currentCost, previousCost);
-
-                                // POI和设备：获取去年12月31日的数据
-                                const prevYearDec31 = `${currentYear - 1}-12-31`;
-                                let poiDeviceUrl = API_BASE + `/summary?date_from=${prevYearDec31}&date_to=${prevYearDec31}`;
-                                if (currentDistrict) {
-                                    if (currentDistrict.includes('网格')) {
-                                        poiDeviceUrl += `&grid=${encodeURIComponent(currentDistrict)}`;
-                                    } else {
-                                        poiDeviceUrl += `&district=${encodeURIComponent(currentDistrict)}`;
-                                    }
-                                }
-
-                                try {
-                                    const poiDeviceResponse = await fetch(poiDeviceUrl);
-                                    const poiDeviceResult = await poiDeviceResponse.json();
-                                    if (poiDeviceResult.success) {
-                                        const prevYearPoi = poiDeviceResult.total_poi_count || 0;
-                                        const prevYearDevice = poiDeviceResult.total_device_count || 0;
-
-                                        console.log('去年12月31日POI:', prevYearPoi, '去年12月31日设备:', prevYearDevice);
-                                        console.log('今年POI:', currentPoi, '今年设备:', currentDevice);
-
-                                        poiChange = calculateChangePercent(currentPoi, prevYearPoi);
-                                        deviceChange = calculateChangePercent(currentDevice, prevYearDevice);
-                                    }
-                                } catch (e) {
-                                    console.error('获取去年12月31日POI/设备数据失败:', e);
-                                    poiChange = null;
-                                    deviceChange = null;
-                                }
-
-                                // 如果去年数据明显不完整，不显示能耗和电费的环比
-                                if (prevRecordCount < currentRecordCount * 0.5) {
-                                    console.log('去年数据不完整（', prevRecordCount, '条），不显示能耗和电费环比');
-                                    energyChange = null;
-                                    costChange = null;
-                                }
-                            } else {
-                                energyChange = calculateChangePercent(currentEnergy, previousEnergy);
-                                costChange = calculateChangePercent(currentCost, previousCost);
-                                poiChange = calculateChangePercent(currentPoi, previousPoi);
-                                deviceChange = calculateChangePercent(currentDevice, previousDevice);
-                            }
-
-                            // 更新环比显示
-                            updateChangeDisplay('energy-change', energyChange);
-                            updateChangeDisplay('cost-change', costChange);
-                            updateChangeDisplay('poi-change', poiChange);
-                            updateChangeDisplay('device-change', deviceChange);
+                    
+                    console.log('月视图：加载详细数据', detailedApiUrl);
+                    
+                    const detailedResponse = await fetch(detailedApiUrl);
+                    const detailedResult = await detailedResponse.json();
+                    
+                    if (detailedResult.success) {
+                        const processedData = detailedResult.data;
+                        const latestDate = detailedResult.latest_date;
+                        
+                        console.log('详细数据加载成功，数据条数:', processedData.length);
+                        console.log('最新有效日期:', latestDate);
+                        
+                        // 缓存原始数据
+                        window.rawDataCache = processedData;
+                        
+                        // 根据当前时间维度过滤数据
+                        const filteredData = filterDataByTimeRange(processedData);
+                        
+                        // 构建数据对象
+                        const data = {
+                            rawData: processedData,
+                            energyData: filteredData,
+                            latestDate: latestDate,
+                            reportData: {
+                                rent: { total: 0, pending: 0, completed: 0 },
+                                electricity: { total: 0, pending: 0, completed: 0 }
+                            },
+                            trendData: generateTrendData(processedData)
+                        };
+                        
+                        // 处理数据（与日视图一致的方式）
+                        processData(data);
+                        
+                        // 更新能耗趋势图
+                        if (typeof updateEnergyTrendChart === 'function') {
+                            updateEnergyTrendChart(data, currentTimeRangeValue);
                         }
-                    } catch (error) {
-                        console.error('获取上期数据失败:', error);
+                        
+                        // 更新标题显示当前区域
+                        updateTitleWithDistrict(currentDistrict);
+                        
+                        // 计算并更新环比数据（使用详细数据计算，确保准确性）
+                        const currentEnergy = filteredData.reduce((sum, item) => sum + Number(item['AB'] || item['ab'] || 0), 0);
+                        const currentCost = filteredData.reduce((sum, item) => sum + Number(item['AC'] || item['ac'] || 0), 0);
+                        const overviewCounts = calculateOverviewCountsByTimeRange(filteredData, currentTimeRangeValue);
+                        const currentPoi = overviewCounts.totalPoi;
+                        const currentDevice = overviewCounts.totalDevice;
+                        
+                        // 调用环比计算函数
+                        calculateAndDisplayChanges(processedData, currentEnergy, currentCost, currentPoi, currentDevice);
                     }
 
+                    // 注：环比数据已在上面的详细数据处理中计算，不再重复计算
+                    // 以下代码已移至上面，确保使用详细数据计算环比
+
+                    // 计算上期日期范围
                     // 更新趋势图
                     if (typeof updateEnergyTrendChart === 'function') {
                         // 月视图/年视图：重新加载对应时间范围的数据
@@ -783,57 +706,77 @@ async function reloadDataWithoutLoading() {
         }
         console.log('日视图：加载详细数据', apiUrl);
 
-        const response = await fetch(apiUrl);
-        const result = await response.json();
+        try {
+            const response = await fetch(apiUrl);
+            const result = await response.json();
 
-        if (!result.success) {
-            console.error('API 返回错误:', result.error);
-            return;
+            if (!result.success) {
+                console.error('API 返回错误:', result.error);
+                return;
+            }
+
+            const processedData = result.data;
+            const latestDate = result.latest_date;
+
+            console.log('API 数据加载成功，数据条数:', processedData.length);
+            console.log('最新有效日期:', latestDate);
+
+            // 缓存原始数据
+            window.rawDataCache = processedData;
+            
+            // 重要：更新全局最新日期，确保 filterDataByTimeRange 能正确过滤
+            window.latestDate = latestDate;
+
+            // 根据当前时间维度过滤数据
+            const filteredData = filterDataByTimeRange(processedData);
+
+            // 构建数据对象
+            const data = {
+                rawData: processedData,
+                energyData: filteredData,
+                latestDate: latestDate,
+                reportData: {
+                    rent: { total: 0, pending: 0, completed: 0 },
+                    electricity: { total: 0, pending: 0, completed: 0 }
+                },
+                trendData: generateTrendData(processedData)
+            };
+
+            // 处理数据
+            processData(data);
+
+            // 更新能耗趋势图
+            if (typeof updateEnergyTrendChart === 'function') {
+                updateEnergyTrendChart(data, currentTimeRangeValue);
+            }
+
+            // 更新标题显示当前区域
+            updateTitleWithDistrict(currentDistrict);
+
+        } catch (error) {
+            console.error('重新加载数据失败:', error);
+            
+            // 区分不同类型的错误并提供友好的提示
+            if (error.message === 'Failed to fetch' || error.name === 'TypeError') {
+                console.warn('API服务器连接失败，请检查服务器是否启动');
+            } else {
+                console.error('数据处理错误:', error.message);
+            }
         }
-
-        const processedData = result.data;
-        const latestDate = result.latest_date;
-
-        console.log('API 数据加载成功，数据条数:', processedData.length);
-        console.log('最新有效日期:', latestDate);
-
-        // 缓存原始数据
-        window.rawDataCache = processedData;
-
-        // 根据当前时间维度过滤数据
-        const filteredData = filterDataByTimeRange(processedData);
-
-        // 构建数据对象
-        const data = {
-            rawData: processedData,
-            energyData: filteredData,
-            latestDate: latestDate,
-            reportData: {
-                rent: { total: 0, pending: 0, completed: 0 },
-                electricity: { total: 0, pending: 0, completed: 0 }
-            },
-            trendData: generateTrendData(processedData)
-        };
-
-        // 处理数据
-        processData(data);
-
-        // 更新能耗趋势图
-        if (typeof updateEnergyTrendChart === 'function') {
-            updateEnergyTrendChart(data, currentTimeRangeValue);
-        }
-
-        // 更新标题显示当前区域
-        updateTitleWithDistrict(currentDistrict);
-
     } catch (error) {
-        console.error('重新加载数据失败:', error);
+        console.error('reloadDataWithoutLoading 函数执行失败:', error);
     }
 }
 
 // 使用筛选后的数据重新加载图表
 function reloadDataWithFilter(filteredData, district) {
     console.log('使用筛选数据重新加载图表，区域:', district, '数据量:', filteredData.length);
+
+    // 检查数据是否有效
+    if (!filteredData || filteredData.length === 0) {
+        console.warn('筛选数据为空，跳过图表更新');
+        return;
+    }
 
     try {
         // 根据当前时间维度过滤数据
@@ -1099,7 +1042,12 @@ function loadAlarms() {
         })
         .catch(error => {
             console.error('加载告警数据失败:', error);
-            alarmList.innerHTML = '<div class="alarm-error"><span>加载失败: ' + error.message + '</span></div>';
+            // 区分不同类型的错误
+            if (error.message === 'Failed to fetch' || error.name === 'TypeError') {
+                alarmList.innerHTML = '<div class="alarm-error"><span>无法连接到服务器</span><button onclick="loadAlarms()" class="retry-btn">重试</button></div>';
+            } else {
+                alarmList.innerHTML = '<div class="alarm-error"><span>加载失败: ' + error.message + '</span></div>';
+            }
         });
 }
 
@@ -1563,7 +1511,12 @@ function loadEvents() {
         })
         .catch(error => {
             console.error('加载事件数据失败:', error);
-            eventList.innerHTML = '<div class="alarm-error"><span>加载失败: ' + error.message + '</span></div>';
+            // 区分不同类型的错误
+            if (error.message === 'Failed to fetch' || error.name === 'TypeError') {
+                eventList.innerHTML = '<div class="alarm-error"><span>无法连接到服务器</span><button onclick="loadEvents()" class="retry-btn">重试</button></div>';
+            } else {
+                eventList.innerHTML = '<div class="alarm-error"><span>加载失败: ' + error.message + '</span></div>';
+            }
         });
 }
 

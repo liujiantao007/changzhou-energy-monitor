@@ -62,7 +62,7 @@ function updateElectricityChart(data) {
     console.log('更新用电量分项统计图表...');
     
     if (!charts.electricityChart) {
-        console.error('用电量分项统计图表实例不存在');
+        console.warn('用电量分项统计图表实例不存在，跳过更新');
         return;
     }
     
@@ -177,7 +177,7 @@ function updatePoiChart(data) {
     console.log('更新 POI 分项统计图表...');
 
     if (!charts.poiChart) {
-        console.error('POI 分项统计图表实例不存在');
+        console.warn('POI 分项统计图表实例不存在，跳过更新');
         return;
     }
 
@@ -333,7 +333,7 @@ function updateElectricityTypeChart(data) {
     };
 
     if (!charts.electricityTypeChart) {
-        console.error('用电类型统计图表实例不存在');
+        console.warn('用电类型统计图表实例不存在，跳过更新');
         return;
     }
 
@@ -630,6 +630,20 @@ function updateEnergyTrendChart(data, timeType) {
         latestDate = window.latestDate;
     }
 
+    // 应用区域筛选
+    const currentRegion = window.getCurrentDistrict ? window.getCurrentDistrict() : '';
+    if (currentRegion) {
+        console.log('能耗趋势图应用区域筛选:', currentRegion);
+        rawData = rawData.filter(item => {
+            const grid = item['GRID'] || '';
+            const district = item['J'] || '';
+            return grid.includes(currentRegion.replace(/网格/g, '')) || 
+                   grid.includes(currentRegion) ||
+                   district.includes(currentRegion);
+        });
+        console.log('区域筛选后数据条数:', rawData.length);
+    }
+    
     console.log('能耗趋势图接收数据 - rawData 条数:', rawData.length, '时间维度:', currentTrendTimeType, '最新日期:', latestDate);
     if (rawData.length > 0 && rawData.length <= 10) {
         console.log('能耗趋势图原始数据内容:', rawData.map(item => ({ date: item['A'], energy: item['AB'], cost: item['AC'] })));
@@ -945,7 +959,7 @@ function updateConsumerTypeChart(data) {
     console.log('更新用电方分类饼图...');
 
     if (!charts.consumerTypeChart) {
-        console.error('用电方分类饼图实例不存在');
+        console.warn('用电方分类饼图实例不存在，跳过更新');
         return;
     }
 
