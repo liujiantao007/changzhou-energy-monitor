@@ -1299,9 +1299,6 @@ function updateCharts(data) {
 
     // 更新能耗趋势图
     updateEnergyTrendChart(data);
-
-    // 更新地图
-    updateMap(data);
 }
 
 // 导出数据处理函数
