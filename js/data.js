@@ -48,6 +48,71 @@ function getTimeRange() {
 }
 
 // 从 API 加载数据
+function processAndResolveData(result, resolve) {
+    const processedData = result.data;
+    const latestDate = result.latest_date;
+
+    console.log('处理后的数据条数:', processedData.length);
+    console.log('最新有效日期:', latestDate);
+    if (processedData.length > 0) {
+        console.log('第一条数据:', processedData[0]);
+    }
+
+    // 缓存原始数据
+    rawDataCache = processedData;
+    
+    // 保存原始完整数据到全局缓存（只在首次加载时保存)
+    if (!window.originalDataCache || window.originalDataCache.length === 0) {
+        window.originalDataCache = processedData;
+        console.log('保存原始完整数据缓存,数据量:', window.originalDataCache.length);
+        
+        // 检查是否包含 GRID 字段
+        if (window.originalDataCache.length > 0) {
+            const firstItem = window.originalDataCache[0];
+            console.log('第一条数据检查:', {
+                date: firstItem['A'],
+                district: firstItem['J'],
+                grid: firstItem['GRID'],
+                energy: firstItem['AB'],
+                cost: firstItem['AC']
+            });
+        }
+    }
+    
+    // 保存当前使用的数据（用于其他图表）
+    window.rawDataCache = processedData;
+    console.log('当前数据缓存，数据量:', window.rawDataCache.length);
+    console.log('数据示例（前3条):', window.rawDataCache.slice(0, 3).map(item => ({ date: item['A'], energy: item['AB'] })));
+    
+    // 保存最新日期到全局变量（用于趋势图）
+    if (latestDate) {
+        window.latestDate = latestDate;
+        console.log('保存最新日期:', window.latestDate);
+    }
+    
+    // 根据当前时间维度过滤数据
+    const filteredData = filterDataByTimeRange(processedData);
+
+    resolve({
+        rawData: processedData,
+        energyData: filteredData,
+        latestDate: latestDate,
+        reportData: {
+            rent: {
+                total: 120,
+                pending: 30,
+                completed: 90
+            },
+            electricity: {
+                total: 150,
+                pending: 45,
+                completed: 105
+            }
+        },
+        trendData: generateTrendData(processedData)
+    });
+}
+
 function loadExcelData() {
     return new Promise((resolve, reject) => {
         const now = new Date();
@@ -71,14 +136,45 @@ function loadExcelData() {
             apiUrl = API_BASE + `/summary_data?date_from=${yearStart}&date_to=${yearEnd}`;
             console.log('年视图：加载', yearStart, '至', yearEnd, '数据');
         } else {
-            // 日视图：加载最近 60 天的数据，确保覆盖图表显示的 30 天范围
-            const now = new Date();
-            const startDate = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
-            const startDateStr = `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, '0')}-${String(startDate.getDate()).padStart(2, '0')}`;
-            const endDateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-            apiUrl = API_BASE + `/summary_data?date_from=${startDateStr}&date_to=${endDateStr}`;
-            console.log('日视图（初始加载）：加载最近 60 天数据', startDateStr, '至', endDateStr);
-            console.log('当前时间:', now.toISOString(), '60 天前:', startDate.toISOString());
+            // 日视图：先获取最新日期，再以最新日期为基准加载60天数据
+            console.log('日视图：先获取最新日期...');
+            fetch(API_BASE + '/latest_valid_date')
+                .then(response => response.json())
+                .then(result => {
+                    if (result.success && result.latest_date) {
+                        const latestDateStr = result.latest_date;
+                        console.log('数据库最新日期:', latestDateStr);
+                        
+                        const latestDate = parseDate(latestDateStr);
+                        if (latestDate) {
+                            const startDate = new Date(latestDate.getTime() - 60 * 24 * 60 * 60 * 1000);
+                            const startDateStr = `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, '0')}-${String(startDate.getDate()).padStart(2, '0')}`;
+                            const endDateStr = latestDateStr;
+                            
+                            const dayApiUrl = API_BASE + `/summary_data?date_from=${startDateStr}&date_to=${endDateStr}`;
+                            console.log('日视图（以最新日期为基准）：加载', startDateStr, '至', endDateStr, '数据');
+                            
+                            return fetch(dayApiUrl).then(response => response.json());
+                        }
+                    }
+                    // 如果获取最新日期失败，使用系统时间
+                    const fallbackStart = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
+                    const fallbackStartStr = `${fallbackStart.getFullYear()}-${String(fallbackStart.getMonth() + 1).padStart(2, '0')}-${String(fallbackStart.getDate()).padStart(2, '0')}`;
+                    const fallbackEndStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+                    console.log('日视图（回退方案）：加载', fallbackStartStr, '至', fallbackEndStr, '数据');
+                    return fetch(API_BASE + `/summary_data?date_from=${fallbackStartStr}&date_to=${fallbackEndStr}`).then(response => response.json());
+                })
+                .then(result => {
+                    if (!result.success) {
+                        throw new Error(result.error || 'API 返回错误');
+                    }
+                    processAndResolveData(result, resolve);
+                })
+                .catch(error => {
+                    console.error('日视图数据加载失败:', error);
+                    reject(error);
+                });
+            return;
         }
         
         console.log('loadExcelData - API 完整地址：', apiUrl);
@@ -100,68 +196,7 @@ function loadExcelData() {
                     throw new Error(result.error || 'API 返回错误');
                 }
 
-                const processedData = result.data;
-                const latestDate = result.latest_date;
-
-                console.log('处理后的数据条数:', processedData.length);
-                console.log('最新有效日期:', latestDate);
-                if (processedData.length > 0) {
-                    console.log('第一条数据:', processedData[0]);
-                }
-
-                // 缓存原始数据
-                rawDataCache = processedData;
-                
-                // 保存原始完整数据到全局缓存（只在首次加载时保存)
-                if (!window.originalDataCache || window.originalDataCache.length === 0) {
-                    window.originalDataCache = processedData;
-                    console.log('保存原始完整数据缓存,数据量:', window.originalDataCache.length);
-                    
-                    // 检查是否包含 GRID 字段
-                    if (window.originalDataCache.length > 0) {
-                        const firstItem = window.originalDataCache[0];
-                        console.log('第一条数据检查:', {
-                            date: firstItem['A'],
-                            district: firstItem['J'],
-                            grid: firstItem['GRID'],
-                            energy: firstItem['AB'],
-                            cost: firstItem['AC']
-                        });
-                    }
-                }
-                
-                // 保存当前使用的数据（用于其他图表）
-                window.rawDataCache = processedData;
-                console.log('当前数据缓存，数据量:', window.rawDataCache.length);
-                console.log('数据示例（前3条):', window.rawDataCache.slice(0, 3).map(item => ({ date: item['A'], energy: item['AB'] })));
-                
-                // 保存最新日期到全局变量（用于趋势图）
-                if (latestDate) {
-                    window.latestDate = latestDate;
-                    console.log('保存最新日期:', window.latestDate);
-                }
-                
-                // 根据当前时间维度过滤数据
-                const filteredData = filterDataByTimeRange(processedData);
-
-                resolve({
-                    rawData: processedData,
-                    energyData: filteredData,
-                    latestDate: latestDate,
-                    reportData: {
-                        rent: {
-                            total: 120,
-                            pending: 30,
-                            completed: 90
-                        },
-                        electricity: {
-                            total: 150,
-                            pending: 45,
-                            completed: 105
-                        }
-                    },
-                    trendData: generateTrendData(processedData)
-                });
+                processAndResolveData(result, resolve);
             })
             .catch(error => {
                 console.error('API 数据加载失败:', error);
