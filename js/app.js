@@ -370,8 +370,11 @@ function initTimeSelectors() {
                 setTimeRange(timeRange);
             }
             
-            // 重新过滤数据（保持当前区域选择）
-            reloadDataWithoutLoading();
+            // 只有日视图才调用 reloadDataWithoutLoading（它会获取60天数据）
+            // 月视图和年视图由 reloadDataForTrendChart 处理
+            if (timeRange === '日') {
+                reloadDataWithoutLoading();
+            }
         });
     });
     
@@ -380,12 +383,18 @@ function initTimeSelectors() {
 
 // 为能耗趋势图重新加载对应时间范围的数据
 async function reloadDataForTrendChart(timeRange) {
+    console.log('=== reloadDataForTrendChart 被调用 ===');
+    console.log('请求的时间维度:', timeRange);
+    console.log('当前 currentTimeRange:', typeof getCurrentTrendTimeType === 'function' ? getCurrentTrendTimeType() : 'undefined');
+    
     try {
         // 检查是否有原始完整数据缓存
         if (!window.originalDataCache || window.originalDataCache.length === 0) {
             console.log('原始完整数据缓存未设置，跳过趋势图数据重新加载');
             return;
         }
+        
+        console.log('原始数据缓存条数:', window.originalDataCache.length);
         
         // 使用数据库最新日期而非系统当前日期
         let baseDate = new Date();
