@@ -785,6 +785,26 @@ function reloadDataWithFilter(filteredData, district) {
         return;
     }
 
+    // 对于月视图和年视图，需要重新从API加载完整时间范围的数据
+    const currentTimeType = typeof getCurrentTrendTimeType === 'function'
+        ? getCurrentTrendTimeType()
+        : '日';
+
+    if (currentTimeType === '月' || currentTimeType === '年') {
+        console.log('月/年维度切换区域，重新加载API数据...');
+        // 调用 reloadDataForTrendChart 来重新从API加载完整时间范围的数据
+        if (typeof reloadDataForTrendChart === 'function') {
+            reloadDataForTrendChart(currentTimeType);
+        }
+        // 更新标题显示当前区域
+        updateTitleWithDistrict(district);
+        // 保持地图区域高亮状态
+        if (district && typeof updateMapHighlight === 'function') {
+            updateMapHighlight(district);
+        }
+        return;
+    }
+
     try {
         // 根据当前时间维度过滤数据
         const timeFilteredData = filterDataByTimeRange(filteredData);
@@ -812,23 +832,20 @@ function reloadDataWithFilter(filteredData, district) {
 
         // 处理数据
         processData(data);
-        
+
         // 更新能耗趋势图，使用当前选择的时间维度
         if (typeof updateEnergyTrendChart === 'function') {
-            const currentTimeType = typeof getCurrentTrendTimeType === 'function' 
-                ? getCurrentTrendTimeType() 
-                : '日';
             updateEnergyTrendChart(data, currentTimeType);
         }
-        
+
         // 更新标题显示当前区域
         updateTitleWithDistrict(district);
-        
+
         // 保持地图区域高亮状态
         if (district && typeof updateMapHighlight === 'function') {
             updateMapHighlight(district);
         }
-        
+
     } catch (error) {
         console.error('筛选数据加载失败:', error);
     }
