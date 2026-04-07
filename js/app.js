@@ -396,19 +396,26 @@ async function reloadDataForTrendChart(timeRange) {
             return;
         }
         
-        const now = new Date();
-        const currentYear = now.getFullYear();
-        const currentMonth = now.getMonth() + 1;
+        // 使用数据库最新日期而非系统当前日期
+        let baseDate = new Date();
+        if (window.latestDate) {
+            const parsedLatest = parseDate(window.latestDate);
+            if (parsedLatest) {
+                baseDate = parsedLatest;
+            }
+        }
+        const currentYear = baseDate.getFullYear();
+        const currentMonth = baseDate.getMonth() + 1;
         
         let dateFrom, dateTo;
         
         if (timeRange === '月') {
-            // 月视图：加载最近 12 个月的数据
+            // 月视图：加载最近 12 个月的数据（以数据库最新日期为准）
             const startDate = new Date(currentYear, currentMonth - 12, 1);
             dateFrom = `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, '0')}-01`;
             const endDate = new Date(currentYear, currentMonth, 0);
             dateTo = `${endDate.getFullYear()}-${String(endDate.getMonth() + 1).padStart(2, '0')}-${String(endDate.getDate()).padStart(2, '0')}`;
-            console.log('月视图：加载最近 12 个月数据', dateFrom, '至', dateTo);
+            console.log('月视图：加载最近 12 个月数据（基于数据库最新日期', window.latestDate, '）', dateFrom, '至', dateTo);
         } else if (timeRange === '年') {
             // 年视图：加载最近 12 年的数据
             dateFrom = `${currentYear - 11}-01-01`;
