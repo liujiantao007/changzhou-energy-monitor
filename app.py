@@ -56,9 +56,11 @@ def get_data():
             where_clauses.append("日期 <= %s")
             params.append(date_to)
 
+        # 统一处理区县名称（如果以“区”或“市”结尾，尝试去掉后进行匹配，以适应数据库中可能的简写）
         if district:
-            where_clauses.append("归属单元 = %s")
-            params.append(district)
+            district_short = district.rstrip('区').rstrip('市')
+            where_clauses.append("(归属单元 = %s OR 归属单元 = %s)")
+            params.extend([district, district_short])
 
         if grid:
             where_clauses.append("归属网格 = %s")
@@ -215,9 +217,13 @@ def get_summary_data():
                 where_clauses.append("stat_date <= %s")
                 params.append(date_to)
 
+        # 统一处理区县名称（如果以“区”或“市”结尾，尝试去掉后进行匹配，以适应数据库中可能的简写）
         if district:
-            where_clauses.append("district = %s")
-            params.append(district)
+            # 这里的逻辑可以根据实际数据库情况调整
+            # 如果数据库中存的是“新北”，而前端传的是“新北区”
+            district_short = district.rstrip('区').rstrip('市')
+            where_clauses.append("(district = %s OR district = %s)")
+            params.extend([district, district_short])
 
         if grid:
             where_clauses.append("grid = %s")
@@ -389,9 +395,11 @@ def get_summary():
                 where_clauses.append("stat_date <= %s")
                 params.append(date_to)
 
+        # 统一处理区县名称（如果以“区”或“市”结尾，尝试去掉后进行匹配，以适应数据库中可能的简写）
         if district:
-            where_clauses.append("district = %s")
-            params.append(district)
+            district_short = district.rstrip('区').rstrip('市')
+            where_clauses.append("(district = %s OR district = %s)")
+            params.extend([district, district_short])
 
         if grid:
             where_clauses.append("grid = %s")
@@ -431,16 +439,18 @@ def get_summary():
         energy_cost_result = cursor.fetchone()
 
         # 获取最后一天的 POI 和设备数量（时点数据，不累加整个月）
-        poi_device_sql = f"""
-            SELECT SUM(overview_poi_count) as total_poi_count,
-                   SUM(overview_device_count) as total_device_count
-            FROM energy_charge_daily_summary
-            WHERE stat_date = %s
-            {where_sql.replace('WHERE', 'AND')}
-        """
-        poi_device_params = [last_date] + params if last_date else params
-        cursor.execute(poi_device_sql, poi_device_params)
-        poi_device_result = cursor.fetchone()
+        poi_device_result = {'total_poi_count': 0, 'total_device_count': 0}
+        if last_date:
+            poi_device_sql = f"""
+                SELECT SUM(overview_poi_count) as total_poi_count,
+                       SUM(overview_device_count) as total_device_count
+                FROM energy_charge_daily_summary
+                WHERE stat_date = %s
+                {where_sql.replace('WHERE', 'AND')}
+            """
+            poi_device_params = [last_date] + params
+            cursor.execute(poi_device_sql, poi_device_params)
+            poi_device_result = cursor.fetchone() or poi_device_result
 
         cursor.close()
         conn.close()

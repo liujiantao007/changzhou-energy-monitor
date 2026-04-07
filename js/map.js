@@ -127,7 +127,12 @@ function initMap() {
             }
         ]};
         
-        mapChart.setOption(option, true); // true 表示不合并，完全替换
+        // 添加错误处理
+        try {
+            mapChart.setOption(option, true); // true 表示不合并，完全替换
+        } catch (error) {
+            console.warn('初始化地图选项时出错:', error.message);
+        }
         
         // 绑定地图点击事件
         mapChart.on('click', function(params) {
@@ -191,23 +196,27 @@ function initMap() {
         console.error('地图数据加载失败:', error);
         
         // 显示错误提示
-        mapChart.setOption({
-            title: {
-                text: '地图数据加载失败',
-                subtext: '请检查网络连接或刷新页面重试',
-                left: 'center',
-                top: 'center',
-                textStyle: {
-                    color: '#ff4d4f',
-                    fontSize: 16,
-                    fontWeight: 'bold'
-                },
-                subtextStyle: {
-                    color: '#666',
-                    fontSize: 12
+        try {
+            mapChart.setOption({
+                title: {
+                    text: '地图数据加载失败',
+                    subtext: '请检查网络连接或刷新页面重试',
+                    left: 'center',
+                    top: 'center',
+                    textStyle: {
+                        color: '#ff4d4f',
+                        fontSize: 16,
+                        fontWeight: 'bold'
+                    },
+                    subtextStyle: {
+                        color: '#666',
+                        fontSize: 12
+                    }
                 }
-            }
-        });
+            });
+        } catch (err) {
+            console.warn('显示错误提示时出错:', err.message);
+        }
     });
     
     // 窗口大小变化时重新调整地图大小
@@ -218,26 +227,17 @@ function initMap() {
             // 重新调整地图视图以适应新的尺寸
             setTimeout(() => {
                 if (mapChart) {
-                    mapChart.setOption({
-                        geo: {
-                            center: [119.72, 31.62],
-                            zoom: 1.2,
-                            itemStyle: {
-                                areaColor: 'rgba(255, 255, 255, 0.5)',
-                                borderColor: 'rgba(24, 144, 255, 0.5)',
-                                borderWidth: 1
-                            },
-                            emphasis: {
-                                itemStyle: {
-                                    areaColor: 'rgba(255, 214, 102, 0.5)'
-                                }
-                            }
-                        },
-                        series: [{
-                            center: [119.72, 31.62],
-                            zoom: 1.2
-                        }]
-                    });
+                    try {
+                        // 只更新 series 配置，不使用 geo 配置
+                        mapChart.setOption({
+                            series: [{
+                                center: [119.72, 31.62],
+                                zoom: 1.2
+                            }]
+                        });
+                    } catch (error) {
+                        console.warn('调整地图视图时出错:', error.message);
+                    }
                 }
             }, 200);
         }
@@ -390,13 +390,15 @@ function loadMapData() {
 function updateMap(data) {
     if (!mapChart) return;
     
-    const energyData = data.energyData || [];
-    
-    console.log('=== updateMap 被调用 ===');
-    console.log('energyData 数据量:', energyData.length);
-    if (energyData.length > 0) {
-        console.log('前 3 条数据:', energyData.slice(0, 3));
-    }
+    // 添加全局错误处理
+    try {
+        const energyData = data.energyData || [];
+        
+        console.log('=== updateMap 被调用 ===');
+        console.log('energyData 数据量:', energyData.length);
+        if (energyData.length > 0) {
+            console.log('前 3 条数据:', energyData.slice(0, 3));
+        }
     
     // 按区域统计能耗（支持区县和网格）
     const regionEnergy = {};
@@ -408,8 +410,6 @@ function updateMap(data) {
         const district = item['J'] || '';
         const region = grid || district;
         const energy = Number(item['AB'] || item['ab'] || 0) || 0;
-        
-        console.log('处理数据项 - 区域:', region, '网格:', grid, '区县:', district, '能耗:', energy);
         
         if (region) {
             if (regionEnergy[region]) {
@@ -499,6 +499,9 @@ function updateMap(data) {
                 resetDistrictFilter();
             }
         }, 500);
+    }
+    } catch (error) {
+        console.warn('更新地图时出错，跳过:', error.message);
     }
 }
 
