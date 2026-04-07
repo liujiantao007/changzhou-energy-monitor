@@ -372,15 +372,6 @@ function initTimeSelectors() {
             
             // 重新过滤数据（保持当前区域选择）
             reloadDataWithoutLoading();
-            
-            // 同时更新能耗趋势图
-            if (typeof updateEnergyTrendChart === 'function') {
-                const cachedData = {
-                    rawData: window.originalDataCache || window.rawDataCache || [],
-                    latestDate: window.latestDate || null
-                };
-                updateEnergyTrendChart(cachedData, timeRange);
-            }
         });
     });
     
@@ -605,11 +596,6 @@ async function reloadDataWithoutLoading() {
                         // 处理数据（与日视图一致的方式）
                         processData(data);
                         
-                        // 更新能耗趋势图
-                        if (typeof updateEnergyTrendChart === 'function') {
-                            updateEnergyTrendChart(data, currentTimeRangeValue);
-                        }
-                        
                         // 更新标题显示当前区域
                         updateTitleWithDistrict(currentDistrict);
                         
@@ -622,27 +608,6 @@ async function reloadDataWithoutLoading() {
                         
                         // 调用环比计算函数
                         calculateAndDisplayChanges(processedData, currentEnergy, currentCost, currentPoi, currentDevice);
-                    }
-
-                    // 注：环比数据已在上面的详细数据处理中计算，不再重复计算
-                    // 以下代码已移至上面，确保使用详细数据计算环比
-
-                    // 计算上期日期范围
-                    // 更新趋势图
-                    if (typeof updateEnergyTrendChart === 'function') {
-                        // 月视图/年视图：重新加载对应时间范围的数据
-                        if (currentTimeRangeValue === '月' || currentTimeRangeValue === '年') {
-                            console.log('月/年视图：重新加载趋势图数据，时间维度:', currentTimeRangeValue);
-                            // 调用 reloadDataForTrendChart 重新加载正确的数据范围
-                            reloadDataForTrendChart(currentTimeRangeValue);
-                        } else {
-                            // 日视图：使用当前缓存
-                            const cachedData = {
-                                rawData: window.rawDataCache || [],
-                                latestDate: summaryResult.last_date || null
-                            };
-                            updateEnergyTrendChart(cachedData, currentTimeRangeValue);
-                        }
                     }
 
                     // 更新用电方分类饼图（双环：外环能耗，内环电费）
@@ -749,13 +714,8 @@ async function reloadDataWithoutLoading() {
                 trendData: generateTrendData(processedData)
             };
 
-            // 处理数据
+            // 处理数据（processData 内部会调用 updateEnergyTrendChart）
             processData(data);
-
-            // 更新能耗趋势图
-            if (typeof updateEnergyTrendChart === 'function') {
-                updateEnergyTrendChart(data, currentTimeRangeValue);
-            }
 
             // 更新标题显示当前区域
             updateTitleWithDistrict(currentDistrict);
@@ -830,13 +790,8 @@ function reloadDataWithFilter(filteredData, district) {
             latestDate: window.latestDate || null // 使用全局保存的最新日期
         };
 
-        // 处理数据
+        // 处理数据（processData 内部会调用 updateEnergyTrendChart）
         processData(data);
-
-        // 更新能耗趋势图，使用当前选择的时间维度
-        if (typeof updateEnergyTrendChart === 'function') {
-            updateEnergyTrendChart(data, currentTimeType);
-        }
 
         // 更新标题显示当前区域
         updateTitleWithDistrict(district);
