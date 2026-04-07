@@ -820,8 +820,8 @@ async function fetchSummaryDataFromAPI() {
     
     if (currentTimeRange === '月') {
         dateFrom = `${currentYear}-${String(currentMonth).padStart(2, '0')}-01`;
-        const lastDayOfMonth = new Date(currentYear, currentMonth, 0).getDate();
-        dateTo = `${currentYear}-${String(currentMonth).padStart(2, '0')}-${String(lastDayOfMonth).padStart(2, '0')}`;
+        const endDate = new Date(currentYear, currentMonth, 0);
+        dateTo = `${endDate.getFullYear()}-${String(endDate.getMonth() + 1).padStart(2, '0')}-${String(endDate.getDate()).padStart(2, '0')}`;
     } else if (currentTimeRange === '年') {
         dateFrom = `${currentYear}-01-01`;
         dateTo = `${currentYear}-12-31`;

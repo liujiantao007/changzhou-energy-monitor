@@ -406,8 +406,8 @@ async function reloadDataForTrendChart(timeRange) {
             // 月视图：加载最近 12 个月的数据
             const startDate = new Date(currentYear, currentMonth - 12, 1);
             dateFrom = `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, '0')}-01`;
-            const lastDayOfMonth = new Date(currentYear, currentMonth, 0).getDate();
-            dateTo = `${currentYear}-${String(currentMonth).padStart(2, '0')}-${String(lastDayOfMonth).padStart(2, '0')}`;
+            const endDate = new Date(currentYear, currentMonth, 0);
+            dateTo = `${endDate.getFullYear()}-${String(endDate.getMonth() + 1).padStart(2, '0')}-${String(endDate.getDate()).padStart(2, '0')}`;
             console.log('月视图：加载最近 12 个月数据', dateFrom, '至', dateTo);
         } else if (timeRange === '年') {
             // 年视图：加载最近 12 年的数据
@@ -503,14 +503,14 @@ async function reloadDataWithoutLoading() {
                     const latestYear = latestDateObj.getFullYear();
                     const latestMonth = latestDateObj.getMonth() + 1;
                     dateFrom = `${latestYear}-${String(latestMonth).padStart(2, '0')}-01`;
-                    const lastDayOfMonth = new Date(latestYear, latestMonth, 0).getDate();
-                    dateTo = `${latestYear}-${String(latestMonth).padStart(2, '0')}-${String(lastDayOfMonth).padStart(2, '0')}`;
+                    const endDate = new Date(latestYear, latestMonth, 0);
+                    dateTo = `${endDate.getFullYear()}-${String(endDate.getMonth() + 1).padStart(2, '0')}-${String(endDate.getDate()).padStart(2, '0')}`;
                     console.log('月视图：使用数据库最新日期所在的月份', latestDate, '→', dateFrom, '至', dateTo);
                 } else {
                     // 如果没有最新日期，使用当前月份
                     dateFrom = `${currentYear}-${String(currentMonth).padStart(2, '0')}-01`;
-                    const lastDayOfMonth = new Date(currentYear, currentMonth, 0).getDate();
-                    dateTo = `${currentYear}-${String(currentMonth).padStart(2, '0')}-${String(lastDayOfMonth).padStart(2, '0')}`;
+                    const endDate = new Date(currentYear, currentMonth, 0);
+                    dateTo = `${endDate.getFullYear()}-${String(endDate.getMonth() + 1).padStart(2, '0')}-${String(endDate.getDate()).padStart(2, '0')}`;
                     console.log('月视图：使用当前月份', dateFrom, '至', dateTo);
                 }
             } else {
