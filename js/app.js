@@ -354,20 +354,20 @@ function initTimeSelectors() {
             const parent = this.closest('.time-selector');
             const parentId = parent ? parent.id : '';
             
-            // 如果是能耗趋势图的时间选择器，重新加载对应时间范围的数据
-            if (parentId === 'trend-time-selector') {
-                // 先更新时间维度
-                if (typeof setTimeRange === 'function') {
-                    setTimeRange(timeRange);
-                }
-                // 重新加载趋势图专用数据（会根据新的时间维度加载正确的数据范围）
-                reloadDataForTrendChart(timeRange);
-                // 注意：这里不再直接 return，而是继续执行后面的全局数据加载逻辑
-            }
-            
-            // 设置时间维度
+            // 先更新时间维度（确保在调用 reloadDataForTrendChart 之前完成）
             if (typeof setTimeRange === 'function') {
                 setTimeRange(timeRange);
+            }
+            
+            // 如果是能耗趋势图的时间选择器，重新加载对应时间范围的数据
+            if (parentId === 'trend-time-selector') {
+                // 重新加载趋势图专用数据（会根据新的时间维度加载正确的数据范围）
+                reloadDataForTrendChart(timeRange);
+            }
+            
+            // 日视图才调用 reloadDataWithoutLoading
+            if (timeRange === '日') {
+                reloadDataWithoutLoading();
             }
             
             // 只有日视图才调用 reloadDataWithoutLoading（它会获取60天数据）
