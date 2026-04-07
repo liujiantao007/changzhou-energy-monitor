@@ -354,13 +354,24 @@ function initTimeSelectors() {
             const parent = this.closest('.time-selector');
             const parentId = parent ? parent.id : '';
             
-            // 如果是能耗趋势图的时间选择器，只重新加载趋势图专用数据
-            if (parentId === 'trend-time-selector') {
+            // 对于月/年视图，所有时间选择器都调用 reloadDataForTrendChart 来重新加载数据
+            if (timeRange === '月' || timeRange === '年') {
                 // 先更新时间维度
                 if (typeof setTimeRange === 'function') {
                     setTimeRange(timeRange);
                 }
                 // 重新加载趋势图专用数据（会根据新的时间维度加载正确的数据范围）
+                reloadDataForTrendChart(timeRange);
+                return;
+            }
+            
+            // 对于日视图，如果是趋势图时间选择器，也调用 reloadDataForTrendChart
+            if (parentId === 'trend-time-selector') {
+                // 先更新时间维度
+                if (typeof setTimeRange === 'function') {
+                    setTimeRange(timeRange);
+                }
+                // 重新加载趋势图专用数据
                 reloadDataForTrendChart(timeRange);
                 return;
             }
