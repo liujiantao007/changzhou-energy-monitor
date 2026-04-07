@@ -907,9 +907,11 @@ function calculateAndDisplayChanges(rawData, currentEnergy, currentCost, current
         
         const filterByRegion = (data) => {
             if (!isGridFilter) return data;
+            const regionShort = currentRegion.replace(/区|市|网格/g, '');
             return data.filter(item => {
                 const grid = item['GRID'] || '';
-                return grid.includes(currentRegion.replace(/网格/g, '')) || grid.includes(currentRegion);
+                const gridShort = grid.replace(/区|市|网格/g, '');
+                return gridShort.includes(regionShort) || grid.includes(currentRegion);
             });
         };
 
@@ -988,11 +990,15 @@ function calculateAndDisplayChanges(rawData, currentEnergy, currentCost, current
         
         const filterByRegion = (data) => {
             if (!currentRegion) return data;
+            const regionShort = currentRegion.replace(/区|市|网格/g, '');
             const filtered = data.filter(item => {
                 const grid = item['GRID'] || '';
                 const district = item['J'] || '';
-                const match = grid.includes(currentRegion.replace(/网格/g, '')) || 
+                const gridShort = grid.replace(/区|市|网格/g, '');
+                const districtShort = district.replace(/区|市|网格/g, '');
+                const match = gridShort.includes(regionShort) || 
                              grid.includes(currentRegion) ||
+                             districtShort.includes(regionShort) ||
                              district.includes(currentRegion);
                 return match;
             });
@@ -1118,6 +1124,7 @@ function calculateAndDisplayChanges(rawData, currentEnergy, currentCost, current
             console.log('上月当日:', previousDayStr);
 
             // 获取当日数据
+            const regionShort = currentRegion.replace(/区|市|网格/g, '');
             const currentDayData = fullDateRangeData.filter(item => {
                 const dateStr = item['A'] || '';
                 const grid = item['GRID'] || '';
@@ -1126,9 +1133,12 @@ function calculateAndDisplayChanges(rawData, currentEnergy, currentCost, current
                 const dateMatch = dateStr === latestDate;
                 
                 // 检查是否匹配区域（区县或网格）
+                const gridShort = grid.replace(/区|市|网格/g, '');
+                const districtShort = district.replace(/区|市|网格/g, '');
                 const regionMatch = !currentRegion || 
-                                   grid.includes(currentRegion.replace(/网格/g, '')) || 
+                                   gridShort.includes(regionShort) || 
                                    grid.includes(currentRegion) ||
+                                   districtShort.includes(regionShort) ||
                                    district.includes(currentRegion);
                 
                 return dateMatch && regionMatch;
@@ -1143,9 +1153,12 @@ function calculateAndDisplayChanges(rawData, currentEnergy, currentCost, current
                 const dateMatch = dateStr === previousDayStr;
                 
                 // 检查是否匹配区域（区县或网格）
+                const gridShort = grid.replace(/区|市|网格/g, '');
+                const districtShort = district.replace(/区|市|网格/g, '');
                 const regionMatch = !currentRegion || 
-                                   grid.includes(currentRegion.replace(/网格/g, '')) || 
+                                   gridShort.includes(regionShort) || 
                                    grid.includes(currentRegion) ||
+                                   districtShort.includes(regionShort) ||
                                    district.includes(currentRegion);
                 
                 return dateMatch && regionMatch;

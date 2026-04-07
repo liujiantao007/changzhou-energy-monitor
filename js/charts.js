@@ -634,11 +634,15 @@ function updateEnergyTrendChart(data, timeType) {
     const currentRegion = window.getCurrentDistrict ? window.getCurrentDistrict() : '';
     if (currentRegion) {
         console.log('能耗趋势图应用区域筛选:', currentRegion);
+        const regionShort = currentRegion.replace(/区|市|网格/g, '');
         rawData = rawData.filter(item => {
             const grid = item['GRID'] || '';
             const district = item['J'] || '';
-            return grid.includes(currentRegion.replace(/网格/g, '')) || 
+            const gridShort = grid.replace(/区|市|网格/g, '');
+            const districtShort = district.replace(/区|市|网格/g, '');
+            return gridShort.includes(regionShort) || 
                    grid.includes(currentRegion) ||
+                   districtShort.includes(regionShort) ||
                    district.includes(currentRegion);
         });
         console.log('区域筛选后数据条数:', rawData.length);

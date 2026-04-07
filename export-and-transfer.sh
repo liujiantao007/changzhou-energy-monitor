@@ -11,7 +11,7 @@ echo ""
 
 # 配置
 IMAGE_NAME="changzhou-energy-monitor:latest"
-OUTPUT_DIR="~/docker-images"
+OUTPUT_DIR="$HOME/docker-images"
 REMOTE_HOST="root@10.38.78.228"
 REMOTE_PORT="2202"
 REMOTE_PATH="/home/user/docker-images"
