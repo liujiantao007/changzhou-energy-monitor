@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>地图CDN测试</title>
+<style>
+  body{background:#111;color:#fff;font-family:sans-serif;padding:20px}
+  #log{background:#000;color:#0f0;font:11px monospace;padding:10px;margin:10px;white-space:pre-wrap;max-height:200px;overflow-y:auto}
+  #map1{width:700px;height:450px;margin:10px;border:2px solid red;background:#113}
+  #map2{width:700px;height:450px;margin:10px;border:2px solid yellow;background:#113}
+  #bar{width:700px;height:300px;margin:10px;border:2px solid cyan;background:#113}
+</style>
+</head>
+<body>
+<h3>Step 1: 基础柱状图测试 (验证ECharts基本渲染)</h3>
+<div id="bar"></div>
+<h3>Step 2: CDN版地图测试</h3>
+<div id="map1"></div>
+<h3>Step 3: 本地版地图测试</h3>
+<div id="map2"></div>
+<div id="log"></div>
+
+<script>
+var L=document.getElementById('log');
+function log(m){L.textContent+=new Date().toLocaleTimeString()+' '+m+'\n';L.scrollTop=L.scrollHeight;console.log(m)}
+
+// Step 1: 测试柱状图
+log('加载CDN echarts...');
+var s1=document.createElement('script');
+s1.src='https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js';
+s1.onload=function(){
+  log('CDN echarts 加载完成 v'+echarts.version);
+  testBar();
+  testMap1();
+};
+s1.onerror=function(){
+  log('CDN加载失败，尝试本地');
+  testLocal();
+};
+document.head.appendChild(s1);
+
+function testBar(){
+  try{
+    var c=echarts.init(document.getElementById('bar'));
+    c.setOption({
+      xAxis:{data:['A','B','C']},
+      yAxis:{},
+      series:[{type:'bar',data:[30,50,80],itemStyle:{color:'#4a8ad4'}}]
+    });
+    log('柱状图 ✓ 渲染成功');
+  }catch(e){log('柱状图 ✗ '+e.message)}
+}
+
+function testMap1(){
+  try{
+    var gj={type:'FeatureCollection',features:[
+      {type:'Feature',properties:{name:'天宁'},geometry:{type:'Polygon',coordinates:[[[120.00,31.78],[120.06,31.78],[120.06,31.84],[120.00,31.84],[120.00,31.78]]]}},
+      {type:'Feature',properties:{name:'钟楼'},geometry:{type:'Polygon',coordinates:[[[119.88,31.78],[120.00,31.78],[120.00,31.84],[119.88,31.84],[119.88,31.78]]]}},
+      {type:'Feature',properties:{name:'新北'},geometry:{type:'Polygon',coordinates:[[[119.94,31.84],[120.06,31.84],[120.06,31.90],[119.94,31.90],[119.94,31.84]]]}}
+    ]};
+    var c=echarts.init(document.getElementById('map1'));
+    echarts.registerMap('cz1',gj);
+    c.setOption({
+      backgroundColor:'#1a2a4e',
+      series:[{type:'map',map:'cz1',
+        data:[{name:'天宁',value:300},{name:'钟楼',value:500},{name:'新北',value:200}],
+        label:{show:true,color:'#fff',fontSize:14},
+        itemStyle:{areaColor:'#4a8ad4',borderColor:'#fff',borderWidth:2},
+        emphasis:{itemStyle:{areaColor:'#ffd466'}},
+        zoom:1.2,center:[119.98,31.81],aspectScale:0.85
+      }]
+    });
+    log('地图1(CDN) ✓ 设置成功, 尺寸:'+c.getWidth()+'x'+c.getHeight());
+  }catch(e){log('地图1(CDN) ✗ '+e.message+'\n'+e.stack)}
+}
+
+function testLocal(){
+  log('使用本地 echarts');
+  var s2=document.createElement('script');
+  s2.src='js/libs/echarts.min.js';
+  s2.onload=function(){
+    log('本地 echarts v'+echarts.version);
+    testBar();
+    testMap2();
+  };
+  document.head.appendChild(s2);
+}
+
+function testMap2(){
+  try{
+    var gj={type:'FeatureCollection',features:[
+      {type:'Feature',properties:{name:'天宁'},geometry:{type:'Polygon',coordinates:[[[120.00,31.78],[120.06,31.78],[120.06,31.84],[120.00,31.84],[120.00,31.78]]]}},
+      {type:'Feature',properties:{name:'钟楼'},geometry:{type:'Polygon',coordinates:[[[119.88,31.78],[120.00,31.78],[120.00,31.84],[119.88,31.84],[119.88,31.78]]]}}
+    ]};
+    var c=echarts.init(document.getElementById('map2'));
+    echarts.registerMap('cz2',gj);
+    c.setOption({
+      backgroundColor:'#1a2a4e',
+      series:[{type:'map',map:'cz2',
+        data:[{name:'天宁',value:300},{name:'钟楼',value:500}],
+        label:{show:true,color:'#fff',fontSize:14},
+        itemStyle:{areaColor:'#4a8ad4',borderColor:'#0ff',borderWidth:3},
+        emphasis:{itemStyle:{areaColor:'#ffd466'}},
+        zoom:1.2,center:[119.98,31.81],aspectScale:0.85
+      }]
+    });
+    log('地图2(本地) ✓ 设置成功, 尺寸:'+c.getWidth()+'x'+c.getHeight());
+  }catch(e){log('地图2(本地) ✗ '+e.message+'\n'+e.stack)}
+}
+</script>
+</body>
+</html>
