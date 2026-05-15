@@ -18,11 +18,24 @@ db_config = {
     'read_timeout': 300
 }
 
+prod_alarm_config = {
+    'host': '10.38.78.228',
+    'port': 53306,
+    'user': 'Cmcc',
+    'password': 'Cmcc_123!',
+    'database': 'usmschis',
+    'charset': 'utf8mb4',
+    'connect_timeout': 30,
+    'read_timeout': 60
+}
+
 def get_db_connection():
     return pymysql.connect(**db_config)
 
+def get_prod_alarm_connection():
+    return pymysql.connect(**prod_alarm_config)
+
 def validate_date(date_str):
-    """验证日期格式是否有效"""
     if not date_str:
         return True, None
     try:
@@ -56,7 +69,6 @@ def get_data():
             where_clauses.append("日期 <= %s")
             params.append(date_to)
 
-        # 统一处理区县名称（如果以“区”或“市”结尾，尝试去掉后进行匹配，以适应数据库中可能的简写）
         if district:
             district_short = district.rstrip('区').rstrip('市')
             where_clauses.append("(归属单元 = %s OR 归属单元 = %s)")
@@ -148,7 +160,6 @@ def get_summary_data():
         grid = request.args.get('grid', None, type=str)
         latest_date_only = request.args.get('latest_date_only', 'false', type=str).lower() == 'true'
 
-        # 验证日期参数
         if date_from:
             is_valid, result = validate_date(date_from)
             if not is_valid:
@@ -217,10 +228,7 @@ def get_summary_data():
                 where_clauses.append("stat_date <= %s")
                 params.append(date_to)
 
-        # 统一处理区县名称（如果以“区”或“市”结尾，尝试去掉后进行匹配，以适应数据库中可能的简写）
         if district:
-            # 这里的逻辑可以根据实际数据库情况调整
-            # 如果数据库中存的是“新北”，而前端传的是“新北区”
             district_short = district.rstrip('区').rstrip('市')
             where_clauses.append("(district = %s OR district = %s)")
             params.extend([district, district_short])
@@ -237,7 +245,6 @@ def get_summary_data():
         cursor.execute(count_sql, params)
         total_count = cursor.fetchone()['total']
 
-        # 获取最新日期（用于日期范围查询）
         latest_date = None
         if date_from or date_to:
             date_range_sql = f"SELECT MAX(stat_date) as max_date FROM energy_charge_daily_summary{where_sql}"
@@ -371,7 +378,6 @@ def get_summary():
         where_clauses.append("district IS NOT NULL")
         where_clauses.append("grid IS NOT NULL")
 
-        # 如果没有指定日期范围，默认只查询最新日期的数据
         if not date_from and not date_to:
             latest_date_sql = """
                 SELECT DISTINCT stat_date
@@ -395,7 +401,6 @@ def get_summary():
                 where_clauses.append("stat_date <= %s")
                 params.append(date_to)
 
-        # 统一处理区县名称（如果以“区”或“市”结尾，尝试去掉后进行匹配，以适应数据库中可能的简写）
         if district:
             district_short = district.rstrip('区').rstrip('市')
             where_clauses.append("(district = %s OR district = %s)")
@@ -409,7 +414,6 @@ def get_summary():
         if where_clauses:
             where_sql = " WHERE " + " AND ".join(where_clauses)
 
-        # 获取日期范围内的最后一天
         last_day_sql = f"""
             SELECT MAX(stat_date) as last_date
             FROM energy_charge_daily_summary{where_sql}
@@ -418,7 +422,6 @@ def get_summary():
         last_day_result = cursor.fetchone()
         last_date = last_day_result['last_date'] if last_day_result and last_day_result['last_date'] else None
 
-        # 获取总能耗、总电费（按日期范围求和 - 这些是可以累加的）
         energy_cost_sql = f"""
             SELECT SUM(total_energy) as total_energy,
                    SUM(total_cost) as total_cost,
@@ -438,7 +441,6 @@ def get_summary():
         cursor.execute(energy_cost_sql, params)
         energy_cost_result = cursor.fetchone()
 
-        # 获取最后一天的 POI 和设备数量（时点数据，不累加整个月）
         poi_device_result = {'total_poi_count': 0, 'total_device_count': 0}
         if last_date:
             poi_device_sql = f"""
@@ -502,36 +504,122 @@ def health_check():
 
 @app.route('/api/alarms/latest_day', methods=['GET'])
 def get_alarms_latest_day():
+    try:
+        data_list = _get_alarms_from_production()
+        data_source = 'production'
+
+        if not data_list:
+            data_list = _get_alarms_from_local()
+            data_source = 'local'
+
+        latest_date = datetime.now().strftime('%Y-%m-%d')
+
+        return jsonify({
+            'success': True,
+            'data': data_list,
+            'count': len(data_list),
+            'latest_date': latest_date,
+            'data_source': data_source
+        })
+
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+def _get_alarms_from_production():
+    prod_sql = """
+        SELECT
+            tcd1.dict_note AS 级别,
+            a.alarm_time AS 告警时间,
+            CASE
+                WHEN TIMESTAMPDIFF(SECOND, a.alarm_time, NOW()) DIV 86400 > 0 THEN
+                    CONCAT(
+                        TIMESTAMPDIFF(SECOND, a.alarm_time, NOW()) DIV 86400, '天',
+                        (TIMESTAMPDIFF(SECOND, a.alarm_time, NOW()) % 86400) DIV 3600, '小时',
+                        (TIMESTAMPDIFF(SECOND, a.alarm_time, NOW()) % 3600) DIV 60, '分',
+                        TIMESTAMPDIFF(SECOND, a.alarm_time, NOW()) % 60, '秒'
+                    )
+                WHEN (TIMESTAMPDIFF(SECOND, a.alarm_time, NOW()) % 86400) DIV 3600 > 0 THEN
+                    CONCAT(
+                        (TIMESTAMPDIFF(SECOND, a.alarm_time, NOW()) % 86400) DIV 3600, '小时',
+                        (TIMESTAMPDIFF(SECOND, a.alarm_time, NOW()) % 3600) DIV 60, '分',
+                        TIMESTAMPDIFF(SECOND, a.alarm_time, NOW()) % 60, '秒'
+                    )
+                WHEN (TIMESTAMPDIFF(SECOND, a.alarm_time, NOW()) % 3600) DIV 60 > 0 THEN
+                    CONCAT(
+                        (TIMESTAMPDIFF(SECOND, a.alarm_time, NOW()) % 3600) DIV 60, '分',
+                        TIMESTAMPDIFF(SECOND, a.alarm_time, NOW()) % 60, '秒'
+                    )
+                ELSE
+                    CONCAT(TIMESTAMPDIFF(SECOND, a.alarm_time, NOW()) % 60, '秒')
+            END AS 告警时长,
+            tcp2.precinct_name AS 区域,
+            tcp1.precinct_name AS 机房,
+            tcd2.dict_note AS 站点类型,
+            b.device_name AS 设备名称,
+            tct.mete_name AS 监控量
+        FROM usmschis.t_his_alarmcurrent a
+        INNER JOIN usmsc.t_cfg_device b
+            ON a.device_id = b.device_id
+        LEFT JOIN usmsc.t_cfg_precinct tcp1
+            ON tcp1.precinct_id = b.precinct_id
+        LEFT JOIN usmsc.t_cfg_precinct tcp2
+            ON tcp2.precinct_id = tcp1.up_precinct_id
+        LEFT JOIN usmsc.t_cfg_telesignal tct
+            ON tct.device_id = a.device_id AND tct.mete_id = a.mete_id
+        LEFT JOIN usmsc.t_cfg_dict tcd1
+            ON tcd1.col_name = 'alarm_level' AND a.alarm_level = tcd1.dict_code
+        LEFT JOIN usmsc.t_cfg_station tcs
+            ON tcs.station_id = b.precinct_id
+        LEFT JOIN usmsc.t_cfg_dict tcd2
+            ON tcd2.col_name = 'station_type' AND tcs.station_type = tcd2.dict_code
+        ORDER BY a.alarm_time DESC
+        LIMIT 100
     """
-    获取 meter_alarm 表中最新一天的告警数据
-    """
+    try:
+        conn = get_prod_alarm_connection()
+        cursor = conn.cursor(pymysql.cursors.DictCursor)
+        cursor.execute(prod_sql)
+        results = cursor.fetchall()
+        cursor.close()
+        conn.close()
+
+        data_list = []
+        for row in results:
+            data_item = {}
+            for key, value in row.items():
+                if isinstance(value, datetime):
+                    data_item[key] = value.strftime('%Y-%m-%d %H:%M:%S')
+                else:
+                    data_item[key] = value
+            data_list.append(data_item)
+        return data_list
+    except Exception as e:
+        print(f'生产平台告警查询失败: {e}')
+        return []
+
+
+def _get_alarms_from_local():
     try:
         conn = get_db_connection()
         cursor = conn.cursor(pymysql.cursors.DictCursor)
 
-        # 先获取最新一天的日期
         cursor.execute("SELECT MAX(DATE(告警时间)) as latest_date FROM meter_alarm")
         result = cursor.fetchone()
         latest_date = result['latest_date']
 
         if not latest_date:
-            return jsonify({
-                'success': True,
-                'data': [],
-                'count': 0,
-                'latest_date': None,
-                'message': '没有告警数据'
-            })
+            cursor.close()
+            conn.close()
+            return []
 
-        # 获取最新一天的所有告警
         query_sql = """
             SELECT
-                id, 序号, 级别, 告警时间, 告警时长, 告警值,
-                地市, 区域, 机房, 站点类型, 设备名称, 设备类型,
-                监控量, 告警描述, 消除时间, 确认人, 确认时间,
-                确认说明, 告警逻辑分类, 告警逻辑子类, 告警标准名,
-                告警编码ID, 屏蔽类型, 翻转次数, 告警流水号,
-                告警接收时间, 业务类型, 告警标准编码, 厂家名称
+                级别, 告警时间, 告警时长, 区域, 机房,
+                站点类型, 设备名称, 监控量
             FROM meter_alarm
             WHERE DATE(告警时间) = %s
             ORDER BY 告警时间 DESC
@@ -539,7 +627,6 @@ def get_alarms_latest_day():
         cursor.execute(query_sql, (latest_date,))
         results = cursor.fetchall()
 
-        # 转换 datetime 类型为字符串
         data_list = []
         for row in results:
             data_item = {}
@@ -552,30 +639,17 @@ def get_alarms_latest_day():
 
         cursor.close()
         conn.close()
-
-        return jsonify({
-            'success': True,
-            'data': data_list,
-            'count': len(data_list),
-            'latest_date': latest_date.strftime('%Y-%m-%d') if isinstance(latest_date, datetime) else str(latest_date)
-        })
-
+        return data_list
     except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
+        print(f'本地告警查询失败: {e}')
+        return []
 
 @app.route('/api/events/latest_day', methods=['GET'])
 def get_events_latest_day():
-    """
-    获取 meter_event 表中最新一天的事件数据
-    """
     try:
         conn = get_db_connection()
         cursor = conn.cursor(pymysql.cursors.DictCursor)
 
-        # 先获取最新一天的日期
         cursor.execute("SELECT MAX(分析日期) as latest_date FROM meter_event")
         result = cursor.fetchone()
         latest_date = result['latest_date']
@@ -589,7 +663,6 @@ def get_events_latest_day():
                 'message': '没有事件数据'
             })
 
-        # 获取最新一天的所有事件
         query_sql = """
             SELECT
                 id, 分析日期, 供电类型, 区县, 归属,
@@ -601,7 +674,6 @@ def get_events_latest_day():
         cursor.execute(query_sql, (latest_date,))
         results = cursor.fetchall()
 
-        # 转换 date/datetime 类型为字符串
         data_list = []
         for row in results:
             data_item = {}
@@ -657,6 +729,7 @@ if __name__ == '__main__':
     print("  GET /api/summary - Get summary statistics")
     print("  GET /api/latest_valid_date - Get latest date with valid district/grid")
     print("  GET /api/health - Health check")
+    print("  GET /api/alarms/latest_day - Get latest alarm data (production first, local fallback)")
     print("\nServer starting on http://0.0.0.0:5000")
     print("=" * 60)
 

@@ -1,0 +1,41 @@
+序号,target_column（daily_summary列名）,target_chinese（中文名称）,source_column（energy_charge源列）,aggregation_method（聚合方法）,aggregation_detail（聚合详情）,used_by_frontend（前台使用）,frontend_module（使用模块）,frontend_key（前台key）
+1,stat_date,统计日期,日期,GROUP BY 透传,直接作为分组键,u,"趋势图X轴, 数据过滤",A
+2,district,归属单元,归属单元,GROUP BY 透传,直接作为分组键,u,"趋势图筛选, 地图区域筛选",J
+3,grid,归属网格,归属网格,GROUP BY 透传,直接作为分组键,u,"趋势图网格筛选, 地图网格渲染",GRID
+4,poi_name,POI名称,poi名称,MIN,组内取任意一个值, , ,
+5,meter,电表,电表,MIN,组内取任意一个值, , ,
+6,electricity_type,用电类型,用电类型,MIN,组内取任意一个值,u,用电类型统计,K
+7,electricity_attr,用电属性,用电属性,MIN,组内取任意一个值,u,用电属性饼图,I
+8,total_energy,度数（总能耗）,度数,SUM,按日期+区县+网格分组求和,u,"能耗总览, 趋势图折线, 地图着色, 用电属性饼图",AB
+9,total_cost,电费（总电费）,电费,SUM,按日期+区县+网格分组求和,u,"能耗总览, 趋势图折线",AC
+10,overview_total_energy,总览总能耗,度数,SUM,同 total_energy, , ,
+11,overview_total_cost,总览总电费,电费,SUM,同 total_cost, , ,
+12,overview_poi_count,POI数量,poi名称,COUNT(DISTINCT),按日期+区县+网格分组去重计数,u,能耗总览卡片,overview_poi_count
+13,overview_device_count,设备数量,电表,COUNT(DISTINCT),按日期+区县+网格分组去重计数,u,能耗总览卡片,overview_device_count
+14,electricity_by_district_energy,各区县能耗,度数,SUM,按日期+区县+网格分组求和, , ,
+15,electricity_by_grid_energy,各网格能耗,度数,SUM,按日期+区县+网格分组求和, , ,
+16,electricity_by_poi_energy,各POI能耗,度数,SUM,按日期+区县+网格分组求和, , ,
+17,poi_stat_energy,POI分项统计能耗,度数,SUM,按日期+区县+网格分组求和, , ,
+18,poi_stat_cost,POI分项统计电费,电费,SUM,按日期+区县+网格分组求和, , ,
+19,electricity_type_energy,用电类型能耗,度数,SUM,按日期+区县+网格分组求和, , ,
+20,electricity_type_cost,用电类型电费,电费,SUM,按日期+区县+网格分组求和, , ,
+21,trend_daily_energy,趋势图日能耗,度数,SUM,按日期+区县+网格分组求和, , ,
+22,trend_daily_cost,趋势图日电费,电费,SUM,按日期+区县+网格分组求和, , ,
+23,trend_monthly_energy,趋势图月能耗,度数,SUM,按日期+区县+网格分组求和, , ,
+24,trend_monthly_cost,趋势图月电费,电费,SUM,按日期+区县+网格分组求和, , ,
+25,trend_yearly_energy,趋势图年能耗,度数,SUM,按日期+区县+网格分组求和, , ,
+26,trend_yearly_cost,趋势图年电费,电费,SUM,按日期+区县+网格分组求和, , ,
+27,record_count,原始记录数,*,COUNT(*),按日期+区县+网格统计原始行数,u,/api/summary聚合,record_count
+28,mobile_cumulative_energy,移动累计能耗,度数,SUM + CASE WHEN,用电方='移动' 的条件求和,u,用电方分类图表,mobile_cumulative_energy
+29,mobile_poi_count,移动POI数,poi名称,COUNT(DISTINCT) + CASE WHEN,用电方='移动' 的条件去重计数,u,POI分项统计图表,mobile_poi_count
+30,tower_cumulative_energy,铁塔累计能耗,度数,SUM + CASE WHEN,用电方='铁塔' 的条件求和,u,用电方分类图表,tower_cumulative_energy
+31,tower_poi_count,铁塔POI数,poi名称,COUNT(DISTINCT) + CASE WHEN,用电方='铁塔' 的条件去重计数,u,POI分项统计图表,tower_poi_count
+32,mobile_electricity_fee,移动电费,电费,SUM + CASE WHEN,用电方='移动' 的条件求和,u,用电方分类图表,mobile_electricity_fee
+33,tower_electricity_fee,铁塔电费,电费,SUM + CASE WHEN,用电方='铁塔' 的条件求和,u,用电方分类图表,tower_electricity_fee
+34,direct_power_supply_energy,直供电能耗,度数,SUM + CASE WHEN,用电类型='直供电' 的条件求和,u,用电类型统计图表,direct_power_supply_energy
+35,direct_power_supply_cost,直供电电费,电费,SUM + CASE WHEN,用电类型='直供电' 的条件求和,u,用电类型统计图表,direct_power_supply_cost
+36,indirect_power_supply_energy,转供电能耗,度数,SUM + CASE WHEN,用电类型='转供电' 的条件求和,u,用电类型统计图表,indirect_power_supply_energy
+37,indirect_power_supply_cost,转供电电费,电费,SUM + CASE WHEN,用电类型='转供电' 的条件求和,u,用电类型统计图表,indirect_power_supply_cost
+聚合粒度说明,,GROUP BY,stat_date + district + grid,,每天+每个区县+每个网格 为一行,,,,,
+聚合来源文件,,scheduler_task/aggregator.py,,,,,,,
+输出映射文件,,app.py (get_summary_data端点 L248-L301),,,,,,,
