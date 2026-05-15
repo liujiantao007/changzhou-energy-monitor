@@ -884,6 +884,12 @@ function initRefreshButtons() {
             loadAlarms();
         });
     }
+
+    // 告警总览每5分钟自动刷新
+    setInterval(function() {
+        console.log('定时刷新告警信息');
+        loadAlarms();
+    }, 300000);
     
     // 事件刷新按钮
     const eventRefresh = document.getElementById('event-refresh');
