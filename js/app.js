@@ -925,12 +925,8 @@ function updateModeToggleButton() {
     if (!modeToggle) return;
     if (window.navDisplayMode === 'popup') {
         modeToggle.textContent = '弹出模式';
-        modeToggle.style.background = '#52c41a';
-        modeToggle.style.color = '#fff';
     } else {
         modeToggle.textContent = '嵌入模式';
-        modeToggle.style.background = '#1890ff';
-        modeToggle.style.color = '#fff';
     }
 }
 

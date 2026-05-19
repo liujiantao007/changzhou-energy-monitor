@@ -5,11 +5,82 @@ let mapChart = null;
 // 当前选中的区域
 let currentSelectedDistrict = null;
 
+// 检测浏览器类型
+function getBrowserInfo() {
+    const ua = navigator.userAgent;
+    if (ua.indexOf('Edg') !== -1) {
+        return { name: 'Edge', version: parseFloat(ua.match(/Edg\/(\d+)/)[1]) || null };
+    }
+    if (ua.indexOf('Chrome') !== -1 && ua.indexOf('Edg') === -1) {
+        return { name: 'Chrome', version: parseFloat(ua.match(/Chrome\/(\d+)/)[1]) || null };
+    }
+    if (ua.indexOf('Firefox') !== -1) {
+        return { name: 'Firefox', version: parseFloat(ua.match(/Firefox\/(\d+)/)[1]) || null };
+    }
+    return { name: 'Unknown', version: null };
+}
+
 // 初始化地图
 function initMap() {
-    // 初始化地图图表
+    console.log('====================================');
+    console.log('开始初始化地图...');
+    
+    const browser = getBrowserInfo();
+    console.log('浏览器信息:', browser);
+    
+    if (typeof echarts === 'undefined') {
+        console.error('ECharts 库未加载！');
+        return;
+    }
+    console.log('ECharts 库已加载，版本:', echarts.version || '未知');
+    
     const mapContainer = document.getElementById('map-chart');
-    mapChart = echarts.init(mapContainer);
+    
+    if (!mapContainer) {
+        console.error('地图容器不存在 (id: map-chart)');
+        console.log('当前页面所有元素:', document.getElementsByTagName('div').length, '个div');
+        return;
+    }
+    
+    console.log('地图容器:', mapContainer);
+    
+    const rect = mapContainer.getBoundingClientRect();
+    console.log('地图容器实际显示尺寸:', rect.width.toFixed(2), 'x', rect.height.toFixed(2));
+    console.log('地图容器offset尺寸:', mapContainer.offsetWidth, 'x', mapContainer.offsetHeight);
+    console.log('地图容器style:', mapContainer.style.cssText);
+    
+    const computedStyle = window.getComputedStyle(mapContainer);
+    console.log('地图容器computed width:', computedStyle.width);
+    console.log('地图容器computed height:', computedStyle.height);
+    
+    if (rect.width < 10 || rect.height < 10) {
+        console.warn('地图容器尺寸过小，尝试延迟初始化...');
+        setTimeout(initMap, 500);
+        return;
+    }
+    
+    const chartWidth = rect.width;
+    const chartHeight = rect.height;
+    console.log('将使用的图表尺寸:', chartWidth.toFixed(2), 'x', chartHeight.toFixed(2));
+    
+    try {
+        mapChart = echarts.init(mapContainer, null, {
+            renderer: 'canvas',
+            width: chartWidth,
+            height: chartHeight
+        });
+        console.log('ECharts 初始化成功');
+        console.log('ECharts实例:', mapChart);
+        
+        const dom = mapChart.getDom();
+        console.log('ECharts DOM元素:', dom);
+        console.log('ECharts DOM尺寸:', dom.offsetWidth, 'x', dom.offsetHeight);
+    } catch (error) {
+        console.error('ECharts 初始化失败:', error.message);
+        console.error('错误详情:', error);
+        return;
+    }
+    console.log('====================================');
     
     // 显示加载状态
     mapChart.showLoading({
