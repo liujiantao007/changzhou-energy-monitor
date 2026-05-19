@@ -40,6 +40,7 @@ body {
     align-items: center;
     justify-content: space-between;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+    position: relative;
 }
 
 .navbar-brand {
@@ -709,7 +710,8 @@ body {
 /* 刷新按钮 */
 .refresh-btn {
     position: absolute;
-    top: 15px;
+    top: 50%;
+    transform: translateY(-50%);
     right: 15px;
     padding: 4px 10px;
     background-color: rgba(255, 255, 255, 0.05);
