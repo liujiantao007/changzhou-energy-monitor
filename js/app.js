@@ -100,45 +100,56 @@ function initNavigation() {
         item.addEventListener('click', function(e) {
             const href = this.getAttribute('href');
             
-            // 外部链接：在 iframe 中加载
-            if (this.classList.contains('external-link')) {
+            // 首页：保持不变
+            if (href === '#home') {
                 e.preventDefault();
-                
-                // 移除所有导航项的 active 类
                 navItems.forEach(nav => nav.classList.remove('active'));
                 this.classList.add('active');
-                
-                // 隐藏所有页面
                 pages.forEach(page => page.classList.remove('active'));
-                
-                // 显示报账管理页面
+                const homePage = document.getElementById('home');
+                if (homePage) homePage.classList.add('active');
+                return;
+            }
+            
+            // 外部链接（报账管理）或其他页面（电表管理/能耗分析/报表管理）
+            e.preventDefault();
+            
+            // 弹出模式：直接在浏览器中打开
+            if (window.navDisplayMode === 'popup') {
+                let targetUrl;
+                if (this.classList.contains('external-link')) {
+                    targetUrl = href;
+                } else {
+                    const targetId = href.substring(1);
+                    targetUrl = NAV_CONFIG.baseURL + (NAV_CONFIG.pages[targetId] ? NAV_CONFIG.pages[targetId].path : '');
+                }
+                if (targetUrl) {
+                    window.open(targetUrl, '_blank');
+                }
+                return;
+            }
+            
+            // iframe 嵌入模式：原有逻辑
+            if (this.classList.contains('external-link')) {
+                navItems.forEach(nav => nav.classList.remove('active'));
+                this.classList.add('active');
+                pages.forEach(page => page.classList.remove('active'));
                 const targetPage = document.getElementById('报账管理');
                 if (targetPage) {
                     targetPage.classList.add('active');
-                    // 在 iframe 中加载外部 URL
                     loadIframePage('baozhang-frame', href);
                 }
                 return;
             }
             
-            e.preventDefault();
-            
-            // 移除所有导航项的 active 类
             navItems.forEach(nav => nav.classList.remove('active'));
-            
-            // 添加当前导航项的 active 类
             this.classList.add('active');
-            
-            // 隐藏所有页面
             pages.forEach(page => page.classList.remove('active'));
             
-            // 显示对应页面
-            const targetId = this.getAttribute('href').substring(1);
+            const targetId = href.substring(1);
             const targetPage = document.getElementById(targetId);
             if (targetPage) {
                 targetPage.classList.add('active');
-                
-                // 根据页面ID加载对应的 iframe
                 switch(targetId) {
                     case '能耗分析':
                         loadEnergyAnalysisFrame();
@@ -161,7 +172,6 @@ function initNavigation() {
     window.addEventListener('hashchange', function() {
         const hash = window.location.hash.substring(1) || 'home';
         
-        // 激活对应导航项
         navItems.forEach(item => {
             const href = item.getAttribute('href').substring(1);
             if (href === hash) {
@@ -171,13 +181,12 @@ function initNavigation() {
             }
         });
         
-        // 显示对应页面
         pages.forEach(page => {
             if (page.id === hash) {
                 page.classList.add('active');
-
-                // 根据页面ID加载对应的 iframe
                 switch(hash) {
+                    case 'home':
+                        break;
                     case '能耗分析':
                         loadEnergyAnalysisFrame();
                         break;
@@ -891,13 +900,37 @@ function initRefreshButtons() {
         loadAlarms();
     }, 300000);
     
-    // 事件刷新按钮
-    const eventRefresh = document.getElementById('event-refresh');
-    if (eventRefresh) {
-        eventRefresh.addEventListener('click', function() {
-            console.log('刷新事件信息');
-            loadEvents();
+    // 事件刷新按钮 - 改为显示模式切换按钮
+    const modeToggle = document.getElementById('display-mode-toggle');
+    if (modeToggle) {
+        // 初始化模式：默认弹出模式
+        if (window.navDisplayMode === undefined) {
+            window.navDisplayMode = 'popup';
+            updateModeToggleButton();
+        }
+        modeToggle.addEventListener('click', function() {
+            if (window.navDisplayMode === 'popup') {
+                window.navDisplayMode = 'iframe';
+            } else {
+                window.navDisplayMode = 'popup';
+            }
+            updateModeToggleButton();
+            console.log('导航显示模式切换为:', window.navDisplayMode === 'popup' ? '弹出模式' : 'iframe嵌入模式');
         });
+    }
+}
+
+function updateModeToggleButton() {
+    const modeToggle = document.getElementById('display-mode-toggle');
+    if (!modeToggle) return;
+    if (window.navDisplayMode === 'popup') {
+        modeToggle.textContent = '弹出模式';
+        modeToggle.style.background = '#52c41a';
+        modeToggle.style.color = '#fff';
+    } else {
+        modeToggle.textContent = '嵌入模式';
+        modeToggle.style.background = '#1890ff';
+        modeToggle.style.color = '#fff';
     }
 }
 
