@@ -1514,20 +1514,21 @@ function loadEvents() {
                 if (index < 3) {
                     console.log(`事件记录 ${index}:`, {
                         '分析日期': event['分析日期'],
-                        '供电类型': event['供电类型'],
-                        '区县': event['区县'],
-                        '归属': event['归属'],
+                        '用电方': event['用电方'],
+                        '用电类型': event['用电类型'],
+                        '归属单元': event['归属单元'],
+                        '归属网格': event['归属网格'],
                         '关联位置点': event['关联位置点'],
                         '电表编号': event['电表编号'],
                         '电表事件': event['电表事件']
                     });
                 }
 
-                // 事件字段映射
                 const eventDate = event['分析日期'] || '';
-                const electricityType = event['供电类型'] || '';
-                const district = event['区县'] || '';
-                const ownership = event['归属'] || '';
+                const electricityUser = event['用电方'] || '';
+                const electricityType = event['用电类型'] || '';
+                const belongUnit = event['归属单元'] || '';
+                const belongGrid = event['归属网格'] || '';
                 const location = event['关联位置点'] || '';
                 const meterNumber = event['电表编号'] || '';
                 const meterEvent = event['电表事件'] || '';
@@ -1535,7 +1536,6 @@ function loadEvents() {
                 const eventItem = document.createElement('div');
                 eventItem.className = 'event-item';
 
-                // 根据事件类型设置不同的样式
                 let eventTypeClass = '';
                 if (meterEvent.includes('一级告警')) {
                     eventTypeClass = 'event-critical';
@@ -1549,13 +1549,17 @@ function loadEvents() {
                     <div class="event-row level-row">
                         <span class="level-badge ${eventTypeClass}">${meterEvent}</span>
                         <span class="time-info" title="分析日期">${eventDate}</span>
-                        <span class="duration-info" title="供电类型" style="margin-left:8px;">⚡ ${electricityType}</span>
+                        <span class="duration-info" title="用电类型" style="margin-left:8px;">${electricityType}</span>
                     </div>
                     <div class="event-row">
-                        <span class="label">区县:</span>
-                        <span class="content" title="${district}">${district}</span>
-                        <span class="label" style="margin-left:8px;">归属:</span>
-                        <span class="content">${ownership}</span>
+                        <span class="label">用电方:</span>
+                        <span class="content" title="${electricityUser}">${electricityUser}</span>
+                        <span class="label" style="margin-left:8px;">单元:</span>
+                        <span class="content">${belongUnit}</span>
+                    </div>
+                    <div class="event-row">
+                        <span class="label">网格:</span>
+                        <span class="content" title="${belongGrid}">${belongGrid}</span>
                     </div>
                     <div class="event-row">
                         <span class="label">位置:</span>

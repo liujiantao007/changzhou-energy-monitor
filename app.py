@@ -1,4 +1,6 @@
 import os
+import hashlib
+import requests
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 import pymysql
@@ -665,7 +667,7 @@ def get_events_latest_day():
 
         query_sql = """
             SELECT
-                id, 分析日期, 供电类型, 区县, 归属,
+                id, 分析日期, 用电方, 用电类型, 归属单元, 归属网格,
                 关联位置点, 电表编号, 电表事件
             FROM meter_event
             WHERE 分析日期 = %s
@@ -718,6 +720,106 @@ def format_date(date_value):
 
     return date_str
 
+DFAI_API_URL = 'http://10.33.222.38:30523/czngcssapi/dfai/queryDfaiStatData.do'
+DFAI_DETAIL_API_URL = 'http://10.33.222.38:30523/czngcssapi/dfai/queryDfaiData.do'
+DFAI_KEY = 'CZYDDFAI20260518'
+
+def generate_signature(timestamp):
+    raw_string = timestamp + DFAI_KEY
+    return hashlib.sha1(raw_string.encode('utf-8')).hexdigest()
+
+def get_current_timestamp():
+    now = datetime.now()
+    return now.strftime('%Y%m%d%H%M%S')
+
+def get_current_date_str():
+    now = datetime.now()
+    return now.strftime('%Y%m%d')
+
+@app.route('/api/dfai/query', methods=['GET'])
+def query_dfai_stat_data():
+    try:
+        read_date = request.args.get('date', get_current_date_str())
+        
+        timestamp = get_current_timestamp()
+        signature = generate_signature(timestamp)
+        
+        payload = {
+            'timestamp': timestamp,
+            'signature': signature,
+            'readDate': read_date
+        }
+        
+        response = requests.post(DFAI_API_URL, json=payload, timeout=30)
+        
+        if response.status_code == 200:
+            return jsonify({
+                'success': True,
+                'data': response.json(),
+                'readDate': read_date
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': f'Remote API returned status code {response.status_code}',
+                'readDate': read_date
+            }), response.status_code
+            
+    except requests.exceptions.RequestException as e:
+        return jsonify({
+            'success': False,
+            'error': f'Failed to connect to DFAI API: {str(e)}',
+            'readDate': read_date if 'read_date' in locals() else get_current_date_str()
+        }), 500
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': f'Internal error: {str(e)}',
+            'readDate': read_date if 'read_date' in locals() else get_current_date_str()
+        }), 500
+
+@app.route('/api/dfai/queryDetail', methods=['GET'])
+def query_dfai_detail_data():
+    try:
+        read_date = request.args.get('date', get_current_date_str())
+        
+        timestamp = get_current_timestamp()
+        signature = generate_signature(timestamp)
+        
+        payload = {
+            'timestamp': timestamp,
+            'signature': signature,
+            'readDate': read_date
+        }
+        
+        response = requests.post(DFAI_DETAIL_API_URL, json=payload, timeout=30)
+        
+        if response.status_code == 200:
+            return jsonify({
+                'success': True,
+                'data': response.json(),
+                'readDate': read_date
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': f'Remote API returned status code {response.status_code}',
+                'readDate': read_date
+            }), response.status_code
+            
+    except requests.exceptions.RequestException as e:
+        return jsonify({
+            'success': False,
+            'error': f'Failed to connect to DFAI Detail API: {str(e)}',
+            'readDate': read_date if 'read_date' in locals() else get_current_date_str()
+        }), 500
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': f'Internal error: {str(e)}',
+            'readDate': read_date if 'read_date' in locals() else get_current_date_str()
+        }), 500
+
 if __name__ == '__main__':
     print("Starting Energy Data API Server...")
     print("Database config:")
@@ -730,6 +832,8 @@ if __name__ == '__main__':
     print("  GET /api/latest_valid_date - Get latest date with valid district/grid")
     print("  GET /api/health - Health check")
     print("  GET /api/alarms/latest_day - Get latest alarm data (production first, local fallback)")
+    print("  GET /api/dfai/query - Query DFAI electricity fee statistics")
+    print("  GET /api/dfai/queryDetail - Query DFAI electricity fee detail")
     print("\nServer starting on http://0.0.0.0:5000")
     print("=" * 60)
 
