@@ -992,6 +992,11 @@ function hideLoading() {
 
 // 加载告警信息
 function loadAlarms() {
+    if (alarmLoadingPromise) {
+        console.log('告警数据正在加载中，跳过重复请求');
+        return;
+    }
+    
     const alarmList = document.getElementById('alarm-list');
 
     if (!alarmList) {
@@ -1003,7 +1008,7 @@ function loadAlarms() {
     alarmList.innerHTML = '<div class="alarm-loading"><div class="spinner"></div><span>正在加载告警数据...</span></div>';
 
     // 从新的 API 获取 meter_alarm 表中最新一天的告警数据
-    fetch(API_BASE + '/alarms/latest_day')
+    alarmLoadingPromise = fetch(API_BASE + '/alarms/latest_day')
         .then(response => {
             if (!response.ok) {
                 throw new Error('网络响应失败: ' + response.status);
@@ -1118,6 +1123,9 @@ function loadAlarms() {
             } else {
                 alarmList.innerHTML = '<div class="alarm-error"><span>加载失败: ' + error.message + '</span></div>';
             }
+        })
+        .finally(() => {
+            alarmLoadingPromise = null;
         });
 }
 
@@ -1154,6 +1162,7 @@ let userScrollTimer = null;
 let autoScrollEnabled = false;  // 防止重复启用
 let lastScrollTop = 0;  // 记录上次滚动位置
 let scrollDirection = 1;  // 滚动方向：1 向下，-1 向上
+let alarmLoadingPromise = null;
 
 // 事件列表自动滚动功能
 let eventScrollInterval = null;
@@ -1161,6 +1170,7 @@ let isEventUserScrolling = false;
 let eventScrollTimer = null;
 let eventScrollEnabled = false;
 let eventScrollDirection = 1;
+let eventLoadingPromise = null;
 
 function enableEventAutoScroll() {
     if (eventScrollEnabled) {
@@ -1455,6 +1465,11 @@ function startAutoScroll() {
 
 // 加载事件信息
 function loadEvents() {
+    if (eventLoadingPromise) {
+        console.log('事件数据正在加载中，跳过重复请求');
+        return;
+    }
+    
     const eventList = document.getElementById('event-list');
 
     if (!eventList) {
@@ -1481,7 +1496,7 @@ function loadEvents() {
     eventList.innerHTML = '<div class="alarm-loading"><div class="spinner"></div><span>正在加载事件数据...</span></div>';
 
     // 从 API 获取 meter_event 表中最新一天的事件数据
-    fetch(API_BASE + '/events/latest_day')
+    eventLoadingPromise = fetch(API_BASE + '/events/latest_day')
         .then(response => {
             if (!response.ok) {
                 throw new Error('网络响应失败: ' + response.status);
@@ -1498,7 +1513,6 @@ function loadEvents() {
             console.log('事件数据加载成功，共', events.length, '条记录，最新日期:', result.latest_date);
 
             if (events.length === 0) {
-                // 空数据
                 eventList.innerHTML = '<div class="alarm-empty"><span>暂无事件数据</span></div>';
                 return;
             }
@@ -1591,6 +1605,9 @@ function loadEvents() {
             } else {
                 eventList.innerHTML = '<div class="alarm-error"><span>加载失败: ' + error.message + '</span></div>';
             }
+        })
+        .finally(() => {
+            eventLoadingPromise = null;
         });
 }
 
