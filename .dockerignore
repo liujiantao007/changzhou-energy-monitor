@@ -36,6 +36,7 @@ verify_*.py
 rebuild_*.py
 update_*.py
 sync_*.py
+!sync_meter_alarm.py
 find_*.py
 final_*.py
 add_*.py

@@ -9,7 +9,7 @@ echo ""
 
 # 检查CDN资源是否存在
 if [ ! -f "/app/js/libs/echarts.min.js" ] || [ ! -f "/app/js/libs/xlsx.full.min.js" ]; then
-    echo "⚠️  警告：CDN资源文件不存在！"
+    echo "警告：CDN资源文件不存在！"
     echo ""
     echo "请在有公网的环境中执行以下命令下载资源："
     echo "  mkdir -p /app/js/libs"
@@ -23,7 +23,7 @@ if [ ! -f "/app/js/libs/echarts.min.js" ] || [ ! -f "/app/js/libs/xlsx.full.min.
 fi
 
 # 启动Flask后端（后台运行）
-echo "📡 启动Flask后端服务（端口5000）..."
+echo "启动Flask后端服务（端口5000）..."
 cd /app
 python3 app.py &
 FLASK_PID=$!
@@ -31,16 +31,22 @@ FLASK_PID=$!
 # 等待Flask启动
 sleep 3
 
+# 启动告警数据定时同步（每5分钟）
+echo "启动告警数据定时同步（每5分钟）..."
+python3 sync_meter_alarm.py --schedule &
+SYNC_PID=$!
+
 # 启动Nginx
-echo "🌐 启动Nginx静态文件服务（端口80）..."
+echo "启动Nginx静态文件服务（端口80）..."
 nginx -g 'daemon off;' &
 NGINX_PID=$!
 
 echo ""
-echo "✅ 所有服务已启动！"
+echo "所有服务已启动！"
 echo "============================================="
 echo "访问地址：http://localhost"
 echo "后端API：http://localhost/api"
+echo "告警同步：每5分钟自动执行"
 echo "============================================="
 echo ""
 
