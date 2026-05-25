@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "前端 (Frontend)",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["serve_frontend.py"],
+      "port": 65080
+    },
+    {
+      "name": "后端 API (Backend)",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["app.py"],
+      "port": 5000
+    }
+  ]
+}
