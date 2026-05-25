@@ -621,12 +621,18 @@ function updateEnergyTrendChart(data, timeType) {
         if (window.originalDataCache && window.originalDataCache.length > 0) {
             rawData = window.originalDataCache;
             console.log('日视图：使用原始完整数据缓存，条数:', rawData.length);
+            console.log('日视图数据检查 - 首条AB值:', rawData[0]['AB'], '所有AB值类型:', typeof rawData[0]['AB']);
         } else if (data.rawData && data.rawData.length > 0) {
             rawData = data.rawData;
             console.log('日视图：使用传入的原始数据，条数:', rawData.length);
         } else if (window.rawDataCache && window.rawDataCache.length > 0) {
             rawData = window.rawDataCache;
             console.log('日视图：使用当前数据缓存，条数:', rawData.length);
+        } else {
+            console.log('日视图：所有数据源均为空 - originalDataCache:', 
+                window.originalDataCache ? window.originalDataCache.length : '不存在',
+                'data.rawData:', data.rawData ? data.rawData.length : '不存在',
+                'rawDataCache:', window.rawDataCache ? window.rawDataCache.length : '不存在');
         }
     } else {
         // 月视图/年视图：优先使用传入的数据（包含完整的时间范围）
@@ -677,18 +683,29 @@ function updateEnergyTrendChart(data, timeType) {
     if (currentTrendTimeType === '日') {
         // 日维度：最近30天（以数据库最新日期为准）
         const dailyData = {};
+        let totalEnergySum = 0;
+        let parsedCount = 0;
+        let unparsedCount = 0;
         rawData.forEach(item => {
             const dateStr = item['A'] || '';
             const dateObj = parseDate(dateStr);
             if (dateObj) {
+                parsedCount++;
                 const dateKey = `${dateObj.getFullYear()}/${dateObj.getMonth() + 1}/${dateObj.getDate()}`;
                 if (!dailyData[dateKey]) {
                     dailyData[dateKey] = { energy: 0, cost: 0 };
                 }
-                dailyData[dateKey].energy += Number(item['AB'] || item['ab'] || 0) || 0;
-                dailyData[dateKey].cost += Number(item['AC'] || item['ac'] || 0) || 0;
+                const enVal = Number(item['AB'] || item['ab'] || 0) || 0;
+                const coVal = Number(item['AC'] || item['ac'] || 0) || 0;
+                dailyData[dateKey].energy += enVal;
+                dailyData[dateKey].cost += coVal;
+                totalEnergySum += enVal;
+            } else {
+                unparsedCount++;
             }
         });
+        console.log('日维度数据统计 - 总记录:', rawData.length, '已解析日期:', parsedCount, '未解析:', unparsedCount, '总能耗和:', totalEnergySum);
+        console.log('dailyData 日期键数量:', Object.keys(dailyData).length, '日期键:', Object.keys(dailyData).slice(0, 5));
         
         // 以数据库最新日期为准，生成最近30天的日期列表
         const days = [];
@@ -699,11 +716,13 @@ function updateEnergyTrendChart(data, timeType) {
         if (!baseDate) {
             baseDate = new Date();
         }
+        console.log('日维度基准日期 - latestDate:', latestDate, 'baseDate:', baseDate);
         
         for (let i = 29; i >= 0; i--) {
             const date = new Date(baseDate.getTime() - i * 24 * 60 * 60 * 1000);
             days.push(`${date.getFullYear()}/${date.getMonth() + 1}/${date.getDate()}`);
         }
+        console.log('日维度生成日期列表 - 首日:', days[0], '末日:', days[29], '日期数:', days.length);
         
         labels = days.map(d => {
             const parts = d.split('/');
@@ -711,12 +730,15 @@ function updateEnergyTrendChart(data, timeType) {
         });
         energyValues = days.map(day => {
             const data = dailyData[day];
-            return data ? Math.floor(data.energy) : 0;
+            const val = data ? Math.floor(data.energy) : 0;
+            if (data) console.log('日期:', day, '有数据, 能耗:', data.energy, '取整:', val);
+            return val;
         });
         costValues = days.map(day => {
             const data = dailyData[day];
             return data ? Math.floor(data.cost) : 0;
         });
+        console.log('日维度图表数据 - energyValues非零数:', energyValues.filter(v => v > 0).length, '标签样本:', labels.slice(0, 5));
         
     } else if (currentTrendTimeType === '月') {
         // 月维度：最近12个月
