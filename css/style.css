@@ -453,7 +453,7 @@ body {
 /* 告警和事件列表 */
 .alarm-list, .event-list {
     flex: 1;
-    min-height: 0;
+    min-height: 250px;
     overflow-y: auto;
     overflow-x: hidden;
     padding: 0;

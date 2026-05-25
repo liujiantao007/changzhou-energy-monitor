@@ -716,10 +716,6 @@ function processData(data) {
     if (typeof updateMap === 'function') {
         updateMap(chartData);
     }
-
-    // 加载告警和事件信息（异步，不影响主流程）
-    loadAlarms();
-    loadEvents();
 }
 
 // 更新能耗总览

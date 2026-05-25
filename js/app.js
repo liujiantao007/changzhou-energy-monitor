@@ -26,9 +26,15 @@ window.onload = function() {
     
     // 初始化地图
     initMap();
-    
+
     // 加载数据
     loadData();
+
+    // 加载告警和事件信息（仅首次加载，不随时间维度切换刷新）
+    setTimeout(() => {
+        loadAlarms();
+        loadEvents();
+    }, 100);
 };
 
 // 初始化响应式缩放
@@ -873,6 +879,116 @@ function hideLoading() {
     }
 }
 
+// 缓存所有告警数据，用于区县筛选
+let alarmDataCache = [];
+
+// 渲染告警列表（根据筛选条件）
+function renderAlarms(alarms) {
+    const alarmList = document.getElementById('alarm-list');
+    if (!alarmList) return;
+
+    alarmList.innerHTML = '';
+
+    if (!alarms || alarms.length === 0) {
+        alarmList.innerHTML = '<div class="alarm-empty"><span>暂无告警数据</span></div>';
+        return;
+    }
+
+    // 限制显示数量，避免过多
+    const maxAlarms = 100;
+    const displayData = alarms.slice(0, maxAlarms);
+
+    displayData.forEach((row, index) => {
+        // API 字段映射
+        const level = row['级别'] || '';
+        const alarmTime = row['告警时间'] || '';
+        const duration = row['告警时长'] || '';
+        const region = row['区域'] || '';
+        const room = row['机房'] || '';
+        const stationType = row['站点类型'] || '';
+        const deviceName = row['设备名称'] || '';
+        const monitorItem = row['监控量'] || '';
+
+        // 级别映射：一级/二级/三级/四级
+        let levelClass = 'level-4';
+        let levelText = level;
+        if (level.includes('一级') || level === '1') {
+            levelClass = 'level-1';
+            levelText = '一级';
+        } else if (level.includes('二级') || level === '2') {
+            levelClass = 'level-2';
+            levelText = '二级';
+        } else if (level.includes('三级') || level === '3') {
+            levelClass = 'level-3';
+            levelText = '三级';
+        } else if (level.includes('四级') || level === '4') {
+            levelClass = 'level-4';
+            levelText = '四级';
+        }
+
+        const alarmItem = document.createElement('div');
+        alarmItem.className = 'alarm-item';
+
+        // 三行布局
+        alarmItem.innerHTML = `
+            <div class="alarm-row level-row">
+                <span class="level-badge ${levelClass}">${levelText}</span>
+                <span class="time-info" title="告警时间">${alarmTime}</span>
+                <span class="duration-info" title="告警时长" style="margin-left:8px;">⏱ ${duration}</span>
+            </div>
+            <div class="alarm-row">
+                <span class="label">区域:</span>
+                <span class="content" title="${region}">${region}</span>
+                <span class="label" style="margin-left:8px;">机房:</span>
+                <span class="content" title="${room}">${room}</span>
+                <span class="label" style="margin-left:8px;">类型:</span>
+                <span class="content">${stationType}</span>
+            </div>
+            <div class="alarm-row">
+                <span class="label">设备:</span>
+                <span class="content" title="${deviceName}">${deviceName}</span>
+            </div>
+            <div class="alarm-row">
+                <span class="label">监控量:</span>
+                <span class="content">${monitorItem}</span>
+            </div>
+        `;
+
+        alarmList.appendChild(alarmItem);
+    });
+
+    if (alarms.length > maxAlarms) {
+        console.log('仅显示前', maxAlarms, '条告警记录，共', alarms.length, '条');
+    }
+
+    // 延迟启用自动滚动
+    setTimeout(() => {
+        enableAutoScroll();
+    }, 100);
+}
+
+// 根据区县筛选告警
+function filterAlarmsByRegion(district) {
+    if (!alarmDataCache || alarmDataCache.length === 0) {
+        console.log('告警缓存为空，跳过筛选');
+        return;
+    }
+
+    if (!district) {
+        renderAlarms(alarmDataCache);
+        return;
+    }
+
+    const districtKeyword = district.replace(/区|市|县/g, '');
+    const filtered = alarmDataCache.filter(a => {
+        const region = a['区域'] || '';
+        return region.includes(districtKeyword) || region.includes(district);
+    });
+
+    console.log(`告警筛选结果: 区县=${district}, 筛选后=${filtered.length}/${alarmDataCache.length}条`);
+    renderAlarms(filtered);
+}
+
 // 加载告警信息
 function loadAlarms() {
     if (alarmLoadingPromise) {
@@ -913,90 +1029,17 @@ function loadAlarms() {
                 return;
             }
 
-            // 清空并渲染告警列表
-            alarmList.innerHTML = '';
+            // 缓存全部告警数据
+            alarmDataCache = alarms;
 
-            // 限制显示数量，避免过多
-            const maxAlarms = 100;
-            const displayData = alarms.slice(0, maxAlarms);
-
-            displayData.forEach((row, index) => {
-                if (index < 3) {
-                    console.log(`告警记录 ${index}:`, {
-                        '级别': row['级别'],
-                        '告警时间': row['告警时间'],
-                        '告警时长': row['告警时长'],
-                        '区域': row['区域'],
-                        '机房': row['机房']
-                    });
-                }
-
-                // API 字段映射
-                const level = row['级别'] || '';
-                const alarmTime = row['告警时间'] || '';
-                const duration = row['告警时长'] || '';
-                const region = row['区域'] || '';
-                const room = row['机房'] || '';
-                const stationType = row['站点类型'] || '';
-                const deviceName = row['设备名称'] || '';
-                const monitorItem = row['监控量'] || '';
-
-                // 级别映射：一级/二级/三级/四级
-                let levelClass = 'level-4';
-                let levelText = level;
-                if (level.includes('一级') || level === '1') {
-                    levelClass = 'level-1';
-                    levelText = '一级';
-                } else if (level.includes('二级') || level === '2') {
-                    levelClass = 'level-2';
-                    levelText = '二级';
-                } else if (level.includes('三级') || level === '3') {
-                    levelClass = 'level-3';
-                    levelText = '三级';
-                } else if (level.includes('四级') || level === '4') {
-                    levelClass = 'level-4';
-                    levelText = '四级';
-                }
-
-                const alarmItem = document.createElement('div');
-                alarmItem.className = 'alarm-item';
-
-                // 三行布局
-                alarmItem.innerHTML = `
-                    <div class="alarm-row level-row">
-                        <span class="level-badge ${levelClass}">${levelText}</span>
-                        <span class="time-info" title="告警时间">${alarmTime}</span>
-                        <span class="duration-info" title="告警时长" style="margin-left:8px;">⏱ ${duration}</span>
-                    </div>
-                    <div class="alarm-row">
-                        <span class="label">区域:</span>
-                        <span class="content" title="${region}">${region}</span>
-                        <span class="label" style="margin-left:8px;">机房:</span>
-                        <span class="content" title="${room}">${room}</span>
-                        <span class="label" style="margin-left:8px;">类型:</span>
-                        <span class="content">${stationType}</span>
-                    </div>
-                    <div class="alarm-row">
-                        <span class="label">设备:</span>
-                        <span class="content" title="${deviceName}">${deviceName}</span>
-                    </div>
-                    <div class="alarm-row">
-                        <span class="label">监控量:</span>
-                        <span class="content">${monitorItem}</span>
-                    </div>
-                `;
-
-                alarmList.appendChild(alarmItem);
-            });
-
-            if (alarms.length > maxAlarms) {
-                console.log('仅显示前', maxAlarms, '条告警记录，共', alarms.length, '条');
+            // 根据当前区县筛选渲染
+            const districtSel = document.getElementById('district-select');
+            const currentDistrict = districtSel ? districtSel.value : '';
+            if (currentDistrict) {
+                filterAlarmsByRegion(currentDistrict);
+            } else {
+                renderAlarms(alarms);
             }
-
-            // 延迟启用自动滚动，确保 DOM 完全渲染
-            setTimeout(() => {
-                enableAutoScroll();
-            }, 100);
         })
         .catch(error => {
             console.error('加载告警数据失败:', error);
@@ -1346,13 +1389,122 @@ function startAutoScroll() {
     }, 30);
 }
 
+// 缓存所有事件数据，用于区县/网格筛选
+let eventDataCache = [];
+
+// 渲染事件列表（根据筛选条件）
+function renderEvents(events) {
+    const eventList = document.getElementById('event-list');
+    if (!eventList) return;
+
+    eventList.innerHTML = '';
+
+    if (!events || events.length === 0) {
+        eventList.innerHTML = '<div class="alarm-empty"><span>暂无事件数据</span></div>';
+        return;
+    }
+
+    // 限制显示数量
+    const maxEvents = 100;
+    const displayData = events.slice(0, maxEvents);
+
+    displayData.forEach((event, index) => {
+        const eventDate = event['分析日期'] || '';
+        const electricityUser = event['用电方'] || '';
+        const electricityType = event['用电类型'] || '';
+        const belongUnit = event['归属单元'] || '';
+        const belongGrid = event['归属网格'] || '';
+        const location = event['关联位置点'] || '';
+        const meterNumber = event['电表编号'] || '';
+        const meterEvent = event['电表事件'] || '';
+
+        const eventItem = document.createElement('div');
+        eventItem.className = 'event-item';
+
+        let eventTypeClass = '';
+        if (meterEvent.includes('一级告警')) {
+            eventTypeClass = 'event-critical';
+        } else if (meterEvent.includes('二级告警')) {
+            eventTypeClass = 'event-warning';
+        } else {
+            eventTypeClass = 'event-normal';
+        }
+
+        eventItem.innerHTML = `
+            <div class="event-row level-row">
+                <span class="level-badge ${eventTypeClass}">${meterEvent}</span>
+                <span class="time-info" title="分析日期">${eventDate}</span>
+                <span class="duration-info" title="用电类型" style="margin-left:8px;">${electricityType}</span>
+            </div>
+            <div class="event-row">
+                <span class="label">用电方:</span>
+                <span class="content" title="${electricityUser}">${electricityUser}</span>
+                <span class="label" style="margin-left:8px;">单元:</span>
+                <span class="content">${belongUnit}</span>
+            </div>
+            <div class="event-row">
+                <span class="label">网格:</span>
+                <span class="content" title="${belongGrid}">${belongGrid}</span>
+            </div>
+            <div class="event-row">
+                <span class="label">位置:</span>
+                <span class="content" title="${location}">${location}</span>
+            </div>
+            <div class="event-row">
+                <span class="label">电表:</span>
+                <span class="content">${meterNumber}</span>
+            </div>
+        `;
+
+        eventList.appendChild(eventItem);
+    });
+
+    if (events.length > maxEvents) {
+        console.log('仅显示前', maxEvents, '条事件记录，共', events.length, '条');
+    }
+
+    // 延迟启用自动滚动
+    setTimeout(() => {
+        enableEventAutoScroll();
+    }, 100);
+}
+
+// 根据区县/网格筛选事件
+function filterEventsByRegion(district, grid) {
+    if (!eventDataCache || eventDataCache.length === 0) {
+        console.log('事件缓存为空，跳过筛选');
+        return;
+    }
+
+    let filtered = eventDataCache;
+
+    if (district) {
+        const districtKeyword = district.replace(/区|市|县/g, '');
+        filtered = filtered.filter(e => {
+            const unit = e['归属单元'] || '';
+            return unit.includes(districtKeyword) || unit.includes(district);
+        });
+    }
+
+    if (grid) {
+        const gridKeyword = grid.replace(/网格/g, '');
+        filtered = filtered.filter(e => {
+            const g = e['归属网格'] || '';
+            return g.includes(gridKeyword) || g.includes(grid);
+        });
+    }
+
+    console.log(`事件筛选结果: 区县=${district}, 网格=${grid}, 筛选后=${filtered.length}/${eventDataCache.length}条`);
+    renderEvents(filtered);
+}
+
 // 加载事件信息
 function loadEvents() {
     if (eventLoadingPromise) {
         console.log('事件数据正在加载中，跳过重复请求');
         return;
     }
-    
+
     const eventList = document.getElementById('event-list');
 
     if (!eventList) {
@@ -1392,97 +1544,24 @@ function loadEvents() {
             }
 
             const events = result.data || [];
-
             console.log('事件数据加载成功，共', events.length, '条记录，最新日期:', result.latest_date);
 
-            if (events.length === 0) {
-                eventList.innerHTML = '<div class="alarm-empty"><span>暂无事件数据</span></div>';
-                return;
+            // 缓存全部事件数据
+            eventDataCache = events;
+
+            // 根据当前区县/网格筛选进行渲染
+            const districtSel = document.getElementById('district-select');
+            const gridSel = document.getElementById('grid-select');
+            const currentDistrict = districtSel ? districtSel.value : '';
+            const currentGrid = gridSel ? gridSel.value : '';
+            if (currentDistrict || currentGrid) {
+                filterEventsByRegion(currentDistrict, currentGrid);
+            } else {
+                renderEvents(events);
             }
-
-            // 清空并渲染事件列表
-            eventList.innerHTML = '';
-
-            // 限制显示数量
-            const maxEvents = 100;
-            const displayData = events.slice(0, maxEvents);
-
-            displayData.forEach((event, index) => {
-                if (index < 3) {
-                    console.log(`事件记录 ${index}:`, {
-                        '分析日期': event['分析日期'],
-                        '用电方': event['用电方'],
-                        '用电类型': event['用电类型'],
-                        '归属单元': event['归属单元'],
-                        '归属网格': event['归属网格'],
-                        '关联位置点': event['关联位置点'],
-                        '电表编号': event['电表编号'],
-                        '电表事件': event['电表事件']
-                    });
-                }
-
-                const eventDate = event['分析日期'] || '';
-                const electricityUser = event['用电方'] || '';
-                const electricityType = event['用电类型'] || '';
-                const belongUnit = event['归属单元'] || '';
-                const belongGrid = event['归属网格'] || '';
-                const location = event['关联位置点'] || '';
-                const meterNumber = event['电表编号'] || '';
-                const meterEvent = event['电表事件'] || '';
-
-                const eventItem = document.createElement('div');
-                eventItem.className = 'event-item';
-
-                let eventTypeClass = '';
-                if (meterEvent.includes('一级告警')) {
-                    eventTypeClass = 'event-critical';
-                } else if (meterEvent.includes('二级告警')) {
-                    eventTypeClass = 'event-warning';
-                } else {
-                    eventTypeClass = 'event-normal';
-                }
-
-                eventItem.innerHTML = `
-                    <div class="event-row level-row">
-                        <span class="level-badge ${eventTypeClass}">${meterEvent}</span>
-                        <span class="time-info" title="分析日期">${eventDate}</span>
-                        <span class="duration-info" title="用电类型" style="margin-left:8px;">${electricityType}</span>
-                    </div>
-                    <div class="event-row">
-                        <span class="label">用电方:</span>
-                        <span class="content" title="${electricityUser}">${electricityUser}</span>
-                        <span class="label" style="margin-left:8px;">单元:</span>
-                        <span class="content">${belongUnit}</span>
-                    </div>
-                    <div class="event-row">
-                        <span class="label">网格:</span>
-                        <span class="content" title="${belongGrid}">${belongGrid}</span>
-                    </div>
-                    <div class="event-row">
-                        <span class="label">位置:</span>
-                        <span class="content" title="${location}">${location}</span>
-                    </div>
-                    <div class="event-row">
-                        <span class="label">电表:</span>
-                        <span class="content">${meterNumber}</span>
-                    </div>
-                `;
-
-                eventList.appendChild(eventItem);
-            });
-
-            if (events.length > maxEvents) {
-                console.log('仅显示前', maxEvents, '条事件记录，共', events.length, '条');
-            }
-
-            // 延迟启用自动滚动，确保 DOM 完全渲染
-            setTimeout(() => {
-                enableEventAutoScroll();
-            }, 100);
         })
         .catch(error => {
             console.error('加载事件数据失败:', error);
-            // 区分不同类型的错误
             if (error.message === 'Failed to fetch' || error.name === 'TypeError') {
                 eventList.innerHTML = '<div class="alarm-error"><span>无法连接到服务器</span><button onclick="loadEvents()" class="retry-btn">重试</button></div>';
             } else {
@@ -1497,3 +1576,5 @@ function loadEvents() {
 // 导出函数
 window.reloadDataWithoutLoading = reloadDataWithoutLoading;
 window.reloadDataWithFilter = reloadDataWithFilter;
+window.filterEventsByRegion = filterEventsByRegion;
+window.filterAlarmsByRegion = filterAlarmsByRegion;

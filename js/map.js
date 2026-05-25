@@ -229,12 +229,34 @@ function initMap() {
                         gridSelect.value = '';
                         gridSelect.disabled = true;
                     }
+                    // 恢复显示全部事件
+                    if (typeof window.filterEventsByRegion === 'function') {
+                        window.filterEventsByRegion('', '');
+                    }
+                    // 恢复显示全部告警
+                    if (typeof window.filterAlarmsByRegion === 'function') {
+                        window.filterAlarmsByRegion('');
+                    }
                 } else {
                     // 根据区域级别触发不同的数据筛选
                     filterDataByRegion(regionName, regionLevel);
                     // 同步更新选择器
                     if (typeof updateSelectorFromMap === 'function') {
                         updateSelectorFromMap(regionName);
+                    }
+                    // 同步筛选事件总览
+                    if (typeof window.filterEventsByRegion === 'function') {
+                        const districtSel = document.getElementById('district-select');
+                        const gridSel = document.getElementById('grid-select');
+                        window.filterEventsByRegion(
+                            districtSel ? districtSel.value : '',
+                            gridSel ? gridSel.value : ''
+                        );
+                    }
+                    // 同步筛选告警总览
+                    if (typeof window.filterAlarmsByRegion === 'function') {
+                        const districtSel = document.getElementById('district-select');
+                        window.filterAlarmsByRegion(districtSel ? districtSel.value : '');
                     }
                 }
             } else {
@@ -257,6 +279,14 @@ function initMap() {
                 if (gridSelect) {
                     gridSelect.value = '';
                     gridSelect.disabled = true;
+                }
+                // 恢复显示全部事件
+                if (typeof window.filterEventsByRegion === 'function') {
+                    window.filterEventsByRegion('', '');
+                }
+                // 恢复显示全部告警
+                if (typeof window.filterAlarmsByRegion === 'function') {
+                    window.filterAlarmsByRegion('');
                 }
             }
         });
@@ -759,26 +789,31 @@ function updateMapHighlight(district) {
 // 重置数据筛选（显示全部数据）
 function resetDistrictFilter() {
     console.log('重置区域筛选，显示全部数据');
-    
+
     const previousDistrict = currentSelectedDistrict;
     currentSelectedDistrict = null;
-    
+
     // 恢复原始完整数据
     if (window.originalDataCache && window.originalDataCache.length > 0) {
         window.rawDataCache = window.originalDataCache;
         console.log('恢复原始数据，数据量:', window.rawDataCache.length);
     }
-    
+
     // 清除缓存
     if (typeof clearDataCache === 'function') {
         clearDataCache();
     }
-    
+
     // 重新加载数据
     if (typeof reloadDataWithoutLoading === 'function') {
         reloadDataWithoutLoading();
     }
-    
+
+    // 恢复显示全部事件
+    if (typeof window.filterEventsByRegion === 'function') {
+        window.filterEventsByRegion('', '');
+    }
+
     // 取消地图选中状态
     if (mapChart && previousDistrict) {
         mapChart.dispatchAction({
@@ -831,46 +866,76 @@ function initDistrictSelector(districts, gridsByDistrict) {
     // 区县选择变化事件
     districtSelect.addEventListener('change', function() {
         const selectedDistrict = this.value;
-        
+
         if (selectedDistrict) {
             // 启用网格选择器
             gridSelect.disabled = false;
-            
+
             // 填充网格选择器
             const grids = gridsByDistrict[selectedDistrict] || [];
             gridSelect.innerHTML = '<option value="">选择网格</option>';
-            
+
             grids.forEach(grid => {
                 const option = document.createElement('option');
                 option.value = grid;
                 option.textContent = grid;
                 gridSelect.appendChild(option);
             });
-            
+
             // 筛选该区县数据
             filterDataByRegion(selectedDistrict, 'district');
+            // 同步筛选事件总览
+            if (typeof window.filterEventsByRegion === 'function') {
+                window.filterEventsByRegion(selectedDistrict, '');
+            }
+            // 同步筛选告警总览
+            if (typeof window.filterAlarmsByRegion === 'function') {
+                window.filterAlarmsByRegion(selectedDistrict);
+            }
         } else {
             // 禁用网格选择器
             gridSelect.disabled = true;
             gridSelect.innerHTML = '<option value="">选择网格</option>';
-            
+
             // 重置为显示全部数据
             resetDistrictFilter();
+            // 恢复显示全部事件
+            if (typeof window.filterEventsByRegion === 'function') {
+                window.filterEventsByRegion('', '');
+            }
+            // 恢复显示全部告警
+            if (typeof window.filterAlarmsByRegion === 'function') {
+                window.filterAlarmsByRegion('');
+            }
         }
     });
-    
+
     // 网格选择变化事件
     gridSelect.addEventListener('change', function() {
         const selectedGrid = this.value;
-        
+
         if (selectedGrid) {
             // 筛选该网格数据
             filterDataByRegion(selectedGrid, 'grid');
+            // 同步筛选事件总览
+            if (typeof window.filterEventsByRegion === 'function') {
+                window.filterEventsByRegion(districtSelect.value, selectedGrid);
+            }
+            // 同步筛选告警总览
+            if (typeof window.filterAlarmsByRegion === 'function') {
+                window.filterAlarmsByRegion(districtSelect.value);
+            }
         } else {
             // 如果没有选择网格，回到区县数据
             const selectedDistrict = districtSelect.value;
             if (selectedDistrict) {
                 filterDataByRegion(selectedDistrict, 'district');
+                if (typeof window.filterEventsByRegion === 'function') {
+                    window.filterEventsByRegion(selectedDistrict, '');
+                }
+                if (typeof window.filterAlarmsByRegion === 'function') {
+                    window.filterAlarmsByRegion(selectedDistrict);
+                }
             }
         }
     });
