@@ -796,9 +796,16 @@ function getCurrentDistrict() {
 
 // 存储区县和网格的对应关系
 let gridsByDistrictMap = {};
+let selectorsInitialized = false;
 
 // 初始化区县和网格选择器
 function initDistrictSelector(districts, gridsByDistrict) {
+    if (selectorsInitialized) {
+        console.log('选择器已初始化，跳过重复绑定');
+        return;
+    }
+    selectorsInitialized = true;
+    
     console.log('初始化选择器 - 区县:', districts);
     console.log('区县-网格对应关系:', gridsByDistrict);
     

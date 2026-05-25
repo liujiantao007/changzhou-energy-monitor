@@ -1298,7 +1298,7 @@ function updateCharts(data) {
     updateElectricityTypeChart(data);
 
     // 更新能耗趋势图
-    updateEnergyTrendChart(data);
+    updateEnergyTrendChart(data, getTimeRange());
 }
 
 // 导出数据处理函数

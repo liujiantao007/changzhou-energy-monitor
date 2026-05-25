@@ -359,48 +359,11 @@ function initTimeSelectors() {
                 }
             });
             
-            // 获取父元素，判断是哪个时间选择器
-            const parent = this.closest('.time-selector');
-            const parentId = parent ? parent.id : '';
-            
-            // 对于月/年视图，调用 reloadDataWithoutLoading 来重新加载数据和更新总览
-            if (timeRange === '月' || timeRange === '年') {
-                // 先更新时间维度
-                if (typeof setTimeRange === 'function') {
-                    setTimeRange(timeRange);
-                }
-                // reloadDataWithoutLoading 内部会处理总览更新、趋势图数据加载等完整流程
-                reloadDataWithoutLoading();
-                return;
-            }
-            
-            // 对于日视图，如果是趋势图时间选择器，也调用 reloadDataForTrendChart
-            if (parentId === 'trend-time-selector') {
-                // 先更新时间维度
-                if (typeof setTimeRange === 'function') {
-                    setTimeRange(timeRange);
-                }
-                // 重新加载趋势图专用数据
-                reloadDataForTrendChart(timeRange);
-                return;
-            }
-            
-            // 设置时间维度
             if (typeof setTimeRange === 'function') {
                 setTimeRange(timeRange);
             }
             
-            // 重新过滤数据（保持当前区域选择）
             reloadDataWithoutLoading();
-            
-            // 同时更新能耗趋势图
-            if (typeof updateEnergyTrendChart === 'function') {
-                const cachedData = {
-                    rawData: window.originalDataCache || window.rawDataCache || [],
-                    latestDate: window.latestDate || null
-                };
-                updateEnergyTrendChart(cachedData, timeRange);
-            }
         });
     });
     
@@ -506,7 +469,12 @@ async function reloadDataForTrendChart(timeRange) {
 }
 
 // 重新加载数据（不显示加载提示框）
+let reloadDataSeq = 0;
+
 async function reloadDataWithoutLoading() {
+    const mySeq = ++reloadDataSeq;
+    const isLatest = () => mySeq === reloadDataSeq;
+
     try {
         const currentDistrict = (typeof getCurrentDistrict === 'function') ? getCurrentDistrict() : null;
         const currentTimeRangeValue = (typeof getTimeRange === 'function') ? getTimeRange() : '日';
@@ -561,23 +529,17 @@ async function reloadDataWithoutLoading() {
 
             try {
                 const summaryResponse = await fetch(summaryUrl);
+                if (!isLatest()) { console.log('月/年视图：已被新请求覆盖，跳过'); return; }
                 const summaryResult = await summaryResponse.json();
 
                 if (summaryResult.success) {
                     console.log('汇总数据获取成功:', summaryResult);
                     
-                    // 对于月视图，我们不应该直接更新DOM，而是应该：
-                    // 1. 从 API 获取详细数据 (summary_data)
-                    // 2. 过滤数据
-                    // 3. 使用 processData 处理数据
-                    // 这样可以确保与日视图的处理方式一致
-                    
                     // 重新构建日期范围：月视图需要加载上月和当月的数据，才能计算环比
-                    // 例如：3月视图应该加载2月和3月的数据
                     let extendedDateFrom = dateFrom;
                     if (currentTimeRangeValue === '月') {
                         const startDateObj = new Date(dateFrom);
-                        startDateObj.setMonth(startDateObj.getMonth() - 1); // 再提前一个月
+                        startDateObj.setMonth(startDateObj.getMonth() - 1);
                         const extYear = startDateObj.getFullYear();
                         const extMonth = startDateObj.getMonth() + 1;
                         extendedDateFrom = `${extYear}-${String(extMonth).padStart(2, '0')}-01`;
@@ -595,6 +557,7 @@ async function reloadDataWithoutLoading() {
                     console.log('月视图：加载详细数据', detailedApiUrl);
                     
                     const detailedResponse = await fetch(detailedApiUrl);
+                    if (!isLatest()) { console.log('月/年视图：已被新请求覆盖，跳过'); return; }
                     const detailedResult = await detailedResponse.json();
                     
                     if (detailedResult.success) {
@@ -622,7 +585,7 @@ async function reloadDataWithoutLoading() {
                             trendData: generateTrendData(processedData)
                         };
                         
-                        // 处理数据（与日视图一致的方式）
+                        // 处理数据
                         processData(data);
                         
                         // 更新能耗趋势图
@@ -633,39 +596,17 @@ async function reloadDataWithoutLoading() {
                         // 更新标题显示当前区域
                         updateTitleWithDistrict(currentDistrict);
                         
-                        // 计算并更新环比数据（使用详细数据计算，确保准确性）
+                        // 计算并更新环比数据
                         const currentEnergy = filteredData.reduce((sum, item) => sum + Number(item['AB'] || item['ab'] || 0), 0);
                         const currentCost = filteredData.reduce((sum, item) => sum + Number(item['AC'] || item['ac'] || 0), 0);
                         const overviewCounts = calculateOverviewCountsByTimeRange(filteredData, currentTimeRangeValue);
                         const currentPoi = overviewCounts.totalPoi;
                         const currentDevice = overviewCounts.totalDevice;
                         
-                        // 调用环比计算函数
                         calculateAndDisplayChanges(processedData, currentEnergy, currentCost, currentPoi, currentDevice);
                     }
 
-                    // 注：环比数据已在上面的详细数据处理中计算，不再重复计算
-                    // 以下代码已移至上面，确保使用详细数据计算环比
-
-                    // 计算上期日期范围
-                    // 更新趋势图
-                    if (typeof updateEnergyTrendChart === 'function') {
-                        // 月视图/年视图：重新加载对应时间范围的数据
-                        if (currentTimeRangeValue === '月' || currentTimeRangeValue === '年') {
-                            console.log('月/年视图：重新加载趋势图数据，时间维度:', currentTimeRangeValue);
-                            // 调用 reloadDataForTrendChart 重新加载正确的数据范围
-                            reloadDataForTrendChart(currentTimeRangeValue);
-                        } else {
-                            // 日视图：使用当前缓存
-                            const cachedData = {
-                                rawData: window.rawDataCache || [],
-                                latestDate: summaryResult.last_date || null
-                            };
-                            updateEnergyTrendChart(cachedData, currentTimeRangeValue);
-                        }
-                    }
-
-                    // 更新用电方分类饼图（双环：外环能耗，内环电费）
+                    // 更新各分项图表
                     if (typeof updateConsumerTypeChart === 'function') {
                         const consumerData = {
                             rawData: window.rawDataCache || [],
@@ -680,7 +621,6 @@ async function reloadDataWithoutLoading() {
                         updateConsumerTypeChart(consumerData);
                     }
 
-                    // 更新 POI 分项统计图表
                     if (typeof updatePoiChart === 'function') {
                         const poiData = {
                             rawData: window.rawDataCache || [],
@@ -693,7 +633,6 @@ async function reloadDataWithoutLoading() {
                         updatePoiChart(poiData);
                     }
 
-                    // 更新用电类型统计图表
                     if (typeof updateElectricityTypeChart === 'function') {
                         const electricityTypeData = {
                             rawData: window.rawDataCache || [],
@@ -735,6 +674,7 @@ async function reloadDataWithoutLoading() {
 
         try {
             const response = await fetch(apiUrl);
+            if (!isLatest()) { console.log('日视图：已被新请求覆盖，跳过'); return; }
             const result = await response.json();
 
             if (!result.success) {
@@ -783,7 +723,6 @@ async function reloadDataWithoutLoading() {
         } catch (error) {
             console.error('重新加载数据失败:', error);
             
-            // 区分不同类型的错误并提供友好的提示
             if (error.message === 'Failed to fetch' || error.name === 'TypeError') {
                 console.warn('API服务器连接失败，请检查服务器是否启动');
             } else {
@@ -797,77 +736,21 @@ async function reloadDataWithoutLoading() {
 
 // 使用筛选后的数据重新加载图表
 function reloadDataWithFilter(filteredData, district) {
-    console.log('使用筛选数据重新加载图表，区域:', district, '数据量:', filteredData.length);
+    console.log('使用筛选数据重新加载图表，区域:', district, '数据量:', filteredData ? filteredData.length : 0);
 
-    // 检查数据是否有效
     if (!filteredData || filteredData.length === 0) {
         console.warn('筛选数据为空，跳过图表更新');
         return;
     }
 
-    // 对于月视图和年视图，需要重新从API加载完整时间范围的数据
-    const currentTimeType = typeof getCurrentTrendTimeType === 'function'
-        ? getCurrentTrendTimeType()
-        : '日';
-
-    if (currentTimeType === '月' || currentTimeType === '年') {
-        console.log('月/年维度切换区域，重新加载API数据...');
-        // 调用 reloadDataForTrendChart 来重新从API加载完整时间范围的数据
-        if (typeof reloadDataForTrendChart === 'function') {
-            reloadDataForTrendChart(currentTimeType);
-        }
-        // 更新标题显示当前区域
-        updateTitleWithDistrict(district);
-        // 保持地图区域高亮状态
-        if (district && typeof updateMapHighlight === 'function') {
-            updateMapHighlight(district);
-        }
-        return;
+    if (typeof reloadDataWithoutLoading === 'function') {
+        reloadDataWithoutLoading();
     }
 
-    try {
-        // 根据当前时间维度过滤数据
-        const timeFilteredData = filterDataByTimeRange(filteredData);
+    updateTitleWithDistrict(district);
 
-        console.log('时间过滤后数据量:', timeFilteredData.length);
-
-        // 计算总体电费用于调试
-        const testCost = timeFilteredData.reduce((sum, item) => {
-            const value = item['AC'] || 0;
-            return sum + Number(value || 0);
-        }, 0);
-        console.log('筛选后的总体电费（原始）:', testCost, '四舍五入:', Math.round(testCost));
-
-        // 构建数据对象
-        const data = {
-            rawData: filteredData,
-            energyData: timeFilteredData,
-            reportData: {
-                rent: { total: 0, pending: 0, completed: 0 },
-                electricity: { total: 0, pending: 0, completed: 0 }
-            },
-            trendData: generateTrendData(filteredData),
-            latestDate: window.latestDate || null // 使用全局保存的最新日期
-        };
-
-        // 处理数据
-        processData(data);
-
-        // 更新能耗趋势图，使用当前选择的时间维度
-        if (typeof updateEnergyTrendChart === 'function') {
-            updateEnergyTrendChart(data, currentTimeType);
-        }
-
-        // 更新标题显示当前区域
-        updateTitleWithDistrict(district);
-
-        // 保持地图区域高亮状态
-        if (district && typeof updateMapHighlight === 'function') {
-            updateMapHighlight(district);
-        }
-
-    } catch (error) {
-        console.error('筛选数据加载失败:', error);
+    if (district && typeof updateMapHighlight === 'function') {
+        updateMapHighlight(district);
     }
 }
 

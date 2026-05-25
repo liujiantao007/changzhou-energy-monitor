@@ -3,10 +3,6 @@
 // 全局图表实例
 let charts = {};
 
-// 防止趋势图多次更新的标志
-let isUpdatingTrendChart = false;
-let trendChartUpdateTimer = null;
-
 // 初始化图表
 function initCharts() {
     console.log('初始化图表...');
@@ -592,19 +588,6 @@ let currentTrendTimeType = '日';  // 默认日维度
 function updateEnergyTrendChart(data, timeType) {
     if (!charts.energyTrendChart) return;
     
-    // 防止在短时间内多次更新
-    if (isUpdatingTrendChart) {
-        console.log('趋势图正在更新中，跳过此次调用');
-        return;
-    }
-    
-    isUpdatingTrendChart = true;
-    
-    // 清除之前的定时器
-    if (trendChartUpdateTimer) {
-        clearTimeout(trendChartUpdateTimer);
-    }
-    
     // 使用传入的时间类型，或使用当前保存的类型
     if (timeType) {
         currentTrendTimeType = timeType;
@@ -990,11 +973,6 @@ function updateEnergyTrendChart(data, timeType) {
     
     charts.energyTrendChart.setOption(option);
     console.log('能耗趋势图配置已设置');
-    
-    // 更新完成后，延迟300毫秒释放标志
-    trendChartUpdateTimer = setTimeout(function() {
-        isUpdatingTrendChart = false;
-    }, 300);
 }
 
 // 获取当前能耗趋势图的时间维度
