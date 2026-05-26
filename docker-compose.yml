@@ -4,10 +4,8 @@ services:
     container_name: energy-monitor-prod
     restart: always
 
-    # 端口映射
-    ports:
-      - "65080:80"    # 前端页面（外部访问 65080）
-      - "5000:5000"   # 后端 API
+    # 使用 host 网络，让容器直通宿主机的网络层（解决 3220 数据库超时问题）
+    network_mode: "host"
 
     environment:
       - TZ=Asia/Shanghai
