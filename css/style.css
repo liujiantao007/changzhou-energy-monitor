@@ -860,7 +860,7 @@ body {
 .knowledge-base-main {
     flex: 1;
     display: flex;
-    height: 100%;
+    min-height: 0;
     overflow: hidden;
     padding: 10px;
     gap: 10px;
@@ -908,6 +908,9 @@ body {
     padding: 0;
     overflow: hidden;
     background: transparent;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
 }
 
 /* 面包屑导航 */
@@ -920,13 +923,15 @@ body {
 
 /* 文件列表表格 */
 .file-list-container {
-    height: 100%;
+    flex: 1;
+    min-height: 0;
     display: flex;
     flex-direction: column;
     background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
     border-radius: 8px;
     padding: 10px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    overflow-y: auto;
 }
 
 .file-list-table {
@@ -935,6 +940,12 @@ body {
     background: white;
     border-radius: 6px;
     overflow: hidden;
+}
+
+.file-list-table thead {
+    position: sticky;
+    top: 0;
+    z-index: 1;
 }
 
 .file-list-table th {

@@ -1,7 +1,8 @@
 import os
+import json
 import hashlib
 import requests
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, send_file, send_from_directory
 from flask_cors import CORS
 import pymysql
 from datetime import datetime, date
@@ -819,6 +820,141 @@ def query_dfai_detail_data():
             'error': f'Internal error: {str(e)}',
             'readDate': read_date if 'read_date' in locals() else get_current_date_str()
         }), 500
+
+# 知识库文件列表接口（扫描 data 目录）
+@app.route('/api/knowledge/files')
+def knowledge_files():
+    """返回分类后的文件列表"""
+    data_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data')
+    manifest_path = os.path.join(data_dir, '_manifest.json')
+
+    # 如果存在 manifest.json 且内容有效，从中读取分类信息
+    if os.path.isfile(manifest_path):
+        try:
+            content = open(manifest_path, 'r', encoding='utf-8').read().strip()
+            if content:
+                return jsonify(json.loads(content))
+        except (json.JSONDecodeError, Exception):
+            pass  # manifest 无效则回退到文件名分类
+
+    # 否则按文件名关键字分类（兼容已有文件）
+    files = os.listdir(data_dir)
+    result = {'管理办法': [], '风险管控': []}
+    for f in files:
+        if f.startswith('~') or f == '_manifest.json':
+            continue
+        ext = os.path.splitext(f)[1].lower().lstrip('.')
+        fsize = os.path.getsize(os.path.join(data_dir, f))
+        size_str = f'{fsize/1024:.0f}KB' if fsize < 1024*1024 else f'{fsize/1024/1024:.1f}MB'
+        file_info = {
+            'name': f, 'size': size_str, 'uploadDate': '', 'type': ext,
+            'filePath': f
+        }
+        if '风险' in f or '廉洁' in f:
+            file_info['uploadDate'] = '2026-05-26'
+            result['风险管控'].append(file_info)
+        elif '办法' in f or '管理' in f or '规范' in f or '规程' in f:
+            file_info['uploadDate'] = '2026-05-26'
+            result['管理办法'].append(file_info)
+    return jsonify(result)
+
+# 知识库文件上传接口
+@app.route('/api/knowledge/upload', methods=['POST'])
+def knowledge_upload():
+    """上传知识库文件"""
+    data_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data')
+    category = request.form.get('category', '')
+    file = request.files.get('file')
+    if not file or not file.filename:
+        return jsonify({'success': False, 'error': 'No file provided'}), 400
+
+    # 保留原始文件名，如果重名则加唯一后缀
+    filename = file.filename
+    file_path = os.path.join(data_dir, filename)
+    base_name, ext = os.path.splitext(filename)
+    counter = 1
+    while os.path.isfile(file_path):
+        filename = f'{base_name}_{counter}{ext}'
+        file_path = os.path.join(data_dir, filename)
+        counter += 1
+
+    file.save(file_path)
+
+    # 更新 manifest
+    manifest_path = os.path.join(data_dir, '_manifest.json')
+    manifest = {}
+    if os.path.isfile(manifest_path):
+        try:
+            with open(manifest_path, 'r', encoding='utf-8') as f:
+                content = f.read().strip()
+                if content:
+                    manifest = json.loads(content)
+        except (json.JSONDecodeError, Exception):
+            manifest = {}
+
+    if category not in manifest:
+        manifest[category] = []
+    from datetime import date
+    today = date.today().isoformat()
+    manifest[category].append({
+        'name': filename, 'size': f'{os.path.getsize(file_path)/1024:.0f}KB',
+        'uploadDate': today, 'type': ext.lstrip('.'),
+        'filePath': filename
+    })
+
+    with open(manifest_path, 'w', encoding='utf-8') as f:
+        json.dump(manifest, f, ensure_ascii=False, indent=2)
+
+    return jsonify({'success': True, 'filename': filename})
+
+# 知识库文件删除接口
+@app.route('/api/knowledge/delete/<path:filename>', methods=['DELETE'])
+def knowledge_delete(filename):
+    """删除知识库文件"""
+    import urllib.parse
+    filename = urllib.parse.unquote(filename)
+    data_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data')
+    file_path = os.path.join(data_dir, filename)
+    if not os.path.realpath(file_path).startswith(os.path.realpath(data_dir)):
+        return jsonify({'success': False, 'error': 'Invalid file path'}), 403
+    # 如果文件存在则删除，不存在也继续清理 manifest
+    if os.path.isfile(file_path):
+        os.remove(file_path)
+
+    # 更新 manifest（移除已删除文件的记录）
+    manifest_path = os.path.join(data_dir, '_manifest.json')
+    if os.path.isfile(manifest_path):
+        try:
+            with open(manifest_path, 'r', encoding='utf-8') as f:
+                content = f.read().strip()
+                if content:
+                    manifest = json.loads(content)
+                    for cat in list(manifest.keys()):
+                        manifest[cat] = [x for x in manifest[cat] if x.get('name') != filename]
+                        if not manifest[cat]:
+                            del manifest[cat]
+                    with open(manifest_path, 'w', encoding='utf-8') as f:
+                        json.dump(manifest, f, ensure_ascii=False, indent=2)
+        except (json.JSONDecodeError, Exception):
+            pass
+
+    return jsonify({'success': True})
+
+# 知识库文件下载接口
+@app.route('/api/knowledge/download/<path:filename>')
+def knowledge_download(filename):
+    """下载知识库文件"""
+    import urllib.parse
+    filename = urllib.parse.unquote(filename)
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    file_path = os.path.join(base_dir, 'data', filename)
+    # 安全检查：防止目录遍历
+    data_dir = os.path.join(base_dir, 'data')
+    if not os.path.realpath(file_path).startswith(os.path.realpath(data_dir)):
+        return jsonify({'success': False, 'error': 'Invalid file path'}), 403
+    if not os.path.isfile(file_path):
+        return jsonify({'success': False, 'error': 'File not found'}), 404
+    return send_file(file_path, as_attachment=True)
 
 if __name__ == '__main__':
     print("Starting Energy Data API Server...")

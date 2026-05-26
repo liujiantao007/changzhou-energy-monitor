@@ -41,7 +41,30 @@ window.onload = function() {
 }
 
 // 知识库功能初始化
+function handleMenuClick(category) {
+    // 记录当前分类
+    currentKnowledgeCategory = category;
+    // 移除所有菜单的active类
+    const menuItems = document.querySelectorAll('.menu-item');
+    menuItems.forEach(item => item.classList.remove('active'));
+
+    // 为当前点击的菜单添加active类
+    const targetMenu = Array.from(menuItems).find(item => item.innerText === category);
+    if (targetMenu) {
+        targetMenu.classList.add('active');
+    }
+
+    // 加载文件列表
+    loadFileList(category);
+}
+
+let knowledgeBaseInitialized = false;
+
 function initKnowledgeBase() {
+    // 防止重复初始化导致事件重复绑定
+    if (knowledgeBaseInitialized) return;
+    knowledgeBaseInitialized = true;
+
     // 菜单点击事件
     const menuItems = document.querySelectorAll('.menu-item');
     menuItems.forEach(menu => {
@@ -50,6 +73,7 @@ function initKnowledgeBase() {
             this.classList.add('active');
 
             const category = this.innerText;
+            currentKnowledgeCategory = category;
             loadFileList(category);
         });
     });
@@ -77,84 +101,149 @@ function initKnowledgeBase() {
 // 加载文件列表
 function loadFileList(category) {
     const fileList = document.getElementById('file-list');
-    const breadcrumb = document.querySelector('.breadcrumb span');
-
-    // 更新面包屑导航
-    breadcrumb.textContent = `当前位置：首页 > ${category}`;
-
-    // 模拟数据（实际应该从服务器获取）
-    const files = {
-        '管理办法': [
-            { name: '网络安全管理办法.docx', size: '1.2MB', uploadDate: '2025-11-26', type: 'doc' },
-            { name: '能耗管理实施细则.pdf', size: '850KB', uploadDate: '2025-10-11', type: 'pdf' },
-            { name: '设备维护管理规定.xlsx', size: '3.5MB', uploadDate: '2025-04-21', type: 'xls' },
-            { name: '安全生产操作规程.doc', size: '2.1MB', uploadDate: '2025-04-14', type: 'doc' },
-            { name: '机房管理规范.pdf', size: '600KB', uploadDate: '2025-04-11', type: 'pdf' }
-        ],
-        '风险管控': [
-            { name: '网络安全风险评估报告.docx', size: '1.5MB', uploadDate: '2025-11-25', type: 'doc' },
-            { name: '能耗异常监控与预警机制.pdf', size: '900KB', uploadDate: '2025-11-20', type: 'pdf' },
-            { name: '设备故障应急处理方案.xlsx', size: '2.5MB', uploadDate: '2025-11-18', type: 'xls' },
-            { name: '安全隐患排查治理记录.doc', size: '1.8MB', uploadDate: '2025-11-15', type: 'doc' }
-        ]
-    };
-
-    // 渲染文件列表
-    fileList.innerHTML = '';
-    const categoryFiles = files[category] || [];
-
-    if (categoryFiles.length === 0) {
-        fileList.innerHTML = '<tr><td colspan="4" class="no-files">暂无文件，请点击"上传文件"添加文件</td></tr>';
-        return;
+    // 直接更新面包屑导航文字
+    const breadcrumbText = document.getElementById('breadcrumb-text');
+    if (breadcrumbText) {
+        breadcrumbText.textContent = `当前位置：知识库 > ${category}`;
+        console.log('Breadcrumb updated to:', category);
+    } else {
+        console.error('Breadcrumb text element not found');
     }
 
-    categoryFiles.forEach(file => {
-        const fileItem = document.createElement('tr');
-        fileItem.innerHTML = `
-            <td><span class="file-icon">${getFileIcon(file.type)}</span> ${file.name}</td>
-            <td>会议材料库</td>
-            <td>${file.uploadDate}</td>
-            <td class="file-actions">
-                <button class="download-btn" onclick="downloadFile('${file.name}')">下载</button>
-                <button class="delete-btn" onclick="deleteFile('${file.name}')">删除</button>
-            </td>
-        `;
-        fileList.appendChild(fileItem);
-    });
+    // 从API获取文件列表
+    renderFileList(category);
+}
+
+// 当前知识库分类
+let currentKnowledgeCategory = '管理办法';
+
+// 渲染文件列表
+function renderFileList(category) {
+    const fileList = document.getElementById('file-list');
+    fileList.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:20px;color:#999;"><div class="spinner" style="margin:0 auto 10px;"></div>加载中...</td></tr>';
+
+    fetch(`${API_BASE}/knowledge/files`)
+        .then(res => res.json())
+        .then(data => {
+            const categoryFiles = data[category] || [];
+            fileList.innerHTML = '';
+            if (categoryFiles.length === 0) {
+                fileList.innerHTML = '<tr><td colspan="4" class="no-files">暂无文件，请点击"上传文件"添加文件</td></tr>';
+                return;
+            }
+            categoryFiles.forEach(file => {
+                const fileItem = document.createElement('tr');
+                fileItem.innerHTML = `
+                    <td><span class="file-icon">${getFileIcon(file.type)}</span> ${file.name}</td>
+                    <td>${getFileTypeLabel(file.type)}</td>
+                    <td>${file.uploadDate || ''}</td>
+                    <td class="file-actions">
+                        <button class="download-btn" onclick="downloadFile('${file.filePath}')">下载</button>
+                        <button class="delete-btn" onclick="deleteFile('${file.name}')">删除</button>
+                    </td>
+                `;
+                fileList.appendChild(fileItem);
+            });
+        })
+        .catch(err => {
+            console.error('加载文件列表失败:', err);
+            fileList.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:20px;color:#f44336;">加载文件列表失败</td></tr>';
+        });
 }
 
 // 获取文件图标
 function getFileIcon(fileType) {
     const icons = {
-        'doc': '📄',
-        'docx': '📄',
-        'xls': '📊',
-        'xlsx': '📊',
-        'pdf': '📕'
+        'doc': '📄', 'docx': '📄',
+        'xls': '📊', 'xlsx': '📊',
+        'ppt': '📑', 'pptx': '📑',
+        'pdf': '📕',
+        'txt': '📃', 'md': '📃',
+        'csv': '📋',
+        'json': '📋', 'xml': '📋',
+        'zip': '📦', 'rar': '📦', '7z': '📦'
     };
     return icons[fileType] || '📄';
+}
+
+function getFileTypeLabel(fileType) {
+    const labels = {
+        'docx': 'Word文档', 'doc': 'Word文档',
+        'xlsx': 'Excel表格', 'xls': 'Excel表格',
+        'pptx': 'PPT演示', 'ppt': 'PPT演示',
+        'pdf': 'PDF文档',
+        'txt': '文本文件', 'md': 'Markdown',
+        'csv': 'CSV文件',
+        'json': 'JSON文件', 'xml': 'XML文件',
+        'zip': '压缩包', 'rar': '压缩包', '7z': '压缩包'
+    };
+    return labels[fileType] || '未知类型';
 }
 
 // 下载文件
 function downloadFile(fileName) {
     console.log('下载文件:', fileName);
-    alert('下载功能开发中...');
+    // 调用后端API下载文件
+    const encodedFileName = encodeURIComponent(fileName);
+    const downloadUrl = `${API_BASE}/knowledge/download/${encodedFileName}`;
+    // 创建下载链接
+    const a = document.createElement('a');
+    a.href = downloadUrl;
+    a.download = fileName;
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    console.log('下载已触发:', downloadUrl);
 }
 
 // 删除文件
 function deleteFile(fileName) {
     if (confirm(`确定要删除文件 "${fileName}" 吗？`)) {
         console.log('删除文件:', fileName);
-        alert('删除功能开发中...');
+        const encodedName = encodeURIComponent(fileName);
+        fetch(`${API_BASE}/knowledge/delete/${encodedName}`, { method: 'DELETE' })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    console.log('文件已删除:', fileName);
+                    loadFileList(currentKnowledgeCategory);
+                } else {
+                    alert('删除失败: ' + (data.error || '未知错误'));
+                }
+            })
+            .catch(err => {
+                console.error('删除文件失败:', err);
+                alert('删除文件失败，请检查后端是否运行');
+            });
     }
 }
 
 // 上传文件
 function uploadFile(file) {
     console.log('上传文件:', file);
-    alert('上传功能开发中...');
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('category', currentKnowledgeCategory);
+
+    fetch(`${API_BASE}/knowledge/upload`, {
+        method: 'POST',
+        body: formData
+    })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                console.log('文件上传成功:', data.filename);
+                loadFileList(currentKnowledgeCategory);
+            } else {
+                alert('上传失败: ' + (data.error || '未知错误'));
+            }
+        })
+        .catch(err => {
+            console.error('上传文件失败:', err);
+            alert('上传文件失败，请检查后端是否运行');
+        });
 }
-};
 
 // 初始化响应式缩放
 function initResponsiveScale() {
@@ -239,8 +328,8 @@ function initNavigation() {
             // 外部链接（报账管理）或其他页面（电表管理/能耗分析/报表管理）
             e.preventDefault();
             
-            // 弹出模式：直接在浏览器中打开
-            if (window.navDisplayMode === 'popup') {
+            // 弹出模式：直接在浏览器中打开（知识库除外，始终在页面内显示）
+            if (window.navDisplayMode === 'popup' && href !== '#知识库') {
                 let targetUrl;
                 if (this.classList.contains('external-link')) {
                     targetUrl = href;
@@ -1701,3 +1790,4 @@ window.reloadDataWithoutLoading = reloadDataWithoutLoading;
 window.reloadDataWithFilter = reloadDataWithFilter;
 window.filterEventsByRegion = filterEventsByRegion;
 window.filterAlarmsByRegion = filterAlarmsByRegion;
+window.handleMenuClick = handleMenuClick;
