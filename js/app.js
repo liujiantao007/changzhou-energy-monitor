@@ -872,15 +872,15 @@ async function reloadDataWithoutLoading() {
             return;
         }
 
-        // 对于日视图，加载包含上月同天的数据范围以支持环比计算
-        const prevMonthDate = new Date(currentYear, currentMonth - 2, 1);
-        const prevMonthYear = prevMonthDate.getFullYear();
-        const prevMonth = prevMonthDate.getMonth() + 1;
-        const prevMonthStart = `${prevMonthYear}-${String(prevMonth).padStart(2, '0')}-20`;
-        const currentMonthEnd = `${currentYear}-${String(currentMonth).padStart(2, '0')}-20`;
+        // 对于日视图，以最新有效日期为截止，加载约60天数据以支持环比计算
+        const endDate = window.latestDate || `${currentYear}-${String(currentMonth).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+        const endDateObj = new Date(endDate);
+        const startDateObj = new Date(endDateObj.getTime() - 60 * 24 * 60 * 60 * 1000);
+        const startDateStr = `${startDateObj.getFullYear()}-${String(startDateObj.getMonth() + 1).padStart(2, '0')}-${String(startDateObj.getDate()).padStart(2, '0')}`;
+        const endDateStr = typeof endDate === 'string' ? endDate : `${endDateObj.getFullYear()}-${String(endDateObj.getMonth() + 1).padStart(2, '0')}-${String(endDateObj.getDate()).padStart(2, '0')}`;
 
         // 构建 API URL，包含区域筛选参数
-        let apiUrl = API_BASE + `/summary_data?date_from=${prevMonthStart}&date_to=${currentMonthEnd}`;
+        let apiUrl = API_BASE + `/summary_data?date_from=${startDateStr}&date_to=${endDateStr}`;
         if (currentDistrict) {
             if (currentDistrict.includes('网格')) {
                 apiUrl += `&grid=${encodeURIComponent(currentDistrict)}`;
