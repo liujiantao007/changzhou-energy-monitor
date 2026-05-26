@@ -245,29 +245,40 @@
 
             <div id="知识库" class="page">
                 <div class="knowledge-base-container">
-                    <!-- 左侧菜单 -->
-                    <div class="knowledge-base-sidebar">
-                        <h3>知识库分类</h3>
-                        <ul class="category-list">
-                            <li class="category-item active" data-category="管理办法">管理办法</li>
-                            <li class="category-item" data-category="风险防控">风险防控</li>
-                        </ul>
-                    </div>
+                    <!-- 主内容区 -->
+                    <div class="knowledge-base-main">
+                        <!-- 左侧菜单 -->
+                        <div class="knowledge-base-sidebar">
+                            <div class="menu-item active">管理办法</div>
+                            <div class="menu-item">风险管控</div>
+                        </div>
 
-                    <!-- 右侧内容区 -->
-                    <div class="knowledge-base-content">
-                        <!-- 文件列表区域 -->
-                        <div class="file-list-container">
-                            <div class="file-list-header">
-                                <h3 id="category-title">管理办法</h3>
-                                <div class="file-actions">
-                                    <label for="file-upload" class="upload-btn">上传文件</label>
-                                    <input type="file" id="file-upload" accept=".doc,.docx,.xls,.xlsx,.pdf" style="display: none;">
-                                </div>
+                        <!-- 右侧内容区 -->
+                        <div class="knowledge-base-content">
+                            <!-- 面包屑导航 -->
+                            <div class="breadcrumb">
+                                <span>当前位置：首页 > 待阅文件</span>
                             </div>
 
-                            <div class="file-list" id="file-list">
-                                <!-- 文件列表将通过 JavaScript 动态生成 -->
+                            <!-- 文件列表区域 -->
+                            <div class="file-list-container">
+                                <div class="upload-section">
+                                    <button id="upload-btn" class="upload-btn">上传文件</button>
+                                    <input type="file" id="file-input" multiple style="display: none;">
+                                </div>
+                                <table class="file-list-table">
+                                    <thead>
+                                        <tr>
+                                            <th>文件名</th>
+                                            <th>文件类型</th>
+                                            <th>时间</th>
+                                            <th>操作</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="file-list">
+                                        <!-- 文件列表将通过 JavaScript 动态生成 -->
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
                     </div>

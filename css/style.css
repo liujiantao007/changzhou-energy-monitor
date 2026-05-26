@@ -843,115 +843,128 @@ body {
     padding: 5px;
 }
 
+    font-size: 12px;
+    color: #999;
+}
+
 /* 知识库样式 */
 .knowledge-base-container {
     display: flex;
+    flex-direction: column;
     height: 100%;
     width: 100%;
+    background: transparent;
 }
 
+/* 主内容区 */
+.knowledge-base-main {
+    flex: 1;
+    display: flex;
+    height: 100%;
+    overflow: hidden;
+    padding: 10px;
+    gap: 10px;
+}
+
+/* 左侧菜单 */
 .knowledge-base-sidebar {
     width: 200px;
-    background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
-    border-radius: 8px 0 0 8px;
-    padding: 15px;
-    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+    background: transparent;
+    display: flex;
+    flex-direction: column;
     flex-shrink: 0;
+    gap: 8px;
 }
 
-.knowledge-base-sidebar h3 {
-    font-size: 16px;
-    font-weight: bold;
-    margin-bottom: 15px;
-    color: #1976d2;
-    border-bottom: 2px solid #1976d2;
-    padding-bottom: 5px;
-}
-
-.category-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-}
-
-.category-item {
-    padding: 10px 15px;
-    margin-bottom: 5px;
-    background: #fff;
-    border-radius: 4px;
+.menu-item {
+    padding: 15px 20px;
+    background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+    border-radius: 6px;
     cursor: pointer;
     transition: all 0.3s ease;
-    color: #333;
+    font-size: 14px;
+    color: #1976d2;
+    font-weight: bold;
+    text-align: center;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
 }
 
-.category-item:hover {
-    background: #1976d2;
+.menu-item:hover {
+    background: linear-gradient(135deg, #bbdefb 0%, #90caf9 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+.menu-item.active {
+    background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
     color: white;
+    font-weight: bold;
+    border-left: 4px solid #fff;
 }
 
-.category-item.active {
-    background: #1976d2;
-    color: white;
-}
-
+/* 右侧内容区 */
 .knowledge-base-content {
     flex: 1;
-    padding: 15px;
-    background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%);
-    border-radius: 0 8px 8px 0;
+    padding: 0;
     overflow: hidden;
+    background: transparent;
 }
 
+/* 面包屑导航 */
+.breadcrumb {
+    margin-bottom: 10px;
+    font-size: 12px;
+    color: #999;
+    padding: 0 10px;
+}
+
+/* 文件列表表格 */
 .file-list-container {
     height: 100%;
     display: flex;
     flex-direction: column;
+    background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+    border-radius: 8px;
+    padding: 10px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
 }
 
-.file-list-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 15px;
-    padding-bottom: 10px;
-    border-bottom: 2px solid #1976d2;
+.file-list-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    border-radius: 6px;
+    overflow: hidden;
 }
 
-#category-title {
-    font-size: 18px;
-    font-weight: bold;
-    color: #1976d2;
-}
-
-.file-actions {
-    display: flex;
-    gap: 10px;
-}
-
-.upload-btn {
-    padding: 8px 16px;
-    background: #1976d2;
+.file-list-table th {
+    background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
     color: white;
     border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: all 0.3s ease;
+    padding: 12px;
+    text-align: center;
+    font-weight: bold;
     font-size: 14px;
 }
 
-.upload-btn:hover {
-    background: #1565c0;
+.file-list-table td {
+    border: none;
+    padding: 12px;
+    text-align: center;
+    font-size: 14px;
+    color: #333;
+    border-bottom: 1px solid #e0e0e0;
 }
 
-.file-list {
-    flex: 1;
-    overflow-y: auto;
-    background: #fff;
-    border-radius: 8px;
-    padding: 10px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+.file-list-table tr:nth-child(even) {
+    background: #f5f5f5;
 }
 
+.file-list-table tr:hover {
+    background: #e3f2fd;
+}
+
+/* 无文件提示 */
 .no-files {
     text-align: center;
     padding: 40px 20px;
@@ -962,49 +975,34 @@ body {
     border: 2px dashed #e0e0e0;
 }
 
-.file-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px;
-    border-bottom: 1px solid #e0e0e0;
-    transition: all 0.3s ease;
+.upload-section {
+    margin-bottom: 10px;
+    text-align: center;
 }
 
-.file-item:last-child {
-    border-bottom: none;
-}
-
-.file-item:hover {
-    background: #f5f5f5;
-}
-
-.file-info {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.file-icon {
-    font-size: 24px;
-}
-
-.file-details h4 {
-    margin: 0;
+.upload-btn {
+    padding: 10px 20px;
+    background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
+    color: white;
+    border: none;
+    border-radius: 6px;
     font-size: 14px;
-    color: #333;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
 }
 
-.file-details p {
-    margin: 5px 0 0;
-    font-size: 12px;
-    color: #999;
+.upload-btn:hover {
+    background: linear-gradient(135deg, #1565c0 0%, #0d47a1 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
 }
 
-.file-actions-buttons {
+.file-actions {
     display: flex;
     gap: 5px;
+    justify-content: center;
 }
 
 .download-btn, .delete-btn {
@@ -1014,22 +1012,27 @@ body {
     cursor: pointer;
     transition: all 0.3s ease;
     font-size: 12px;
+    font-weight: bold;
 }
 
 .download-btn {
-    background: #4caf50;
+    background: linear-gradient(135deg, #52c41a 0%, #45a049 100%);
     color: white;
 }
 
 .download-btn:hover {
-    background: #45a049;
+    background: linear-gradient(135deg, #45a049 0%, #388e3c 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
 .delete-btn {
-    background: #ff4d4f;
+    background: linear-gradient(135deg, #ff4d4f 0%, #d32f2f 100%);
     color: white;
 }
 
 .delete-btn:hover {
-    background: #d32f2f;
+    background: linear-gradient(135deg, #d32f2f 0%, #b71c1c 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }

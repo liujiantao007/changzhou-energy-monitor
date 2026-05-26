@@ -42,54 +42,60 @@ window.onload = function() {
 
 // 知识库功能初始化
 function initKnowledgeBase() {
-    const categoryItems = document.querySelectorAll('.category-item');
-    const fileList = document.getElementById('file-list');
-    const categoryTitle = document.getElementById('category-title');
-    const fileUpload = document.getElementById('file-upload');
+    // 菜单点击事件
+    const menuItems = document.querySelectorAll('.menu-item');
+    menuItems.forEach(menu => {
+        menu.addEventListener('click', function() {
+            menuItems.forEach(item => item.classList.remove('active'));
+            this.classList.add('active');
 
-    // 分类菜单点击事件
-    categoryItems.forEach(item => {
-        item.addEventListener('click', () => {
-            // 更新菜单激活状态
-            categoryItems.forEach(li => li.classList.remove('active'));
-            item.classList.add('active');
-
-            // 更新分类标题
-            const category = item.dataset.category;
-            categoryTitle.textContent = category;
-
-            // 加载该分类下的文件列表
+            const category = this.innerText;
             loadFileList(category);
         });
     });
 
-    // 文件上传事件
-    fileUpload.addEventListener('change', function(e) {
-        const file = e.target.files[0];
-        if (file) {
-            uploadFile(file);
-        }
+    // 上传文件事件
+    const uploadBtn = document.getElementById('upload-btn');
+    const fileInput = document.getElementById('file-input');
+    uploadBtn.addEventListener('click', function() {
+        fileInput.click();
     });
 
-    // 初始化时加载第一个分类的文件列表
+    fileInput.addEventListener('change', function(e) {
+        const files = Array.from(e.target.files);
+        files.forEach(file => {
+            uploadFile(file);
+        });
+        // 清空文件输入框
+        fileInput.value = '';
+    });
+
+    // 初始化时加载默认分类的文件
     loadFileList('管理办法');
 }
 
 // 加载文件列表
 function loadFileList(category) {
     const fileList = document.getElementById('file-list');
+    const breadcrumb = document.querySelector('.breadcrumb span');
+
+    // 更新面包屑导航
+    breadcrumb.textContent = `当前位置：首页 > ${category}`;
 
     // 模拟数据（实际应该从服务器获取）
     const files = {
         '管理办法': [
-            { name: '用电管理办法.docx', size: '1.2MB', uploadDate: '2024-01-15', type: 'doc' },
-            { name: '能源消耗统计报表.xlsx', size: '850KB', uploadDate: '2024-01-14', type: 'xls' },
-            { name: '安全操作规程.pdf', size: '3.5MB', uploadDate: '2024-01-13', type: 'pdf' }
+            { name: '网络安全管理办法.docx', size: '1.2MB', uploadDate: '2025-11-26', type: 'doc' },
+            { name: '能耗管理实施细则.pdf', size: '850KB', uploadDate: '2025-10-11', type: 'pdf' },
+            { name: '设备维护管理规定.xlsx', size: '3.5MB', uploadDate: '2025-04-21', type: 'xls' },
+            { name: '安全生产操作规程.doc', size: '2.1MB', uploadDate: '2025-04-14', type: 'doc' },
+            { name: '机房管理规范.pdf', size: '600KB', uploadDate: '2025-04-11', type: 'pdf' }
         ],
-        '风险防控': [
-            { name: '用电风险评估报告.docx', size: '2.1MB', uploadDate: '2024-01-16', type: 'doc' },
-            { name: '故障处理流程.pdf', size: '1.8MB', uploadDate: '2024-01-15', type: 'pdf' },
-            { name: '应急预案.xlsx', size: '600KB', uploadDate: '2024-01-14', type: 'xls' }
+        '风险管控': [
+            { name: '网络安全风险评估报告.docx', size: '1.5MB', uploadDate: '2025-11-25', type: 'doc' },
+            { name: '能耗异常监控与预警机制.pdf', size: '900KB', uploadDate: '2025-11-20', type: 'pdf' },
+            { name: '设备故障应急处理方案.xlsx', size: '2.5MB', uploadDate: '2025-11-18', type: 'xls' },
+            { name: '安全隐患排查治理记录.doc', size: '1.8MB', uploadDate: '2025-11-15', type: 'doc' }
         ]
     };
 
@@ -98,25 +104,20 @@ function loadFileList(category) {
     const categoryFiles = files[category] || [];
 
     if (categoryFiles.length === 0) {
-        fileList.innerHTML = '<div class="no-files">暂无文件，请点击"上传文件"添加文件</div>';
+        fileList.innerHTML = '<tr><td colspan="4" class="no-files">暂无文件，请点击"上传文件"添加文件</td></tr>';
         return;
     }
 
     categoryFiles.forEach(file => {
-        const fileItem = document.createElement('div');
-        fileItem.className = 'file-item';
+        const fileItem = document.createElement('tr');
         fileItem.innerHTML = `
-            <div class="file-info">
-                <div class="file-icon">${getFileIcon(file.type)}</div>
-                <div class="file-details">
-                    <h4>${file.name}</h4>
-                    <p>大小: ${file.size} | 上传日期: ${file.uploadDate}</p>
-                </div>
-            </div>
-            <div class="file-actions-buttons">
+            <td><span class="file-icon">${getFileIcon(file.type)}</span> ${file.name}</td>
+            <td>会议材料库</td>
+            <td>${file.uploadDate}</td>
+            <td class="file-actions">
                 <button class="download-btn" onclick="downloadFile('${file.name}')">下载</button>
                 <button class="delete-btn" onclick="deleteFile('${file.name}')">删除</button>
-            </div>
+            </td>
         `;
         fileList.appendChild(fileItem);
     });
