@@ -285,7 +285,7 @@ body {
     flex-shrink: 0;
 }
 
-.time-btn {
+.time-btn, .category-btn {
     padding: 3px 10px;
     font-size: 11px;
     border: 1px solid #90caf9;
@@ -294,15 +294,15 @@ body {
     transition: all 0.3s ease;
 }
 
-.time-btn:first-child {
+.time-btn:first-child, .category-btn:first-child {
     border-radius: 4px 0 0 4px;
 }
 
-.time-btn:last-child {
+.time-btn:last-child, .category-btn:last-child {
     border-radius: 0 4px 4px 0;
 }
 
-.time-btn.active {
+.time-btn.active, .category-btn.active {
     background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
     color: white;
     border-color: #1976d2;
