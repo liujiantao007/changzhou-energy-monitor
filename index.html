@@ -23,6 +23,7 @@
                 <a href="#电表管理" class="nav-item">电表管理</a>
                 <a href="#能耗分析" class="nav-item">能耗分析</a>
                 <a href="#报表管理" class="nav-item">报表管理</a>
+                <a href="#知识库" class="nav-item">知识库</a>
             </nav>
             <div class="navbar-placeholder"></div>
             <div class="refresh-btn mode-toggle" id="display-mode-toggle" title="切换报账管理/电表管理/能耗分析/报表管理的显示方式">弹出模式</div>
@@ -239,6 +240,37 @@
                         <span>报表管理加载中...</span>
                     </div>
                     <iframe id="baobiao-frame" src="" style="width: 100%; height: 100%; border: none; display: block;"></iframe>
+                </div>
+            </div>
+
+            <div id="知识库" class="page">
+                <div class="knowledge-base-container">
+                    <!-- 左侧菜单 -->
+                    <div class="knowledge-base-sidebar">
+                        <h3>知识库分类</h3>
+                        <ul class="category-list">
+                            <li class="category-item active" data-category="管理办法">管理办法</li>
+                            <li class="category-item" data-category="风险防控">风险防控</li>
+                        </ul>
+                    </div>
+
+                    <!-- 右侧内容区 -->
+                    <div class="knowledge-base-content">
+                        <!-- 文件列表区域 -->
+                        <div class="file-list-container">
+                            <div class="file-list-header">
+                                <h3 id="category-title">管理办法</h3>
+                                <div class="file-actions">
+                                    <label for="file-upload" class="upload-btn">上传文件</label>
+                                    <input type="file" id="file-upload" accept=".doc,.docx,.xls,.xlsx,.pdf" style="display: none;">
+                                </div>
+                            </div>
+
+                            <div class="file-list" id="file-list">
+                                <!-- 文件列表将通过 JavaScript 动态生成 -->
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </main>

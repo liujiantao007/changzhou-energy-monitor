@@ -31,6 +31,10 @@ const NAV_CONFIG = {
         '报表管理': {
             id: '报表管理',
             path: '/baobiao'
+        },
+        '知识库': {
+            id: '知识库',
+            path: '/zhishiku'
         }
     }
 };

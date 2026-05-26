@@ -35,6 +35,124 @@ window.onload = function() {
         loadAlarms();
         loadEvents();
     }, 100);
+
+    // 初始化知识库功能
+    initKnowledgeBase();
+}
+
+// 知识库功能初始化
+function initKnowledgeBase() {
+    const categoryItems = document.querySelectorAll('.category-item');
+    const fileList = document.getElementById('file-list');
+    const categoryTitle = document.getElementById('category-title');
+    const fileUpload = document.getElementById('file-upload');
+
+    // 分类菜单点击事件
+    categoryItems.forEach(item => {
+        item.addEventListener('click', () => {
+            // 更新菜单激活状态
+            categoryItems.forEach(li => li.classList.remove('active'));
+            item.classList.add('active');
+
+            // 更新分类标题
+            const category = item.dataset.category;
+            categoryTitle.textContent = category;
+
+            // 加载该分类下的文件列表
+            loadFileList(category);
+        });
+    });
+
+    // 文件上传事件
+    fileUpload.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            uploadFile(file);
+        }
+    });
+
+    // 初始化时加载第一个分类的文件列表
+    loadFileList('管理办法');
+}
+
+// 加载文件列表
+function loadFileList(category) {
+    const fileList = document.getElementById('file-list');
+
+    // 模拟数据（实际应该从服务器获取）
+    const files = {
+        '管理办法': [
+            { name: '用电管理办法.docx', size: '1.2MB', uploadDate: '2024-01-15', type: 'doc' },
+            { name: '能源消耗统计报表.xlsx', size: '850KB', uploadDate: '2024-01-14', type: 'xls' },
+            { name: '安全操作规程.pdf', size: '3.5MB', uploadDate: '2024-01-13', type: 'pdf' }
+        ],
+        '风险防控': [
+            { name: '用电风险评估报告.docx', size: '2.1MB', uploadDate: '2024-01-16', type: 'doc' },
+            { name: '故障处理流程.pdf', size: '1.8MB', uploadDate: '2024-01-15', type: 'pdf' },
+            { name: '应急预案.xlsx', size: '600KB', uploadDate: '2024-01-14', type: 'xls' }
+        ]
+    };
+
+    // 渲染文件列表
+    fileList.innerHTML = '';
+    const categoryFiles = files[category] || [];
+
+    if (categoryFiles.length === 0) {
+        fileList.innerHTML = '<div class="no-files">暂无文件，请点击"上传文件"添加文件</div>';
+        return;
+    }
+
+    categoryFiles.forEach(file => {
+        const fileItem = document.createElement('div');
+        fileItem.className = 'file-item';
+        fileItem.innerHTML = `
+            <div class="file-info">
+                <div class="file-icon">${getFileIcon(file.type)}</div>
+                <div class="file-details">
+                    <h4>${file.name}</h4>
+                    <p>大小: ${file.size} | 上传日期: ${file.uploadDate}</p>
+                </div>
+            </div>
+            <div class="file-actions-buttons">
+                <button class="download-btn" onclick="downloadFile('${file.name}')">下载</button>
+                <button class="delete-btn" onclick="deleteFile('${file.name}')">删除</button>
+            </div>
+        `;
+        fileList.appendChild(fileItem);
+    });
+}
+
+// 获取文件图标
+function getFileIcon(fileType) {
+    const icons = {
+        'doc': '📄',
+        'docx': '📄',
+        'xls': '📊',
+        'xlsx': '📊',
+        'pdf': '📕'
+    };
+    return icons[fileType] || '📄';
+}
+
+// 下载文件
+function downloadFile(fileName) {
+    console.log('下载文件:', fileName);
+    alert('下载功能开发中...');
+}
+
+// 删除文件
+function deleteFile(fileName) {
+    if (confirm(`确定要删除文件 "${fileName}" 吗？`)) {
+        console.log('删除文件:', fileName);
+        alert('删除功能开发中...');
+    }
+}
+
+// 上传文件
+function uploadFile(file) {
+    console.log('上传文件:', file);
+    alert('上传功能开发中...');
+}
 };
 
 // 初始化响应式缩放
@@ -168,6 +286,10 @@ function initNavigation() {
                         break;
                     case '报表管理':
                         loadIframePage('baobiao-frame', NAV_CONFIG.baseURL + NAV_CONFIG.pages['报表管理'].path);
+                        break;
+                    case '知识库':
+                        // 知识库是本页面功能，不需要加载 iframe
+                        initKnowledgeBase();
                         break;
                 }
             }
