@@ -7,7 +7,7 @@ import os
 import urllib.parse
 import io
 
-PORT = 65080
+PORT = int(os.environ.get('PORT', '65080'))
 
 class MyHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
     def guess_type(self, path):

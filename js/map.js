@@ -854,12 +854,29 @@ function initDistrictSelector(districts, gridsByDistrict) {
         return;
     }
     
+    // 区县排序（用户指定顺序）
+    const districtOrder = ['武进区', '新北区', '天宁区', '钟楼区', '经开区', '溧阳市', '金坛区'];
+    // 显示名称映射（value 保持 GeoJSON 原名，显示文字用用户习惯的名称）
+    const displayNames = {
+        '溧阳市': '溧阳市',
+        '金坛区': '金坛区'
+    };
+
+    // 按指定顺序排序
+    const sortedDistricts = [...districts].sort((a, b) => {
+        const ai = districtOrder.indexOf(a);
+        const bi = districtOrder.indexOf(b);
+        return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
+    });
+
+    console.log('排序后区县顺序:', sortedDistricts);
+
     // 填充区县选择器
     districtSelect.innerHTML = '<option value="">选择区县</option>';
-    districts.forEach(district => {
+    sortedDistricts.forEach(district => {
         const option = document.createElement('option');
-        option.value = district;
-        option.textContent = district;
+        option.value = district; // value 保持 GeoJSON 原名
+        option.textContent = displayNames[district] || district; // 显示名称用映射
         districtSelect.appendChild(option);
     });
     
