@@ -5,7 +5,7 @@
       "name": "前端 (Frontend)",
       "runtimeExecutable": "python",
       "runtimeArgs": ["serve_frontend.py"],
-      "port": 65186,
+      "port": 65080,
       "autoPort": true
     },
     {
