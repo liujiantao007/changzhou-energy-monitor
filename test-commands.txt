@@ -1,0 +1,17 @@
+# 测试命令集
+
+# 检查页面是否正常加载
+curl -s -o /dev/null -w "%{http_code}" "http://localhost:65080"
+
+# 检查 JavaScript 是否加载
+curl -s "http://localhost:65080" | grep -o '<script.*app\.js'
+
+# 获取 JavaScript 文件的前几行
+curl -s "http://localhost:65080/js/app.js" | head -100
+
+# 检查 body 标签
+curl -s "http://localhost:65080" | grep -A 1 -B 1 '<body'
+
+# 检查 version-toggle 元素
+curl -s "http://localhost:65080" | grep -A 5 -B 5 'version-toggle'
+

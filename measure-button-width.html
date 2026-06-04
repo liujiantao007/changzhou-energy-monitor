@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>按钮宽度测量</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background-color: #0a1a2e;
+            color: white;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 8px;
+        }
+
+        h1 {
+            color: #fff;
+            margin-bottom: 20px;
+        }
+
+        .button-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .refresh-btn {
+            padding: 4px 10px;
+            background-color: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 11px;
+            transition: all 0.3s ease;
+            color: rgba(255, 255, 255, 0.6);
+            text-shadow: none;
+            box-shadow: none;
+            outline: none;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        .refresh-btn:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .result {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-family: monospace;
+            white-space: pre;
+        }
+
+        .btn {
+            display: inline-block;
+            margin-right: 10px;
+            padding: 8px 16px;
+            background-color: #1890ff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            background-color: #40a9ff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>按钮宽度测量</h1>
+
+        <div class="button-container">
+            <div id="display-mode-toggle" class="refresh-btn mode-toggle">弹出模式</div>
+            <div id="version-toggle" class="refresh-btn mode-toggle">切换旧版</div>
+        </div>
+
+        <div id="measurement" class="result">
+            正在计算按钮尺寸...
+        </div>
+
+        <div style="margin-top: 20px;">
+            <button id="refresh" class="btn">重新测量</button>
+            <button id="calculate" class="btn">计算20%距离</button>
+        </div>
+    </div>
+
+    <script>
+        // 获取按钮尺寸
+        function measureButtons() {
+            const measurementDiv = document.getElementById('measurement');
+
+            try {
+                const displayBtn = document.getElementById('display-mode-toggle');
+                const versionBtn = document.getElementById('version-toggle');
+
+                const displayWidth = displayBtn.offsetWidth;
+                const versionWidth = versionBtn.offsetWidth;
+
+                measurementDiv.textContent = `
+✅ 测量结果：
+"弹出模式"按钮宽度: ${displayWidth}px
+"切换旧版"按钮宽度: ${versionWidth}px
+                `;
+
+                return { displayWidth, versionWidth };
+            } catch (error) {
+                measurementDiv.textContent = `❌ 测量失败: ${error.message}`;
+                return null;
+            }
+        }
+
+        // 计算20%距离
+        function calculateDistance() {
+            const result = measureButtons();
+            if (result) {
+                const versionWidth = result.versionWidth;
+                const distance = Math.round(versionWidth * 0.2);
+                const measurementDiv = document.getElementById('measurement');
+                measurementDiv.textContent += `
+20%距离 (${versionWidth}px * 0.2): ${distance}px
+                `;
+            }
+        }
+
+        // 事件绑定
+        document.getElementById('refresh').addEventListener('click', measureButtons);
+        document.getElementById('calculate').addEventListener('click', calculateDistance);
+
+        // 页面加载时测量
+        window.addEventListener('load', () => {
+            setTimeout(measureButtons, 100);
+        });
+    </script>
+</body>
+</html>

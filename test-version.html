@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>版本切换功能测试</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test-container { max-width: 800px; margin: 0 auto; }
+        .control-panel { background: #f0f0f0; padding: 20px; margin-bottom: 20px; border-radius: 8px; }
+        .version-button { background: #4CAF50; color: white; padding: 10px 20px; font-size: 16px; border: none; border-radius: 4px; cursor: pointer; margin: 5px; }
+        .version-button:hover { background: #45a049; }
+        .old-version { background: #f8f8f8; }
+        .new-version { background: #f0f8ff; }
+        .status { background: #e8f4f8; padding: 10px; margin-top: 10px; border-radius: 4px; font-family: monospace; }
+    </style>
+</head>
+<body class="new-version">
+    <div class="test-container">
+        <h1>常州能耗云运营驾驶舱 - 版本切换功能测试</h1>
+
+        <div class="control-panel">
+            <h2>控制区</h2>
+            <div id="version-toggle" class="version-button">切换旧版</div>
+        </div>
+
+        <div class="control-panel">
+            <h2>版本状态</h2>
+            <div class="status" id="version-status">
+                <div id="status-display">当前版本：新版</div>
+                <div id="local-storage-status">localStorage 值：new</div>
+                <div id="class-status">body 类名：new-version</div>
+            </div>
+        </div>
+
+        <div class="control-panel">
+            <h2>执行信息</h2>
+            <div id="execution-log" class="status"></div>
+        </div>
+    </div>
+
+    <script>
+        // 版本切换功能测试
+        function initVersionToggle() {
+            const versionToggle = document.getElementById('version-toggle');
+            if (versionToggle) {
+                versionToggle.addEventListener('click', function() {
+                    toggleVersion();
+                });
+            }
+        }
+
+        function checkVersionPreference() {
+            const savedVersion = localStorage.getItem('version');
+            if (savedVersion === 'old') {
+                switchToOldVersion();
+            } else {
+                // 默认显示新版
+                switchToNewVersion();
+            }
+        }
+
+        function toggleVersion() {
+            const currentVersion = localStorage.getItem('version');
+            if (currentVersion === 'old') {
+                switchToNewVersion();
+            } else {
+                switchToOldVersion();
+            }
+        }
+
+        function switchToNewVersion() {
+            localStorage.setItem('version', 'new');
+            const versionToggle = document.getElementById('version-toggle');
+            if (versionToggle) {
+                versionToggle.textContent = '切换旧版';
+                versionToggle.style.backgroundColor = '#1890ff';
+            }
+            // 显示新版样式
+            document.body.classList.remove('old-version');
+            document.body.classList.add('new-version');
+            log('切换到新版');
+            updateStatus();
+        }
+
+        function switchToOldVersion() {
+            localStorage.setItem('version', 'old');
+            const versionToggle = document.getElementById('version-toggle');
+            if (versionToggle) {
+                versionToggle.textContent = '切换新版';
+                versionToggle.style.backgroundColor = '#f5222d';
+            }
+            // 显示旧版样式
+            document.body.classList.remove('new-version');
+            document.body.classList.add('old-version');
+            log('切换到旧版');
+            updateStatus();
+        }
+
+        function updateStatus() {
+            const version = localStorage.getItem('version');
+            const isOldVersion = version === 'old';
+
+            document.getElementById('status-display').textContent =
+                `当前版本：${isOldVersion ? '旧版' : '新版'}`;
+
+            document.getElementById('local-storage-status').textContent =
+                `localStorage 值：${version}`;
+
+            document.getElementById('class-status').textContent =
+                `body 类名：${document.body.className}`;
+        }
+
+        function log(message) {
+            const logDiv = document.getElementById('execution-log');
+            const timestamp = new Date().toLocaleTimeString();
+            const entry = document.createElement('div');
+            entry.textContent = `[${timestamp}] ${message}`;
+            logDiv.appendChild(entry);
+
+            // 自动滚动到底部
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            log('页面加载完成');
+
+            // 检查版本偏好
+            log('检查版本偏好');
+            checkVersionPreference();
+
+            // 初始化切换按钮
+            log('初始化切换按钮');
+            initVersionToggle();
+
+            // 更新状态
+            log('更新状态');
+            updateStatus();
+
+            log('测试页面初始化完成');
+        });
+    </script>
+</body>
+</html>

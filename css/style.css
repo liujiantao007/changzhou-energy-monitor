@@ -17,6 +17,41 @@ body {
     color: #333;
 }
 
+/* 新版样式 */
+body.new-version {
+    /* 新版样式将在后续优化中添加 */
+}
+
+/* 旧版样式 */
+body.old-version {
+    /* 旧版样式将保持原样 */
+}
+
+/* 版本切换按钮样式（与弹出模式按钮一致） */
+#version-toggle {
+    margin-left: 15px;
+    position: static;
+    background-color: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 4px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 11px;
+    transition: all 0.3s ease;
+    color: rgba(255, 255, 255, 0.6);
+    text-shadow: none;
+    box-shadow: none;
+    outline: none;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    transform: translateX(-60px); /* 向左平移 30% 按钮宽度 */
+}
+
+#version-toggle:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.9);
+}
+
 /* 响应式缩放容器 */
 #app {
     width: 1920px;
@@ -60,6 +95,13 @@ body {
 
 .navbar-placeholder {
     flex: 1;
+}
+
+/* 导航栏右侧按钮容器 */
+.navbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
 
 .nav-item {

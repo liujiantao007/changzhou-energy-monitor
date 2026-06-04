@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>常州能耗云运营驾驶舱</title>
-    <link rel="stylesheet" href="css/style.css?v=5">
+    <link rel="stylesheet" href="css/style.css?v=6">
     <!-- ECharts库 - 本地版本（内网部署） -->
     <script src="js/libs/echarts.min.js"></script>
     <!-- SheetJS库 - 本地版本（内网部署） -->
@@ -26,7 +26,10 @@
                 <a href="#知识库" class="nav-item">知识库</a>
             </nav>
             <div class="navbar-placeholder"></div>
-            <div class="refresh-btn mode-toggle" id="display-mode-toggle" title="切换报账管理/电表管理/能耗分析/报表管理的显示方式">弹出模式</div>
+            <div class="navbar-actions">
+                <div class="refresh-btn mode-toggle" id="display-mode-toggle" title="切换报账管理/电表管理/能耗分析/报表管理的显示方式">弹出模式</div>
+                <div class="refresh-btn mode-toggle" id="version-toggle" title="切换首页显示版本">切换旧版</div>
+            </div>
         </header>
         
         <!-- 主内容区 -->
@@ -296,7 +299,7 @@
     </div>
 
     <script src="js/data.js?v=20260525b"></script>
-    <script src="js/app.js?v=20260525b"></script>
+    <script src="js/app.js?v=20260604a"></script>
     <script src="js/charts.js?v=20260525b"></script>
     <script src="js/map.js?v=20260525b"></script>
 </body>

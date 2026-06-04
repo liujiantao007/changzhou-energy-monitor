@@ -8,22 +8,78 @@ const API_BASE = (window.location.hostname === '127.0.0.1' || window.location.ho
     : '/api';
 
 // 页面加载完成后执行
+// 版本切换功能
+function initVersionToggle() {
+    console.log('执行 initVersionToggle()');
+    const versionToggle = document.getElementById('version-toggle');
+    console.log('版本切换按钮找到:', !!versionToggle);
+
+    if (versionToggle) {
+        console.log('按钮文字:', versionToggle.textContent);
+
+        // 确保只添加一个事件监听器
+        versionToggle.removeEventListener('click', toggleVersion);
+        versionToggle.addEventListener('click', function() {
+            console.log('版本切换按钮被点击');
+            toggleVersion();
+        });
+
+        console.log('事件监听器已添加');
+    } else {
+        console.error('版本切换按钮未找到');
+    }
+}
+
+function checkVersionPreference() {
+    const savedVersion = localStorage.getItem('version');
+    console.log('检查版本偏好: savedVersion =', savedVersion);
+    if (savedVersion === 'old') {
+        console.log('当前版本是旧版，切换到旧版');
+        switchToOldVersion();
+    } else {
+        console.log('当前版本是新版，切换到新版');
+        // 默认显示新版
+        switchToNewVersion();
+    }
+}
+
+function toggleVersion() {
+    console.log('执行 toggleVersion()');
+    const currentVersion = localStorage.getItem('version');
+    console.log('当前版本:', currentVersion);
+
+    if (currentVersion === 'old') {
+        console.log('当前是旧版，将切换到新版');
+        switchToNewVersion();
+    } else {
+        console.log('当前是新版，将切换到旧版');
+        switchToOldVersion();
+    }
+}
+
+// 页面加载完成后执行
 window.onload = function() {
+    // 检查并应用版本偏好
+    checkVersionPreference();
+
+    // 初始化版本切换按钮
+    initVersionToggle();
+
     // 初始化响应式缩放
     initResponsiveScale();
-    
+
     // 初始化页面导航
     initNavigation();
-    
+
     // 初始化时间选择器
     initTimeSelectors();
-    
+
     // 初始化刷新按钮
     initRefreshButtons();
-    
+
     // 初始化图表
     initCharts();
-    
+
     // 初始化地图
     initMap();
 
@@ -38,6 +94,38 @@ window.onload = function() {
 
     // 初始化知识库功能
     initKnowledgeBase();
+};
+
+function switchToNewVersion() {
+    console.log('执行 switchToNewVersion()');
+    localStorage.setItem('version', 'new');
+    const versionToggle = document.getElementById('version-toggle');
+    if (versionToggle) {
+        versionToggle.textContent = '切换旧版';
+        versionToggle.style.backgroundColor = '#1890ff';
+    }
+    // 显示新版样式
+    document.body.classList.remove('old-version');
+    document.body.classList.add('new-version');
+    console.log('切换到新版完成');
+    console.log('body 类名:', document.body.className);
+    console.log('localStorage 值:', localStorage.getItem('version'));
+}
+
+function switchToOldVersion() {
+    console.log('执行 switchToOldVersion()');
+    localStorage.setItem('version', 'old');
+    const versionToggle = document.getElementById('version-toggle');
+    if (versionToggle) {
+        versionToggle.textContent = '切换新版';
+        versionToggle.style.backgroundColor = '#f5222d';
+    }
+    // 显示旧版样式
+    document.body.classList.remove('new-version');
+    document.body.classList.add('old-version');
+    console.log('切换到旧版完成');
+    console.log('body 类名:', document.body.className);
+    console.log('localStorage 值:', localStorage.getItem('version'));
 }
 
 // 知识库功能初始化
