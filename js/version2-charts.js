@@ -269,7 +269,7 @@ function updatePoiChart(data) {
             avoidLabelOverlap: true,
             minShowLabelAngle: 5,
             label: {
-                show: false,
+                show: true,
                 formatter: function(params) {
                     const percent = params.percent != null ? params.percent.toFixed(1) : '0.0';
                     return `${params.name}\n${percent}%`;
@@ -539,7 +539,7 @@ function updateElectricityTypeChart(data) {
                 avoidLabelOverlap: true,
                 minShowLabelAngle: 0,
                 label: {
-                    show: false,
+                    show: true,
                     overflow: 'none',
                     textOverflow: 'none',
                     lineHeight: 18,
@@ -1157,7 +1157,7 @@ function updateConsumerTypeChart(data) {
                 avoidLabelOverlap: true,
                 minShowLabelAngle: 5,
                 label: {
-                    show: false,
+                    show: true,
                     formatter: function(params) {
                         const percent = params.percent != null ? params.percent.toFixed(1) : '0.0';
                         return `${params.name}\n${percent}%`;
@@ -1202,7 +1202,7 @@ function updateConsumerTypeChart(data) {
                 avoidLabelOverlap: true,
                 minShowLabelAngle: 0,
                 label: {
-                    show: false,
+                    show: true,
                     formatter: function(params) {
                         const value = params.value.toLocaleString('zh-CN');
                         return ` ${value}元`;
