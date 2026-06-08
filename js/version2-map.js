@@ -130,11 +130,12 @@ function initMap() {
                 itemWidth: 20,
                 itemHeight: 200,
                 inRange: {
-                    // 蓝色渐变：低值为白色，高值为深蓝色
-                    color: ['#ffffff', '#e6f3ff', '#b3d9ff', '#80bfff', '#4da6ff', '#1a8cff', '#0073e6', '#0059b3', '#004080', '#00264d']
+                    // 暗黑科技风青色渐变
+                    color: ['#0a1628', '#0a2848', '#0a3d6b', '#005a9e', '#0077c2', '#0091ea', '#00b0ff', '#00d4ff', '#18ffff', '#84ffff']
                 },
                 textStyle: {
-                    fontSize: 12
+                    fontSize: 12,
+                    color: 'rgba(255,255,255,0.6)'
                 }
             },
             series: [{
@@ -189,11 +190,16 @@ function initMap() {
                 },
                 itemStyle: {
                     // 基础区域颜色（无数据时的颜色）
-                    areaColor: 'rgba(240, 245, 255, 0.6)',
-                    // 边界线颜色 - 使用较深的蓝色增强层次感
-                    borderColor: 'rgba(24, 144, 255, 1)',
-                    // 边界线宽度 - 增加到 1.5 使网格边界更清晰
-                    borderWidth: 1.5
+                    areaColor: 'rgba(6, 25, 55, 0.5)',
+                    // 边界线颜色 - 亮青色科技感
+                    borderColor: 'rgba(0, 180, 255, 0.6)',
+                    // 边界线宽度
+                    borderWidth: 1.5,
+                    // 添加阴影效果
+                    shadowBlur: 5,
+                    shadowColor: 'rgba(0, 180, 255, 0.1)',
+                    shadowOffsetX: 0,
+                    shadowOffsetY: 2
                 }
             }
         ]};
@@ -312,7 +318,7 @@ function initMap() {
                         fontWeight: 'bold'
                     },
                     subtextStyle: {
-                        color: '#666',
+                        color: 'rgba(255,255,255,0.6)',
                         fontSize: 12
                     }
                 }
@@ -818,7 +824,7 @@ function updateMapHighlight(district) {
     var vm = window.__savedVisualMap || (opt.visualMap && opt.visualMap[0]) || {};
     var minVal = vm.min || 0;
     var maxVal = vm.max || 100;
-    var colors = vm.inRange && vm.inRange.color || ['#e0f3ff', '#1890ff'];
+    var colors = vm.inRange && vm.inRange.color || ['#0a1628', '#00d4ff'];
 
     // 获取当前地图数据
     var seriesData = (opt.series && opt.series[0] && opt.series[0].data) || [];
@@ -871,24 +877,24 @@ function updateMapHighlight(district) {
             value: districtTotal || 0,
             level: 'district',
             itemStyle: {
-                areaColor: '#FFD700',
-                borderColor: '#FF4500',
-                borderWidth: 4,
-                shadowBlur: 10,
-                shadowColor: 'rgba(255, 69, 0, 0.5)'
+                areaColor: 'rgba(0, 180, 255, 0.3)',
+                borderColor: '#00d4ff',
+                borderWidth: 3,
+                shadowBlur: 15,
+                shadowColor: 'rgba(0, 212, 255, 0.4)'
             },
             label: {
                 show: true,
                 fontSize: 18,
                 fontWeight: 'bold',
-                color: '#FF4500',
-                textShadowColor: '#fff',
+                color: '#00d4ff',
+                textShadowColor: 'rgba(0, 0, 0, 0.8)',
                 textShadowBlur: 4,
                 formatter: function() { return district; }
             },
             emphasis: {
-                label: { show: true, fontSize: 18, fontWeight: 'bold', color: '#FF4500' },
-                itemStyle: { areaColor: '#FFD700', borderColor: '#FF4500', borderWidth: 4 }
+                label: { show: true, fontSize: 18, fontWeight: 'bold', color: '#00d4ff' },
+                itemStyle: { areaColor: 'rgba(0, 180, 255, 0.4)', borderColor: '#18ffff', borderWidth: 4 }
             }
         });
     }
@@ -900,18 +906,18 @@ function updateMapHighlight(district) {
         if (isTarget) {
             targetFound = true;
             d.itemStyle = {
-                areaColor: '#FFD700',
-                borderColor: '#FF4500',
-                borderWidth: 4,
-                shadowBlur: 10,
-                shadowColor: 'rgba(255, 69, 0, 0.5)'
+                areaColor: 'rgba(0, 180, 255, 0.3)',
+                borderColor: '#00d4ff',
+                borderWidth: 3,
+                shadowBlur: 15,
+                shadowColor: 'rgba(0, 212, 255, 0.4)'
             };
             d.label = {
                 show: true,
                 fontSize: 18,
                 fontWeight: 'bold',
-                color: '#FF4500',
-                textShadowColor: '#fff',
+                color: '#00d4ff',
+                textShadowColor: 'rgba(0, 0, 0, 0.8)',
                 textShadowBlur: 4,
                 formatter: function() { return district; }
             };
