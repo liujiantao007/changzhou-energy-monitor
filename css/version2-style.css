@@ -283,10 +283,10 @@ body {
     background: linear-gradient(90deg, #00d4ff, transparent);
 }
 
-/* 左侧栏模块高度分配 - 使用 grid 精确对齐 */
+/* 左侧栏模块高度分配 - calc() 像素级精确对齐 */
 .column-left {
     display: grid;
-    grid-template-rows: 1fr 1fr 1fr;
+    grid-template-rows: calc((100% - 16px) / 3) calc((100% - 16px) / 3) calc((100% - 16px) / 3);
     gap: 8px;
     height: 100%;
     min-height: 0;
@@ -300,10 +300,12 @@ body {
     overflow: hidden;
 }
 
-/* 中间栏模块高度分配 - 使用 grid 精确对齐 */
+/* 中间栏模块高度分配 - calc() 像素级精确对齐 */
 .column-center {
     display: grid;
-    grid-template-rows: 2fr 1fr;
+    /* 第一行(地图) = 左列前2行 + 1个间距的总和
+       第二行(下方图表) = 左列第3行高度 */
+    grid-template-rows: calc((200% - 8px) / 3) calc((100% - 16px) / 3);
     gap: 8px;
     height: 100%;
     min-height: 0;
@@ -332,10 +334,10 @@ body {
     overflow: hidden;
 }
 
-/* 右侧栏模块高度分配 - 使用 grid 精确对齐 */
+/* 右侧栏模块高度分配 - calc() 像素级精确对齐 */
 .column-right {
     display: grid;
-    grid-template-rows: 1fr 1fr 1fr;
+    grid-template-rows: calc((100% - 16px) / 3) calc((100% - 16px) / 3) calc((100% - 16px) / 3);
     gap: 8px;
     height: 100%;
     min-height: 0;
