@@ -269,7 +269,7 @@ function updatePoiChart(data) {
             avoidLabelOverlap: true,
             minShowLabelAngle: 5,
             label: {
-                show: true,
+                show: false,
                 formatter: function(params) {
                     if (!params.value || params.value === 0) return '';
                     const percent = params.percent != null ? params.percent.toFixed(1) : '0.0';
@@ -284,7 +284,7 @@ function updatePoiChart(data) {
                 textShadowColor: 'rgba(0,0,0,0.5)'
             },
             labelLine: {
-                show: true,
+                show: false,
                 length: 6,
                 length2: 8,
                 lineStyle: {
@@ -492,7 +492,7 @@ function updateElectricityTypeChart(data) {
                 avoidLabelOverlap: false,
                 minShowLabelAngle: 0,
                 label: {
-                    show: true,
+                    show: false,
                     formatter: function(params) {
                         const percent = params.percent != null ? params.percent.toFixed(1) : '0.0';
                         return `${params.name}\n${percent}%`;
@@ -501,12 +501,12 @@ function updateElectricityTypeChart(data) {
                     fontFamily: 'Microsoft YaHei, SimHei, sans-serif',
                     fontWeight: 'bold',
                     position: 'outside',
-                    color: 'rgba(255,255,255,0.65)',
+                    color: 'rgba(255,255,255,0.85)',
                     textShadowBlur: 2,
                     textShadowColor: 'rgba(0,0,0,0.5)'
                 },
                 labelLine: {
-                    show: true,
+                    show: false,
                     length: 10,
                     length2: 15,
                     lineStyle: {
@@ -1158,8 +1158,9 @@ function updateConsumerTypeChart(data) {
                 avoidLabelOverlap: true,
                 minShowLabelAngle: 5,
                 label: {
-                    show: true,
+                    show: false,
                     formatter: function(params) {
+                        if (!params.value || params.value === 0) return '';
                         const percent = params.percent != null ? params.percent.toFixed(1) : '0.0';
                         return `${params.name}\n${percent}%`;
                     },
@@ -1167,12 +1168,12 @@ function updateConsumerTypeChart(data) {
                     fontFamily: 'Microsoft YaHei, SimHei, sans-serif',
                     fontWeight: 'normal',
                     position: 'outside',
-                    color: 'rgba(255,255,255,0.65)',
+                    color: 'rgba(255,255,255,0.85)',
                     textShadowBlur: 2,
                     textShadowColor: 'rgba(0,0,0,0.5)'
                 },
                 labelLine: {
-                    show: true,
+                    show: false,
                     length: 6,
                     length2: 8,
                     lineStyle: {
