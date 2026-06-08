@@ -1124,7 +1124,6 @@ function updateConsumerTypeChart(data) {
                     { name: '移动', icon: 'roundRect', itemStyle: { color: '#00e676' } },
                     { name: '铁塔', icon: 'roundRect', itemStyle: { color: '#ffd740' } }
                 ]
-                ]
             }
         ],
         // 富文本样式定义
