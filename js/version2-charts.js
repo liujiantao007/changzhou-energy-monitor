@@ -165,7 +165,7 @@ function updateElectricityChart(data) {
                 length2: 5
             },
             data: chartData,
-            color: ['#00d4ff', '#ffd591', '#87e8de', '#ff9c6e', '#4dd0e1', '#81c784', '#ff8a65', '#b39ddb', '#f48fb1']
+            color: ['#00D9FF', '#2B7DE9', '#5B9FFF', '#3A8BFF', '#4FC3F7', '#29B6F6', '#039BE5', '#0277BD', '#01579B']
         }]
     };
     
@@ -265,21 +265,21 @@ function updatePoiChart(data) {
         series: [{
             name: 'POI 分类',
             type: 'pie',
-            radius: ['40%', '65%'],
+            radius: ['52%', '65%'],
             center: ['28%', '50%'],
             avoidLabelOverlap: true,
             minShowLabelAngle: 5,
             label: {
-                show: true,
+                show: false,
                 formatter: function(params) {
                     const percent = params.percent != null ? params.percent.toFixed(1) : '0.0';
                     return `${params.name}\n${percent}%`;
                 },
-                fontSize: 12,
+                fontSize: 11,
                 fontFamily: 'Microsoft YaHei, SimHei, sans-serif',
-                fontWeight: 'bold',
+                fontWeight: 'normal',
                 position: 'outside',
-                color: 'rgba(255,255,255,0.85)',
+                color: 'rgba(255,255,255,0.65)',
                 textShadowBlur: 2,
                 textShadowColor: 'rgba(0,0,0,0.5)'
             },
@@ -307,7 +307,7 @@ function updatePoiChart(data) {
                 }
             },
             data: chartData,
-            color: ['#00d4ff', '#ff9c6e']
+            color: ['#00d4ff', '#3A8BFF']
         }]
     };
 
@@ -325,12 +325,12 @@ function updateElectricityTypeChart(data) {
         // 外环 - 能耗 (冷色科技系)
         energy: [
             '#00d4ff', // 直供电 - 亮青
-            '#ff9c6e'  // 转供电 - 柔和红
+            '#3A8BFF'  // 转供电 - 柔和红
         ],
         // 内环 - 电费 (暖色财富系)
         cost: [
-            '#ffd591', // 直供电 - 柔和绿
-            '#87e8de'  // 转供电 - 柔和金
+            '#2B7DE9', // 直供电 - 柔和绿
+            '#5B9FFF'  // 转供电 - 柔和金
         ]
     };
 
@@ -357,12 +357,12 @@ function updateElectricityTypeChart(data) {
 
     const energyDataArray = [
         { name: '直供电', value: Math.floor(directEnergy), itemStyle: { color: '#00d4ff' } },
-        { name: '转供电', value: Math.floor(indirectEnergy), itemStyle: { color: '#ff9c6e' } }
+        { name: '转供电', value: Math.floor(indirectEnergy), itemStyle: { color: '#3A8BFF' } }
     ];
 
     const costDataArray = [
-        { name: '直供电', value: Math.floor(directCost), itemStyle: { color: '#ffd591' } },
-        { name: '转供电', value: Math.floor(indirectCost), itemStyle: { color: '#87e8de' } }
+        { name: '直供电', value: Math.floor(directCost), itemStyle: { color: '#2B7DE9' } },
+        { name: '转供电', value: Math.floor(indirectCost), itemStyle: { color: '#5B9FFF' } }
     ];
 
     const totalEnergy = directEnergy + indirectEnergy;
@@ -454,7 +454,7 @@ function updateElectricityTypeChart(data) {
                 icon: 'roundRect',
                 data: [
                     { name: '直供电', icon: 'roundRect', itemStyle: { color: '#00d4ff' } },
-                    { name: '转供电', icon: 'roundRect', itemStyle: { color: '#ff9c6e' } }
+                    { name: '转供电', icon: 'roundRect', itemStyle: { color: '#3A8BFF' } }
                 ]
             },
             {
@@ -478,8 +478,8 @@ function updateElectricityTypeChart(data) {
                 itemGap: 12,
                 icon: 'roundRect',
                 data: [
-                    { name: '直供电', icon: 'roundRect', itemStyle: { color: '#ffd591' } },
-                    { name: '转供电', icon: 'roundRect', itemStyle: { color: '#87e8de' } }
+                    { name: '直供电', icon: 'roundRect', itemStyle: { color: '#2B7DE9' } },
+                    { name: '转供电', icon: 'roundRect', itemStyle: { color: '#5B9FFF' } }
                 ]
             }
         ],
@@ -487,7 +487,7 @@ function updateElectricityTypeChart(data) {
             {
                 name: '能耗',
                 type: 'pie',
-                radius: ['50%', '70%'],
+                radius: ['55%', '68%'],
                 center: ['28%', '50%'],
                 avoidLabelOverlap: false,
                 minShowLabelAngle: 0,
@@ -535,22 +535,22 @@ function updateElectricityTypeChart(data) {
             {
                 name: '电费',
                 type: 'pie',
-                radius: ['0%', '35%'],
+                radius: ['0%', '42%'],
                 center: ['28%', '50%'],
                 avoidLabelOverlap: true,
                 minShowLabelAngle: 0,
                 label: {
-                    show: true,
+                    show: false,
                     overflow: 'none',
                     textOverflow: 'none',
                     lineHeight: 18,
                     formatter: function(params) {
                         const value = params.value.toLocaleString('zh-CN');
-                        return `${params.name}\n${value}元`;
+                        return ` ${value}元`;
                     },
-                    fontSize: 11,
+                    fontSize: 10,
                     fontFamily: 'Microsoft YaHei, SimHei, sans-serif',
-                    fontWeight: 'bold',
+                    fontWeight: 'normal',
                     position: 'inside',
                     color: 'rgba(255,255,255,0.65)',
                     textShadowBlur: 2,
@@ -1021,12 +1021,12 @@ function updateConsumerTypeChart(data) {
 
     const energyDataArray = [
         { name: '移动', value: Math.floor(mobileEnergy), itemStyle: { color: '#00d4ff' } },
-        { name: '铁塔', value: Math.floor(towerEnergy), itemStyle: { color: '#ff9c6e' } }
+        { name: '铁塔', value: Math.floor(towerEnergy), itemStyle: { color: '#3A8BFF' } }
     ];
 
     const feeDataArray = [
-        { name: '移动', value: Math.floor(mobileFee), itemStyle: { color: '#ffd591' } },
-        { name: '铁塔', value: Math.floor(towerFee), itemStyle: { color: '#87e8de' } }
+        { name: '移动', value: Math.floor(mobileFee), itemStyle: { color: '#2B7DE9' } },
+        { name: '铁塔', value: Math.floor(towerFee), itemStyle: { color: '#5B9FFF' } }
     ];
 
     const totalEnergy = mobileEnergy + towerEnergy;
@@ -1099,7 +1099,7 @@ function updateConsumerTypeChart(data) {
                 icon: 'roundRect',
                 data: [
                     { name: '移动', icon: 'roundRect', itemStyle: { color: '#00d4ff' } },
-                    { name: '铁塔', icon: 'roundRect', itemStyle: { color: '#ff9c6e' } }
+                    { name: '铁塔', icon: 'roundRect', itemStyle: { color: '#3A8BFF' } }
                 ]
             },
             {
@@ -1123,8 +1123,8 @@ function updateConsumerTypeChart(data) {
                 itemGap: 12,
                 icon: 'roundRect',
                 data: [
-                    { name: '移动', icon: 'roundRect', itemStyle: { color: '#ffd591' } },
-                    { name: '铁塔', icon: 'roundRect', itemStyle: { color: '#87e8de' } }
+                    { name: '移动', icon: 'roundRect', itemStyle: { color: '#2B7DE9' } },
+                    { name: '铁塔', icon: 'roundRect', itemStyle: { color: '#5B9FFF' } }
                 ]
             }
         ],
@@ -1153,19 +1153,19 @@ function updateConsumerTypeChart(data) {
             {
                 name: '能耗',
                 type: 'pie',
-                radius: ['45%', '60%'],
+                radius: ['52%', '65%'],
                 center: ['30%', '50%'],
                 avoidLabelOverlap: true,
                 minShowLabelAngle: 5,
                 label: {
-                    show: true,
+                    show: false,
                     formatter: function(params) {
                         const percent = params.percent != null ? params.percent.toFixed(1) : '0.0';
                         return `${params.name}\n${percent}%`;
                     },
-                    fontSize: 12,
+                    fontSize: 11,
                     fontFamily: 'Microsoft YaHei, SimHei, sans-serif',
-                    fontWeight: 'bold',
+                    fontWeight: 'normal',
                     position: 'outside',
                     color: 'rgba(255,255,255,0.65)',
                     textShadowBlur: 2,
@@ -1198,19 +1198,19 @@ function updateConsumerTypeChart(data) {
             {
                 name: '电费',
                 type: 'pie',
-                radius: ['0%', '35%'],
+                radius: ['0%', '42%'],
                 center: ['30%', '50%'],
                 avoidLabelOverlap: true,
                 minShowLabelAngle: 0,
                 label: {
-                    show: true,
+                    show: false,
                     formatter: function(params) {
                         const value = params.value.toLocaleString('zh-CN');
-                        return `${params.name}\n${value}元`;
+                        return ` ${value}元`;
                     },
-                    fontSize: 11,
+                    fontSize: 10,
                     fontFamily: 'Microsoft YaHei, SimHei, sans-serif',
-                    fontWeight: 'bold',
+                    fontWeight: 'normal',
                     position: 'inside',
                     color: 'rgba(255,255,255,0.65)',
                     textShadowBlur: 2,

@@ -1240,8 +1240,8 @@ function updateChangeDisplay(elementId, changePercent) {
             element.className = 'metric-change';
         } else {
             const sign = changePercent >= 0 ? '+' : '';
-            element.textContent = sign + changePercent + '%';
-            
+            const arrow = changePercent > 0 ? '↑' : '↓';
+
             // 根据环比数值设置颜色类
             let colorClass;
             if (changePercent < 0) {
@@ -1251,7 +1251,8 @@ function updateChangeDisplay(elementId, changePercent) {
             } else {
                 colorClass = 'neutral'; // 橙色 - 增长 0% - 20%
             }
-            
+
+            element.innerHTML = arrow + ' ' + sign + changePercent + '%';
             element.className = 'metric-change ' + colorClass;
         }
     }

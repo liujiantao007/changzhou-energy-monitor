@@ -18,7 +18,7 @@ html, body {
 
 body {
     font-family: 'Microsoft YaHei', 'PingFang SC', Arial, sans-serif;
-    background: radial-gradient(ellipse at center, #0a1628 0%, #060e1e 40%, #020810 100%);
+    background: #06142D;
     color: rgba(255, 255, 255, 0.85);
 }
 
@@ -238,9 +238,9 @@ body {
 
 /* 模块面板 - 玻璃质感科技风 */
 .module {
-    background: linear-gradient(135deg, rgba(6, 30, 65, 0.85), rgba(2, 15, 40, 0.9));
+    background: #0B2348;
     border-radius: 8px;
-    border: 1px solid rgba(0, 180, 255, 0.12);
+    border: 1px solid rgba(0, 217, 255, 0.15);
     padding: 10px;
     display: flex;
     flex-direction: column;
@@ -655,8 +655,8 @@ body {
 }
 
 .alarm-row.level-row .level-badge.level-3 {
-    background: linear-gradient(135deg, #ffd740, #ffab00);
-    box-shadow: 0 0 10px rgba(255, 215, 64, 0.2);
+    background: linear-gradient(135deg, #3A8BFF, #2B7DE9);
+    box-shadow: 0 0 10px rgba(58, 139, 255, 0.3);
 }
 
 .alarm-row.level-row .level-badge.level-4 {

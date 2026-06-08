@@ -141,8 +141,8 @@ function initMap() {
                 itemWidth: 12,
                 itemHeight: 150,
                 inRange: {
-                    // 暗黑科技风青色渐变
-                    color: ['#0a1628', '#0a2848', '#0a3d6b', '#005a9e', '#0077c2', '#0091ea', '#00b0ff', '#00d4ff', '#18ffff', '#84ffff']
+                    // #06142D 暗底 → #00D9FF 亮青色高亮
+                    color: ['#06142D', '#0A1E4A', '#0F2B6B', '#143A8A', '#1A4BA8', '#2060C7', '#2878E6', '#3A9EFF', '#00D9FF', '#00D9FF']
                 },
                 textStyle: {
                     fontSize: 12,
@@ -200,15 +200,15 @@ function initMap() {
                     }
                 },
                 itemStyle: {
-                    // 基础区域颜色（无数据时的颜色）
-                    areaColor: 'rgba(6, 25, 55, 0.5)',
-                    // 边界线颜色 - 亮青色科技感
-                    borderColor: 'rgba(0, 180, 255, 0.6)',
+                    // 基础区域颜色（无数据时的浅蓝半透明）
+                    areaColor: 'rgba(0, 100, 200, 0.12)',
+                    // 边界线加亮
+                    borderColor: 'rgba(0, 217, 255, 0.5)',
                     // 边界线宽度
-                    borderWidth: 1.5,
-                    // 添加阴影效果
-                    shadowBlur: 5,
-                    shadowColor: 'rgba(0, 180, 255, 0.1)',
+                    borderWidth: 2,
+                    // 添加发光阴影
+                    shadowBlur: 8,
+                    shadowColor: 'rgba(0, 217, 255, 0.15)',
                     shadowOffsetX: 0,
                     shadowOffsetY: 2
                 }
@@ -240,9 +240,9 @@ function initMap() {
                 color: 'rgba(255,255,255,0.6)'
             },
             itemStyle: {
-                color: '#00d4ff',
-                shadowBlur: 10,
-                shadowColor: '#00d4ff'
+                color: '#00D9FF',
+                shadowBlur: 15,
+                shadowColor: '#00D9FF'
             },
             zlevel: 2
         }
