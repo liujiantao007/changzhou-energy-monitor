@@ -102,12 +102,11 @@ function updateElectricityChart(data) {
             formatter: function(params) {
                 return params.name + ': ' + params.value.toLocaleString('zh-CN') + ' kWh (' + params.percent + '%)';
             },
-            backgroundColor: 'rgba(0, 0, 0, 0)',
-            borderColor: 'rgba(0, 0, 0, 0)',
-            borderWidth: 0,
-            shadowBlur: 0,
-            padding: [0, 0, 0, 0],
-            extraCssText: 'box-shadow: none; border: none; background: transparent !important;',
+            backgroundColor: 'rgba(10, 20, 45, 0.92)',
+            borderColor: 'rgba(0, 217, 255, 0.3)',
+            borderWidth: 1,
+            padding: [8, 12, 8, 12],
+            extraCssText: 'box-shadow: 0 4px 15px rgba(0,0,0,0.4); border-radius: 6px;',
             textStyle: {
                 fontSize: 14,
                 color: '#fff'
@@ -237,11 +236,11 @@ function updatePoiChart(data) {
                     <div>占比：${percent}%</div>
                 </div>`;
             },
-            backgroundColor: 'transparent',
-            borderColor: 'transparent',
-            borderWidth: 0,
-            padding: 0,
-            extraCssText: 'box-shadow: none; border: none;'
+            backgroundColor: 'rgba(10, 20, 45, 0.92)',
+            borderColor: 'rgba(0, 217, 255, 0.3)',
+            borderWidth: 1,
+            padding: [8, 12, 8, 12],
+            extraCssText: 'box-shadow: 0 4px 15px rgba(0,0,0,0.4); border-radius: 6px;'
         },
         legend: {
             orient: 'vertical',
@@ -406,11 +405,11 @@ function updateElectricityTypeChart(data) {
                     <div>占比：${percent}%</div>
                 </div>`;
             },
-            backgroundColor: 'transparent',
-            borderColor: 'transparent',
-            borderWidth: 0,
-            padding: 0,
-            extraCssText: 'box-shadow: none; border: none;'
+            backgroundColor: 'rgba(10, 20, 45, 0.92)',
+            borderColor: 'rgba(0, 217, 255, 0.3)',
+            borderWidth: 1,
+            padding: [8, 12, 8, 12],
+            extraCssText: 'box-shadow: 0 4px 15px rgba(0,0,0,0.4); border-radius: 6px;'
         },
         // 富文本样式定义
         textStyle: {
@@ -820,9 +819,9 @@ function updateEnergyTrendChart(data, timeType) {
     const option = {
         tooltip: {
             trigger: 'axis',
-            backgroundColor: 'rgba(50, 50, 50, 0.9)',
-            borderColor: 'rgba(50, 50, 50, 0.9)',
-            borderWidth: 0,
+            backgroundColor: 'rgba(10, 20, 45, 0.92)',
+            borderColor: 'rgba(0, 217, 255, 0.3)',
+            borderWidth: 1,
             textStyle: {
                 fontSize: 14,
                 color: '#fff'
@@ -1070,11 +1069,11 @@ function updateConsumerTypeChart(data) {
                     <div>占比：${percent}%</div>
                 </div>`;
             },
-            backgroundColor: 'transparent',
-            borderColor: 'transparent',
-            borderWidth: 0,
-            padding: 0,
-            extraCssText: 'box-shadow: none; border: none;'
+            backgroundColor: 'rgba(10, 20, 45, 0.92)',
+            borderColor: 'rgba(0, 217, 255, 0.3)',
+            borderWidth: 1,
+            padding: [8, 12, 8, 12],
+            extraCssText: 'box-shadow: 0 4px 15px rgba(0,0,0,0.4); border-radius: 6px;'
         },
         legend: [
             {
