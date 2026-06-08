@@ -271,6 +271,7 @@ function updatePoiChart(data) {
             label: {
                 show: true,
                 formatter: function(params) {
+                    if (!params.value || params.value === 0) return '';
                     const percent = params.percent != null ? params.percent.toFixed(1) : '0.0';
                     return `${params.name}\n${percent}%`;
                 },
@@ -544,6 +545,7 @@ function updateElectricityTypeChart(data) {
                     textOverflow: 'none',
                     lineHeight: 18,
                     formatter: function(params) {
+                        if (!params.value || params.value === 0) return '';
                         const value = params.value.toLocaleString('zh-CN');
                         return ` ${value}元`;
                     },
@@ -1204,6 +1206,7 @@ function updateConsumerTypeChart(data) {
                 label: {
                     show: true,
                     formatter: function(params) {
+                        if (!params.value || params.value === 0) return '';
                         const value = params.value.toLocaleString('zh-CN');
                         return ` ${value}元`;
                     },
