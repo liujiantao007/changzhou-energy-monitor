@@ -230,11 +230,7 @@ function updatePoiChart(data) {
             formatter: function(params) {
                 const value = params.value.toLocaleString('zh-CN');
                 const percent = params.percent.toFixed(1);
-                return `<div style="font-family: Microsoft YaHei, SimHei, sans-serif; font-size: 12px; color: #fff; background: rgba(0,0,0,0.8); padding: 8px 12px; border-radius: 4px;">
-                    <div style="font-weight: bold; margin-bottom: 4px;">${params.name}</div>
-                    <div>POI 数量：${value} 个</div>
-                    <div>占比：${percent}%</div>
-                </div>`;
+                return params.name + '<br/>POI 数量：' + value + ' 个<br/>占比：' + percent + '%';
             },
             backgroundColor: 'rgba(10, 20, 45, 0.92)',
             borderColor: 'rgba(0, 217, 255, 0.3)',
@@ -401,11 +397,7 @@ function updateElectricityTypeChart(data) {
                 const value = params.value.toLocaleString('zh-CN');
                 const unit = params.seriesName === '能耗' ? 'kWh' : '元';
                 const percent = params.percent.toFixed(1);
-                return `<div style="font-family: Microsoft YaHei, SimHei, sans-serif; font-size: 12px; color: #fff; background: rgba(0,0,0,0.8); padding: 8px 12px; border-radius: 4px;">
-                    <div style="font-weight: bold; margin-bottom: 4px;">${params.seriesName} - ${params.name}</div>
-                    <div>数值：${value} ${unit}</div>
-                    <div>占比：${percent}%</div>
-                </div>`;
+                return params.seriesName + ' - ' + params.name + '<br/>数值：' + value + ' ' + unit + '<br/>占比：' + percent + '%';
             },
             backgroundColor: 'rgba(10, 20, 45, 0.92)',
             borderColor: 'rgba(0, 217, 255, 0.3)',
@@ -1065,11 +1057,7 @@ function updateConsumerTypeChart(data) {
                 const value = params.value.toLocaleString('zh-CN');
                 const unit = params.seriesName === '能耗' ? 'kWh' : '元';
                 const percent = params.percent.toFixed(1);
-                return `<div style="font-family: Microsoft YaHei, SimHei, sans-serif; font-size: 12px; color: #fff; background: rgba(0,0,0,0.8); padding: 8px 12px; border-radius: 4px;">
-                    <div style="font-weight: bold; margin-bottom: 4px;">${params.seriesName} - ${params.name}</div>
-                    <div>数值：${value} ${unit}</div>
-                    <div>占比：${percent}%</div>
-                </div>`;
+                return params.seriesName + ' - ' + params.name + '<br/>数值：' + value + ' ' + unit + '<br/>占比：' + percent + '%';
             },
             backgroundColor: 'rgba(10, 20, 45, 0.92)',
             borderColor: 'rgba(0, 217, 255, 0.3)',
