@@ -29,6 +29,9 @@ class MyHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         path = path.split('?', 1)[0]
         path = path.split('#', 1)[0]
         path = urllib.parse.unquote(path)
+        # 默认首页改为主题版页面（只拦截根路径，不影响 /index.html 直接访问）
+        if path == '/' or path == '':
+            path = '/version2-theme.html'
         return super().translate_path(path)
 
 if __name__ == "__main__":

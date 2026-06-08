@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>常州能耗云运营驾驶舱 - 科技版</title>
+    <title>常州能耗云运营驾驶舱 - 主题版</title>
     <link rel="stylesheet" href="css/version2-style.css">
     <!-- 科技感数字字体 -->
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&display=swap" rel="stylesheet">
@@ -30,7 +30,6 @@
             <div class="navbar-placeholder"></div>
             <div class="navbar-actions">
                 <div class="refresh-btn mode-toggle" id="display-mode-toggle" title="切换报账管理/电表管理/能耗分析/报表管理的显示方式">弹出模式</div>
-                <div class="refresh-btn mode-toggle" id="version-toggle" title="切换首页显示版本">切换主题版本</div>
             </div>
         </header>
         
@@ -127,6 +126,11 @@
                                 </select>
                             </div>
                             <div id="map-chart" class="chart map-chart"></div>
+                            <div class="map-opacity-control">
+                                <label for="map-opacity-slider">地图透明度</label>
+                                <input type="range" id="map-opacity-slider" min="20" max="100" value="60">
+                                <span id="map-opacity-value">60%</span>
+                            </div>
                         </div>
                         
                         <!-- 统计图表区域 -->
@@ -304,5 +308,11 @@
     <script src="js/version2-app.js?v=20260609e"></script>
     <script src="js/version2-charts.js?v=20260609e"></script>
     <script src="js/version2-map.js?v=20260609e"></script>
+    <script src="js/version2-theme.js?v=20260609e"></script>
+    <script>
+        window.addEventListener('load', function() {
+            setTimeout(initThemeSystem, 100);
+        });
+    </script>
 </body>
 </html>

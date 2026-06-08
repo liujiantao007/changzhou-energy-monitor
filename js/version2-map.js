@@ -4,6 +4,8 @@
 let mapChart = null;
 // 当前选中的区域
 window.currentSelectedDistrict = null;
+// 地图区域透明度（主题版右上角滑块实时控制）
+window.mapAreaOpacity = 0.60;
 
 // 检测浏览器类型
 function getBrowserInfo() {
@@ -27,6 +29,9 @@ function initMap() {
     
     const browser = getBrowserInfo();
     console.log('浏览器信息:', browser);
+    if (browser.name === 'Edge') {
+        document.documentElement.classList.add('edge-browser');
+    }
     
     if (typeof echarts === 'undefined') {
         console.error('ECharts 库未加载！');
@@ -137,9 +142,11 @@ function initMap() {
                 bottom: 'bottom',
                 orient: 'vertical',
                 text: ['高', '低'],
-                calculable: true,
+                calculable: false,
                 itemWidth: 12,
                 itemHeight: 150,
+                borderWidth: 0,
+                backgroundColor: 'transparent',
                 inRange: {
                     // 低能耗蓝色 → 高能耗红色/橙色
                     color: ['#0B2348', '#1A4BA8', '#3A8BFF', '#4FC3F7', '#66BB6A', '#FFD54F', '#FFB74D', '#FF8A65', '#FF5252', '#D32F2F']
@@ -170,7 +177,8 @@ function initMap() {
                         }
                     },
                     itemStyle: {
-                        areaColor: 'rgba(255, 214, 102, 0.8)'
+                        areaColor: 'rgba(255, 214, 102, 0.65)',
+                        opacity: 0.75
                     }
                 },
                 label: {
@@ -196,7 +204,8 @@ function initMap() {
                         }
                     },
                     itemStyle: {
-                        areaColor: 'rgba(255, 214, 102, 0.8)'
+                        areaColor: 'rgba(255, 214, 102, 0.65)',
+                        opacity: 0.75
                     }
                 },
                 itemStyle: {
@@ -210,7 +219,9 @@ function initMap() {
                     shadowBlur: 8,
                     shadowColor: 'rgba(0, 217, 255, 0.15)',
                     shadowOffsetX: 0,
-                    shadowOffsetY: 2
+                    shadowOffsetY: 2,
+                    // 降低地图区域整体透明度，让主题底色更明显
+                    opacity: window.mapAreaOpacity
                 }
             },
         // 第二个系列：呼吸灯散点效果
@@ -240,9 +251,10 @@ function initMap() {
                 color: 'rgba(255,255,255,0.6)'
             },
             itemStyle: {
-                color: '#00D9FF',
-                shadowBlur: 15,
-                shadowColor: '#00D9FF'
+                color: 'rgba(0, 217, 255, 0.28)',
+                opacity: 0.35,
+                shadowBlur: 10,
+                shadowColor: 'rgba(0, 217, 255, 0.22)'
             },
             zlevel: 2
         }
@@ -253,6 +265,8 @@ function initMap() {
             mapChart.setOption(option, true); // true 表示不合并，完全替换
             // 保存原始 visualMap 配置，用于取消高亮时恢复
             window.__savedVisualMap = JSON.parse(JSON.stringify(option.visualMap));
+
+            bindMapOpacityControl();
 
             // 初始化呼吸灯散点数据（先使用默认值，后续在 updateMap 中更新）
             var initScatterData = [];
@@ -553,6 +567,33 @@ function loadMapData() {
                 resolve(mockGeoJson);
             });
     });
+}
+
+function bindMapOpacityControl() {
+    const slider = document.getElementById('map-opacity-slider');
+    const valueText = document.getElementById('map-opacity-value');
+    if (!slider) return;
+
+    window.mapAreaOpacity = Number(slider.value) / 100;
+
+    slider.addEventListener('input', function() {
+        window.mapAreaOpacity = Number(this.value) / 100;
+        if (valueText) valueText.textContent = this.value + '%';
+        applyMapOpacity();
+    });
+}
+
+function applyMapOpacity() {
+    if (!mapChart) return;
+    try {
+        mapChart.setOption({
+            series: [{
+                itemStyle: { opacity: window.mapAreaOpacity }
+            }]
+        });
+    } catch (error) {
+        console.warn('更新地图透明度时出错:', error.message);
+    }
 }
 
 // 更新地图数据

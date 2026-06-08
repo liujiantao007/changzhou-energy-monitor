@@ -33,16 +33,27 @@ function initVersionToggle() {
 function checkVersionPreference() {
     const savedVersion = localStorage.getItem('version');
     console.log('检查版本偏好: savedVersion =', savedVersion);
+    var currentPage = window.location.pathname.split('/').pop() || 'version2-index.html';
+
     if (savedVersion === 'old') {
         console.log('当前版本是旧版，切换到旧版');
         switchToOldVersion();
     } else if (savedVersion === 'new') {
         console.log('当前版本是新版，切换到新版');
-        // 默认显示新版
         switchToNewVersion();
+    } else if (savedVersion === 'theme') {
+        if (currentPage === 'version2-theme.html') {
+            console.log('已在主题版页面，保持当前页面');
+            return;
+        }
+        console.log('当前版本是主题版，跳转到主题版');
+        switchToThemeVersion();
     } else {
+        if (currentPage === 'version2-theme.html' || currentPage === 'version2-index.html') {
+            console.log('已在目标页面，保持当前页面');
+            return;
+        }
         console.log('当前版本是新版本2，保持当前页面');
-        // 已经是新版本2，不需要跳转
     }
 }
 
@@ -51,15 +62,18 @@ function toggleVersion() {
     const currentVersion = localStorage.getItem('version');
     console.log('当前版本:', currentVersion);
 
-    if (currentVersion === 'old') {
-        console.log('当前是旧版，将切换到新版');
+    if (currentVersion === 'version2') {
+        console.log('当前是新版本2，将切换到主题版');
+        switchToThemeVersion();
+    } else if (currentVersion === 'theme') {
+        console.log('当前是主题版，将切换到旧版本');
+        switchToOldVersion();
+    } else if (currentVersion === 'old') {
+        console.log('当前是旧版本，将切换到新版');
         switchToNewVersion();
-    } else if (currentVersion === 'new') {
+    } else {
         console.log('当前是新版，将切换到新版本2');
         switchToVersion2();
-    } else {
-        console.log('当前是新版本2，将切换到旧版');
-        switchToOldVersion();
     }
 }
 
@@ -121,6 +135,13 @@ function switchToOldVersion() {
     localStorage.setItem('version', 'old');
     // 重定向到旧版页面
     window.location.href = 'index.html';
+}
+
+function switchToThemeVersion() {
+    console.log('执行 switchToThemeVersion()');
+    localStorage.setItem('version', 'theme');
+    // 重定向到主题版页面
+    window.location.href = 'version2-theme.html';
 }
 
 // 知识库功能初始化

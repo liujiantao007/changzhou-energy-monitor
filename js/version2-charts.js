@@ -3,6 +3,35 @@
 // 全局图表实例
 let charts = {};
 
+// 主题色辅助函数 - 获取当前主题的调色板
+function getThemePalette(count) {
+    if (window.getThemeColors) {
+        const colors = window.getThemeColors();
+        if (colors && colors.palette) {
+            return colors.palette.slice(0, count || colors.palette.length);
+        }
+    }
+    // 默认调色板
+    const defaultPalette = ['#00D9FF', '#2B7DE9', '#5B9FFF', '#3A8BFF', '#4FC3F7', '#29B6F6', '#039BE5', '#0277BD', '#01579B'];
+    return defaultPalette.slice(0, count || defaultPalette.length);
+}
+
+function isLightTechTheme() {
+    return document.documentElement.dataset.theme === 'light-tech';
+}
+
+function getThemeChartTextColor(opacity) {
+    return isLightTechTheme() ? 'rgba(0,0,0,' + opacity + ')' : 'rgba(255,255,255,' + opacity + ')';
+}
+
+function getThemeChartLineColor(opacity) {
+    return isLightTechTheme() ? 'rgba(0,0,0,' + opacity + ')' : 'rgba(255,255,255,' + opacity + ')';
+}
+
+function getThemeChartShadowColor() {
+    return isLightTechTheme() ? 'rgba(255,255,255,0.65)' : 'rgba(0,0,0,0.5)';
+}
+
 // 初始化图表
 function initCharts() {
     console.log('初始化图表...');
@@ -119,7 +148,7 @@ function updateElectricityChart(data) {
             textStyle: {
                 fontSize: 14,
                 fontFamily: 'Microsoft YaHei, SimHei, sans-serif',
-                color: 'rgba(255,255,255,0.85)'
+                color: getThemeChartTextColor(0.85)
             }
         },
         series: [{
@@ -140,7 +169,7 @@ function updateElectricityChart(data) {
                 fontSize: 12,
                 fontFamily: 'Microsoft YaHei, SimHei, sans-serif',
                 position: 'outside',
-                color: 'rgba(255,255,255,0.85)',
+                color: getThemeChartTextColor(0.85),
                 textBorderColor: 'transparent',
                 textBorderWidth: 0
             },
@@ -150,7 +179,7 @@ function updateElectricityChart(data) {
                     fontSize: 14,
                     fontWeight: 'bold',
                     fontFamily: 'Microsoft YaHei, SimHei, sans-serif',
-                    color: 'rgba(255,255,255,0.85)'
+                    color: getThemeChartTextColor(0.85)
                 },
                 itemStyle: {
                     shadowBlur: 10,
@@ -164,7 +193,7 @@ function updateElectricityChart(data) {
                 length2: 5
             },
             data: chartData,
-            color: ['#00D9FF', '#2B7DE9', '#5B9FFF', '#3A8BFF', '#4FC3F7', '#29B6F6', '#039BE5', '#0277BD', '#01579B']
+            color: getThemePalette(9)
         }]
     };
     
@@ -236,7 +265,11 @@ function updatePoiChart(data) {
             borderColor: 'rgba(0, 217, 255, 0.3)',
             borderWidth: 1,
             padding: [8, 12, 8, 12],
-            extraCssText: 'box-shadow: 0 4px 15px rgba(0,0,0,0.4); border-radius: 6px;'
+            extraCssText: 'box-shadow: 0 4px 15px rgba(0,0,0,0.4); border-radius: 6px;',
+            textStyle: {
+                fontSize: 14,
+                color: '#fff'
+            }
         },
         legend: {
             orient: 'vertical',
@@ -245,7 +278,7 @@ function updatePoiChart(data) {
             textStyle: {
                 fontSize: 13,
                 fontFamily: 'Microsoft YaHei, SimHei, sans-serif',
-                color: 'rgba(255,255,255,0.85)'
+                color: getThemeChartTextColor(0.85)
             },
             formatter: function(name) {
                 const data = chartData.find(d => d.name === name);
@@ -265,7 +298,7 @@ function updatePoiChart(data) {
             avoidLabelOverlap: true,
             minShowLabelAngle: 5,
             label: {
-                show: false,
+                show: true,
                 formatter: function(params) {
                     if (!params.value || params.value === 0) return '';
                     const percent = params.percent != null ? params.percent.toFixed(1) : '0.0';
@@ -275,7 +308,7 @@ function updatePoiChart(data) {
                 fontFamily: 'Microsoft YaHei, SimHei, sans-serif',
                 fontWeight: 'normal',
                 position: 'outside',
-                color: 'rgba(255,255,255,0.65)',
+                color: getThemeChartTextColor(0.85),
                 textShadowBlur: 2,
                 textShadowColor: 'rgba(0,0,0,0.5)'
             },
@@ -284,7 +317,7 @@ function updatePoiChart(data) {
                 length: 6,
                 length2: 8,
                 lineStyle: {
-                    color: 'rgba(255,255,255,0.2)',
+                    color: getThemeChartLineColor(0.2),
                     width: 1
                 }
             },
@@ -295,7 +328,7 @@ function updatePoiChart(data) {
                     fontSize: 16,
                     fontWeight: 'bold',
                     fontFamily: 'Microsoft YaHei, SimHei, sans-serif',
-                    color: 'rgba(255,255,255,0.85)'
+                    color: getThemeChartTextColor(0.85)
                 },
                 itemStyle: {
                     shadowBlur: 15,
@@ -304,7 +337,7 @@ function updatePoiChart(data) {
                 }
             },
             data: chartData,
-            color: ['#00d4ff', '#3A8BFF']
+            color: getThemePalette(2)
         }]
     };
 
@@ -352,14 +385,15 @@ function updateElectricityTypeChart(data) {
         indirectCost += Number(item.indirect_power_supply_cost || 0) || 0;
     });
 
+    var _palette = getThemePalette();
     const energyDataArray = [
-        { name: '直供电', value: Math.floor(directEnergy), itemStyle: { color: '#00d4ff' } },
-        { name: '转供电', value: Math.floor(indirectEnergy), itemStyle: { color: '#3A8BFF' } }
+        { name: '直供电', value: Math.floor(directEnergy), itemStyle: { color: _palette[0] } },
+        { name: '转供电', value: Math.floor(indirectEnergy), itemStyle: { color: _palette[1] } }
     ];
 
     const costDataArray = [
-        { name: '直供电', value: Math.floor(directCost), itemStyle: { color: '#2B7DE9' } },
-        { name: '转供电', value: Math.floor(indirectCost), itemStyle: { color: '#5B9FFF' } }
+        { name: '直供电', value: Math.floor(directCost), itemStyle: { color: _palette[2] } },
+        { name: '转供电', value: Math.floor(indirectCost), itemStyle: { color: _palette[3] } }
     ];
 
     const totalEnergy = directEnergy + indirectEnergy;
@@ -403,7 +437,11 @@ function updateElectricityTypeChart(data) {
             borderColor: 'rgba(0, 217, 255, 0.3)',
             borderWidth: 1,
             padding: [8, 12, 8, 12],
-            extraCssText: 'box-shadow: 0 4px 15px rgba(0,0,0,0.4); border-radius: 6px;'
+            extraCssText: 'box-shadow: 0 4px 15px rgba(0,0,0,0.4); border-radius: 6px;',
+            textStyle: {
+                fontSize: 14,
+                color: '#fff'
+            }
         },
         // 富文本样式定义
         textStyle: {
@@ -433,7 +471,7 @@ function updateElectricityTypeChart(data) {
                 textStyle: {
                     fontSize: 13,
                     fontFamily: 'Microsoft YaHei, SimHei, sans-serif',
-                    color: 'rgba(255,255,255,0.85)'
+                    color: getThemeChartTextColor(0.85)
                 },
                 formatter: function(name) {
                     const energyData = energyDataArray.find(d => d.name === name);
@@ -446,8 +484,8 @@ function updateElectricityTypeChart(data) {
                 itemGap: 12,
                 icon: 'roundRect',
                 data: [
-                    { name: '直供电', icon: 'roundRect', itemStyle: { color: '#00d4ff' } },
-                    { name: '转供电', icon: 'roundRect', itemStyle: { color: '#3A8BFF' } }
+                    { name: '直供电', icon: 'roundRect', itemStyle: { color: _palette[0] } },
+                    { name: '转供电', icon: 'roundRect', itemStyle: { color: _palette[1] } }
                 ]
             },
             {
@@ -458,7 +496,7 @@ function updateElectricityTypeChart(data) {
                 textStyle: {
                     fontSize: 13,
                     fontFamily: 'Microsoft YaHei, SimHei, sans-serif',
-                    color: 'rgba(255,255,255,0.85)'
+                    color: getThemeChartTextColor(0.85)
                 },
                 formatter: function(name) {
                     const costData = costDataArray.find(d => d.name === name);
@@ -471,8 +509,8 @@ function updateElectricityTypeChart(data) {
                 itemGap: 12,
                 icon: 'roundRect',
                 data: [
-                    { name: '直供电', icon: 'roundRect', itemStyle: { color: '#2B7DE9' } },
-                    { name: '转供电', icon: 'roundRect', itemStyle: { color: '#5B9FFF' } }
+                    { name: '直供电', icon: 'roundRect', itemStyle: { color: _palette[2] } },
+                    { name: '转供电', icon: 'roundRect', itemStyle: { color: _palette[3] } }
                 ]
             }
         ],
@@ -490,20 +528,20 @@ function updateElectricityTypeChart(data) {
                         const percent = params.percent != null ? params.percent.toFixed(1) : '0.0';
                         return `${params.name}\n${percent}%`;
                     },
-                    fontSize: 12,
+                    fontSize: 11,
                     fontFamily: 'Microsoft YaHei, SimHei, sans-serif',
-                    fontWeight: 'bold',
+                    fontWeight: 'normal',
                     position: 'outside',
-                    color: 'rgba(255,255,255,0.85)',
+                    color: getThemeChartTextColor(0.85),
                     textShadowBlur: 2,
                     textShadowColor: 'rgba(0,0,0,0.5)'
                 },
                 labelLine: {
                     show: true,
-                    length: 10,
-                    length2: 15,
+                    length: 6,
+                    length2: 8,
                     lineStyle: {
-                        color: 'rgba(255,255,255,0.2)',
+                        color: getThemeChartLineColor(0.2),
                         width: 1
                     }
                 },
@@ -533,19 +571,19 @@ function updateElectricityTypeChart(data) {
                 avoidLabelOverlap: true,
                 minShowLabelAngle: 0,
                 label: {
-                    show: false,
+                    show: true,
                     textOverflow: 'none',
                     lineHeight: 18,
                     formatter: function(params) {
                         if (!params.value || params.value === 0) return '';
                         const value = params.value.toLocaleString('zh-CN');
-                        return ` ${value}元`;
+                        return `${params.name}\n${value}元`;
                     },
                     fontSize: 10,
                     fontFamily: 'Microsoft YaHei, SimHei, sans-serif',
                     fontWeight: 'normal',
                     position: 'inside',
-                    color: 'rgba(255,255,255,0.65)',
+                    color: getThemeChartTextColor(0.65),
                     textShadowBlur: 2,
                     textShadowColor: 'rgba(0,0,0,0.5)'
                 },
@@ -809,7 +847,13 @@ function updateEnergyTrendChart(data, timeType) {
     console.log('能耗趋势图标签:', labels);
     console.log('能耗趋势图能耗数据:', energyValues);
     console.log('能耗趋势图电费数据:', costValues);
-    
+
+    var _palette = getThemePalette();
+    var _areaEnergyColor = 'rgba(' + parseInt(_palette[0].slice(1,3),16) + ', ' + parseInt(_palette[0].slice(3,5),16) + ', ' + parseInt(_palette[0].slice(5,7),16) + ', 0.3)';
+    var _areaEnergyColor2 = 'rgba(' + parseInt(_palette[0].slice(1,3),16) + ', ' + parseInt(_palette[0].slice(3,5),16) + ', ' + parseInt(_palette[0].slice(5,7),16) + ', 0.05)';
+    var _areaCostColor = 'rgba(' + parseInt(_palette[1].slice(1,3),16) + ', ' + parseInt(_palette[1].slice(3,5),16) + ', ' + parseInt(_palette[1].slice(5,7),16) + ', 0.3)';
+    var _areaCostColor2 = 'rgba(' + parseInt(_palette[1].slice(1,3),16) + ', ' + parseInt(_palette[1].slice(3,5),16) + ', ' + parseInt(_palette[1].slice(5,7),16) + ', 0.05)';
+
     const option = {
         tooltip: {
             trigger: 'axis',
@@ -835,7 +879,7 @@ function updateEnergyTrendChart(data, timeType) {
             textStyle: {
                 fontSize: 14,
                 fontFamily: 'Microsoft YaHei, SimHei, sans-serif',
-                color: 'rgba(255,255,255,0.85)'
+                color: getThemeChartTextColor(0.85)
             }
         },
         grid: {
@@ -852,7 +896,7 @@ function updateEnergyTrendChart(data, timeType) {
             axisLabel: {
                 fontSize: 12,
                 fontFamily: 'Microsoft YaHei, SimHei, sans-serif',
-                color: 'rgba(255,255,255,0.65)'
+                color: getThemeChartTextColor(0.65)
             }
         },
         yAxis: [
@@ -863,7 +907,7 @@ function updateEnergyTrendChart(data, timeType) {
                 axisLabel: {
                     fontSize: 12,
                     fontFamily: 'Microsoft YaHei, SimHei, sans-serif',
-                    color: 'rgba(255,255,255,0.65)',
+                    color: getThemeChartTextColor(0.65),
                     formatter: function(value) {
                         return value.toLocaleString('zh-CN');
                     }
@@ -871,11 +915,11 @@ function updateEnergyTrendChart(data, timeType) {
                 nameTextStyle: {
                     fontSize: 12,
                     fontFamily: 'Microsoft YaHei, SimHei, sans-serif',
-                    color: 'rgba(255,255,255,0.85)'
+                    color: getThemeChartTextColor(0.85)
                 },
                 splitLine: {
                     lineStyle: {
-                        color: 'rgba(255, 255, 255, 0.06)'
+                        color: getThemeChartLineColor(0.06)
                     }
                 }
             },
@@ -886,7 +930,7 @@ function updateEnergyTrendChart(data, timeType) {
                 axisLabel: {
                     fontSize: 12,
                     fontFamily: 'Microsoft YaHei, SimHei, sans-serif',
-                    color: 'rgba(255,255,255,0.65)',
+                    color: getThemeChartTextColor(0.65),
                     formatter: function(value) {
                         return value.toLocaleString('zh-CN');
                     }
@@ -894,7 +938,7 @@ function updateEnergyTrendChart(data, timeType) {
                 nameTextStyle: {
                     fontSize: 12,
                     fontFamily: 'Microsoft YaHei, SimHei, sans-serif',
-                    color: 'rgba(255,255,255,0.85)'
+                    color: getThemeChartTextColor(0.85)
                 },
                 splitLine: {
                     show: false
@@ -911,11 +955,11 @@ function updateEnergyTrendChart(data, timeType) {
                 symbol: 'circle',
                 symbolSize: 8,
                 lineStyle: {
-                    color: '#5470c6',
+                    color: _palette[0],
                     width: 2
                 },
                 itemStyle: {
-                    color: '#5470c6'
+                    color: _palette[0]
                 },
                 areaStyle: {
                     color: {
@@ -925,8 +969,8 @@ function updateEnergyTrendChart(data, timeType) {
                         x2: 0,
                         y2: 1,
                         colorStops: [
-                            { offset: 0, color: 'rgba(84, 112, 198, 0.3)' },
-                            { offset: 1, color: 'rgba(84, 112, 198, 0.05)' }
+                            { offset: 0, color: _areaEnergyColor },
+                            { offset: 1, color: _areaEnergyColor2 }
                         ]
                     }
                 }
@@ -940,11 +984,11 @@ function updateEnergyTrendChart(data, timeType) {
                 symbol: 'circle',
                 symbolSize: 8,
                 lineStyle: {
-                    color: '#ee6666',
+                    color: _palette[1],
                     width: 2
                 },
                 itemStyle: {
-                    color: '#ee6666'
+                    color: _palette[1]
                 },
                 areaStyle: {
                     color: {
@@ -954,8 +998,8 @@ function updateEnergyTrendChart(data, timeType) {
                         x2: 0,
                         y2: 1,
                         colorStops: [
-                            { offset: 0, color: 'rgba(238, 102, 102, 0.3)' },
-                            { offset: 1, color: 'rgba(238, 102, 102, 0.05)' }
+                            { offset: 0, color: _areaCostColor },
+                            { offset: 1, color: _areaCostColor2 }
                         ]
                     }
                 }
@@ -1012,14 +1056,15 @@ function updateConsumerTypeChart(data) {
         towerFee += Number(item.tower_electricity_fee || 0) || 0;
     });
 
+    var _palette2 = getThemePalette();
     const energyDataArray = [
-        { name: '移动', value: Math.floor(mobileEnergy), itemStyle: { color: '#00d4ff' } },
-        { name: '铁塔', value: Math.floor(towerEnergy), itemStyle: { color: '#3A8BFF' } }
+        { name: '移动', value: Math.floor(mobileEnergy), itemStyle: { color: _palette2[0] } },
+        { name: '铁塔', value: Math.floor(towerEnergy), itemStyle: { color: _palette2[1] } }
     ];
 
     const feeDataArray = [
-        { name: '移动', value: Math.floor(mobileFee), itemStyle: { color: '#2B7DE9' } },
-        { name: '铁塔', value: Math.floor(towerFee), itemStyle: { color: '#5B9FFF' } }
+        { name: '移动', value: Math.floor(mobileFee), itemStyle: { color: _palette2[2] } },
+        { name: '铁塔', value: Math.floor(towerFee), itemStyle: { color: _palette2[3] } }
     ];
 
     const totalEnergy = mobileEnergy + towerEnergy;
@@ -1063,7 +1108,11 @@ function updateConsumerTypeChart(data) {
             borderColor: 'rgba(0, 217, 255, 0.3)',
             borderWidth: 1,
             padding: [8, 12, 8, 12],
-            extraCssText: 'box-shadow: 0 4px 15px rgba(0,0,0,0.4); border-radius: 6px;'
+            extraCssText: 'box-shadow: 0 4px 15px rgba(0,0,0,0.4); border-radius: 6px;',
+            textStyle: {
+                fontSize: 14,
+                color: '#fff'
+            }
         },
         legend: [
             {
@@ -1074,7 +1123,7 @@ function updateConsumerTypeChart(data) {
                 textStyle: {
                     fontSize: 13,
                     fontFamily: 'Microsoft YaHei, SimHei, sans-serif',
-                    color: 'rgba(255,255,255,0.85)'
+                    color: getThemeChartTextColor(0.85)
                 },
                 formatter: function(name) {
                     const energyData = energyDataArray.find(d => d.name === name);
@@ -1087,8 +1136,8 @@ function updateConsumerTypeChart(data) {
                 itemGap: 12,
                 icon: 'roundRect',
                 data: [
-                    { name: '移动', icon: 'roundRect', itemStyle: { color: '#00d4ff' } },
-                    { name: '铁塔', icon: 'roundRect', itemStyle: { color: '#3A8BFF' } }
+                    { name: '移动', icon: 'roundRect', itemStyle: { color: _palette2[0] } },
+                    { name: '铁塔', icon: 'roundRect', itemStyle: { color: _palette2[1] } }
                 ]
             },
             {
@@ -1099,7 +1148,7 @@ function updateConsumerTypeChart(data) {
                 textStyle: {
                     fontSize: 13,
                     fontFamily: 'Microsoft YaHei, SimHei, sans-serif',
-                    color: 'rgba(255,255,255,0.85)'
+                    color: getThemeChartTextColor(0.85)
                 },
                 formatter: function(name) {
                     const feeData = feeDataArray.find(d => d.name === name);
@@ -1112,8 +1161,8 @@ function updateConsumerTypeChart(data) {
                 itemGap: 12,
                 icon: 'roundRect',
                 data: [
-                    { name: '移动', icon: 'roundRect', itemStyle: { color: '#2B7DE9' } },
-                    { name: '铁塔', icon: 'roundRect', itemStyle: { color: '#5B9FFF' } }
+                    { name: '移动', icon: 'roundRect', itemStyle: { color: _palette2[2] } },
+                    { name: '铁塔', icon: 'roundRect', itemStyle: { color: _palette2[3] } }
                 ]
             }
         ],
@@ -1157,7 +1206,7 @@ function updateConsumerTypeChart(data) {
                     fontFamily: 'Microsoft YaHei, SimHei, sans-serif',
                     fontWeight: 'normal',
                     position: 'outside',
-                    color: 'rgba(255,255,255,0.85)',
+                    color: getThemeChartTextColor(0.85),
                     textShadowBlur: 2,
                     textShadowColor: 'rgba(0,0,0,0.5)'
                 },
@@ -1166,7 +1215,7 @@ function updateConsumerTypeChart(data) {
                     length: 6,
                     length2: 8,
                     lineStyle: {
-                        color: 'rgba(255,255,255,0.2)',
+                        color: getThemeChartLineColor(0.2),
                         width: 1
                     }
                 },
@@ -1194,17 +1243,17 @@ function updateConsumerTypeChart(data) {
                 avoidLabelOverlap: true,
                 minShowLabelAngle: 0,
                 label: {
-                    show: false,
+                    show: true,
                     formatter: function(params) {
                         if (!params.value || params.value === 0) return '';
                         const value = params.value.toLocaleString('zh-CN');
-                        return ` ${value}元`;
+                        return `${params.name}\n${value}元`;
                     },
                     fontSize: 10,
                     fontFamily: 'Microsoft YaHei, SimHei, sans-serif',
                     fontWeight: 'normal',
                     position: 'inside',
-                    color: 'rgba(255,255,255,0.65)',
+                    color: getThemeChartTextColor(0.65),
                     textShadowBlur: 2,
                     textShadowColor: 'rgba(0,0,0,0.5)'
                 },

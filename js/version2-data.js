@@ -710,6 +710,8 @@ function processData(data) {
         latestDate: data.latestDate
     };
     console.log('创建深拷贝后，chartData.rawData 量:', chartData.rawData.length);
+    // 缓存数据供主题切换时重新渲染图表颜色
+    window.__lastChartData = chartData;
     updateCharts(chartData);
 
     // 更新地图
