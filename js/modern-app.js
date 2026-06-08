@@ -38,9 +38,28 @@ if (document.readyState === 'loading') {
 function initVersionToggle() {
     const versionToggle = document.getElementById('version-toggle');
     if (versionToggle) {
+        // 初始化按钮文本
+        updateVersionToggleText();
         versionToggle.addEventListener('click', () => {
             toggleVersion();
         });
+    }
+}
+
+function updateVersionToggleText() {
+    const versionToggle = document.getElementById('version-toggle');
+    const currentVersion = localStorage.getItem('version');
+    if (versionToggle) {
+        const toggleText = versionToggle.querySelector('.toggle-text');
+        if (toggleText) {
+            if (currentVersion === 'old') {
+                toggleText.textContent = '新版';
+            } else if (currentVersion === 'new') {
+                toggleText.textContent = '新版本2';
+            } else {
+                toggleText.textContent = '旧版'; // 从新版本2 → 旧版
+            }
+        }
     }
 }
 
@@ -48,17 +67,22 @@ function checkVersionPreference() {
     const savedVersion = localStorage.getItem('version');
     if (savedVersion === 'old') {
         switchToOldVersion();
+    } else if (savedVersion === 'version2') {
+        switchToVersion2();
     }
-    // 如果版本不是 'old'，说明已经在现代版，不需要做任何事
+    // 如果版本不是 'old' 或 'version2'，说明已经在现代版，不需要做任何事
 }
 
 function toggleVersion() {
     const currentVersion = localStorage.getItem('version');
     if (currentVersion === 'old') {
-        // 当前是旧版，需要跳转到新版
-        // 但我们已经在新版，所以无需跳转
+        // 当前是旧版，跳转到现代版
         localStorage.setItem('version', 'new');
+    } else if (currentVersion === 'new') {
+        // 当前是现代版，跳转到新版本2
+        switchToVersion2();
     } else {
+        // 当前是新版本2，跳转到旧版
         switchToOldVersion();
     }
 }
@@ -66,6 +90,11 @@ function toggleVersion() {
 function switchToOldVersion() {
     localStorage.setItem('version', 'old');
     window.location.href = 'index.html';
+}
+
+function switchToVersion2() {
+    localStorage.setItem('version', 'version2');
+    window.location.href = 'version2-index.html';
 }
 
 // 响应式缩放

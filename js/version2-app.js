@@ -36,13 +36,13 @@ function checkVersionPreference() {
     if (savedVersion === 'old') {
         console.log('当前版本是旧版，切换到旧版');
         switchToOldVersion();
-    } else if (savedVersion === 'version2') {
-        console.log('当前版本是新版本2，切换到新版本2');
-        switchToVersion2();
-    } else {
+    } else if (savedVersion === 'new') {
         console.log('当前版本是新版，切换到新版');
         // 默认显示新版
         switchToNewVersion();
+    } else {
+        console.log('当前版本是新版本2，保持当前页面');
+        // 已经是新版本2，不需要跳转
     }
 }
 
@@ -119,17 +119,8 @@ function switchToVersion2() {
 function switchToOldVersion() {
     console.log('执行 switchToOldVersion()');
     localStorage.setItem('version', 'old');
-    const versionToggle = document.getElementById('version-toggle');
-    if (versionToggle) {
-        versionToggle.textContent = '切换新版';
-        versionToggle.style.backgroundColor = '#f5222d';
-    }
-    // 显示旧版样式
-    document.body.classList.remove('new-version');
-    document.body.classList.add('old-version');
-    console.log('切换到旧版完成');
-    console.log('body 类名:', document.body.className);
-    console.log('localStorage 值:', localStorage.getItem('version'));
+    // 重定向到旧版页面
+    window.location.href = 'index.html';
 }
 
 // 知识库功能初始化
