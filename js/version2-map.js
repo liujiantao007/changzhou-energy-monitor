@@ -141,8 +141,8 @@ function initMap() {
                 itemWidth: 12,
                 itemHeight: 150,
                 inRange: {
-                    // #06142D 暗底 → #00D9FF 亮青色高亮
-                    color: ['#06142D', '#0A1E4A', '#0F2B6B', '#143A8A', '#1A4BA8', '#2060C7', '#2878E6', '#3A9EFF', '#00D9FF', '#00D9FF']
+                    // 低能耗蓝色 → 高能耗红色/橙色
+                    color: ['#0B2348', '#1A4BA8', '#3A8BFF', '#4FC3F7', '#66BB6A', '#FFD54F', '#FFB74D', '#FF8A65', '#FF5252', '#D32F2F']
                 },
                 textStyle: {
                     fontSize: 12,
