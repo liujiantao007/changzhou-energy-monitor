@@ -223,7 +223,7 @@ body {
 .grid-container {
     display: grid;
     grid-template-columns: minmax(150px, 1fr) 2fr minmax(150px, 1fr);
-    grid-gap: 10px;
+    gap: 8px;
     height: 100%;
     padding: 10px;
 }
@@ -283,32 +283,34 @@ body {
     background: linear-gradient(90deg, #00d4ff, transparent);
 }
 
-/* 左侧栏模块高度分配 */
+/* 左侧栏模块高度分配 - 使用 grid 精确对齐 */
 .column-left {
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-rows: 1fr 1fr 1fr;
     gap: 8px;
     height: 100%;
+    min-height: 0;
+    overflow: hidden;
 }
 
 .column-left .module {
-    flex: 1 1 0;
     min-height: 0;
     display: flex;
     flex-direction: column;
     overflow: hidden;
 }
 
-/* 中间栏模块高度分配 */
+/* 中间栏模块高度分配 - 使用 grid 精确对齐 */
 .column-center {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
+    display: grid;
+    grid-template-rows: 2fr 1fr;
+    gap: 8px;
     height: 100%;
+    min-height: 0;
+    overflow: hidden;
 }
 
 .column-center > .module:first-child {
-    flex: 2 1 0;
     min-height: 0;
     display: flex;
     flex-direction: column;
@@ -316,32 +318,31 @@ body {
 }
 
 .chart-row {
-    flex: 1 1 0;
     min-height: 0;
     display: grid;
     grid-template-columns: 1fr 1fr;
-    grid-gap: 10px;
+    gap: 8px;
     overflow: hidden;
 }
 
 .chart-row .module {
-    height: 100%;
     min-height: 0;
     display: flex;
     flex-direction: column;
     overflow: hidden;
 }
 
-/* 右侧栏模块高度分配 */
+/* 右侧栏模块高度分配 - 使用 grid 精确对齐 */
 .column-right {
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-rows: 1fr 1fr 1fr;
     gap: 8px;
     height: 100%;
+    min-height: 0;
+    overflow: hidden;
 }
 
 .column-right .module {
-    flex: 1 1 0;
     min-height: 0;
     display: flex;
     flex-direction: column;
