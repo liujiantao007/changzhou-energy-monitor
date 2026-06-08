@@ -1,0 +1,309 @@
+/* 新版首页样式 */
+
+/* 全局样式 */
+body {
+    font-family: 'Microsoft YaHei', Arial, sans-serif;
+    background-color: #ffffff;
+    color: #333;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+}
+
+#app {
+    width: 1920px;
+    height: 1080px;
+    position: absolute;
+    left: 0;
+    top: 0;
+    margin: 0;
+    transform-origin: top left;
+    transition: transform 0.3s ease;
+    background: #ffffff;
+}
+
+/* 导航栏样式 */
+.navbar {
+    background: #f8f9fa;
+    color: #333;
+    padding: 0 1.56vw;
+    height: 70px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    position: relative;
+}
+
+.navbar-brand {
+    font-size: 24px;
+    font-weight: bold;
+    letter-spacing: 2px;
+    text-shadow: none;
+    flex: 1;
+}
+
+.navbar-nav {
+    display: flex;
+    justify-content: center;
+    flex: 1;
+    gap: 5px;
+}
+
+.nav-item {
+    color: #333;
+    text-decoration: none;
+    padding: 8px 16px;
+    height: 70px;
+    line-height: 70px;
+    transition: all 0.3s ease;
+    font-size: 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    position: relative;
+}
+
+.nav-item:hover {
+    background-color: rgba(24, 144, 255, 0.1);
+    color: #1890ff;
+}
+
+.nav-item.active {
+    background-color: #1890ff;
+    color: #fff;
+}
+
+/* 新版本首页特定样式 */
+.new-home-content {
+    padding: 40px;
+    height: 100%;
+    overflow-y: auto;
+}
+
+.welcome-section {
+    text-align: center;
+    margin-bottom: 60px;
+}
+
+.welcome-section h1 {
+    font-size: 48px;
+    color: #1890ff;
+    margin-bottom: 20px;
+    font-weight: 300;
+}
+
+.welcome-section p {
+    font-size: 24px;
+    color: #666;
+    margin-bottom: 40px;
+}
+
+.features-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+.feature-card {
+    background: #f8f9fa;
+    padding: 30px;
+    border-radius: 8px;
+    text-align: left;
+    transition: all 0.3s ease;
+}
+
+.feature-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+.feature-card h3 {
+    font-size: 20px;
+    color: #1890ff;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+}
+
+.feature-card h3::before {
+    content: '';
+    display: inline-block;
+    width: 4px;
+    height: 20px;
+    background: #1890ff;
+    margin-right: 10px;
+    border-radius: 2px;
+}
+
+.feature-card p {
+    font-size: 14px;
+    color: #666;
+    line-height: 1.6;
+}
+
+.dashboard-preview {
+    margin-bottom: 60px;
+}
+
+.dashboard-preview h2 {
+    font-size: 36px;
+    color: #333;
+    margin-bottom: 30px;
+    text-align: center;
+    font-weight: 300;
+}
+
+.preview-content {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+}
+
+.placeholder-module {
+    background: #f8f9fa;
+    padding: 40px 20px;
+    border-radius: 8px;
+    text-align: center;
+    border: 2px dashed #e0e0e0;
+    transition: all 0.3s ease;
+}
+
+.placeholder-module:hover {
+    border-color: #1890ff;
+    background: #e6f7ff;
+}
+
+.placeholder-module h4 {
+    font-size: 18px;
+    color: #333;
+    margin-bottom: 10px;
+}
+
+.placeholder-module p {
+    font-size: 14px;
+    color: #666;
+}
+
+.development-status {
+    text-align: center;
+}
+
+.development-status h2 {
+    font-size: 36px;
+    color: #333;
+    margin-bottom: 30px;
+    font-weight: 300;
+}
+
+.progress-bar-container {
+    max-width: 600px;
+    margin: 0 auto 40px;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 20px;
+    background: #f0f0f0;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 10px;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #1890ff, #52c41a);
+    border-radius: 10px;
+    transition: width 0.3s ease;
+}
+
+.timeline {
+    display: flex;
+    justify-content: space-between;
+    max-width: 800px;
+    margin: 0 auto;
+    position: relative;
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: #e0e0e0;
+    z-index: 0;
+    transform: translateY(-50%);
+}
+
+.timeline-item {
+    position: relative;
+    z-index: 1;
+    background: #fff;
+    padding: 10px 20px;
+    border-radius: 20px;
+    font-size: 14px;
+    transition: all 0.3s ease;
+}
+
+.timeline-item.completed {
+    background: #52c41a;
+    color: #fff;
+}
+
+.timeline-item.active {
+    background: #1890ff;
+    color: #fff;
+    font-weight: bold;
+}
+
+.timeline-item.upcoming {
+    background: #e0e0e0;
+    color: #666;
+}
+
+/* 页面内容区域 */
+.main-content {
+    height: calc(1080px - 70px);
+    position: relative;
+    padding: 10px 0;
+    overflow: hidden;
+}
+
+.page {
+    display: none;
+    height: 100%;
+}
+
+.page.active {
+    display: block;
+}
+
+/* 响应式缩放 */
+@media screen {
+    #app {
+        transform: scale(calc(min(100vw / 1920, 100vh / 1080)));
+        transform-origin: top left;
+    }
+}
+
+/* 滚动条样式 */
+.new-home-content::-webkit-scrollbar {
+    width: 6px;
+}
+
+.new-home-content::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+}
+
+.new-home-content::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 3px;
+}
+
+.new-home-content::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}

@@ -99,17 +99,8 @@ window.onload = function() {
 function switchToNewVersion() {
     console.log('执行 switchToNewVersion()');
     localStorage.setItem('version', 'new');
-    const versionToggle = document.getElementById('version-toggle');
-    if (versionToggle) {
-        versionToggle.textContent = '切换旧版';
-        versionToggle.style.backgroundColor = '#1890ff';
-    }
-    // 显示新版样式
-    document.body.classList.remove('old-version');
-    document.body.classList.add('new-version');
-    console.log('切换到新版完成');
-    console.log('body 类名:', document.body.className);
-    console.log('localStorage 值:', localStorage.getItem('version'));
+    // 重定向到新版页面
+    window.location.href = 'modern-index.html';
 }
 
 function switchToOldVersion() {

@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>常州能耗云运营驾驶舱 - 现代版</title>
+    <link rel="stylesheet" href="css/modern-style.css?v=20260608a">
+    <!-- 引入通用库 -->
+    <script src="js/libs/echarts.min.js"></script>
+    <script src="js/libs/xlsx.full.min.js"></script>
+    <script src="js/nav-config.js"></script>
+</head>
+<body>
+    <div id="app">
+        <!-- 顶部导航栏 -->
+        <header class="navbar">
+            <div class="navbar-brand">
+                <span class="logo-icon">⚡</span>
+                <span class="brand-text">常州能耗云运营驾驶舱</span>
+            </div>
+            <nav class="navbar-nav">
+                <a href="#home" class="nav-item active">首页</a>
+                <a href="http://10.38.78.217:8526/baozhang" class="nav-item external-link">报账管理</a>
+                <a href="#电表管理" class="nav-item">电表管理</a>
+                <a href="#能耗分析" class="nav-item">能耗分析</a>
+                <a href="#报表管理" class="nav-item">报表管理</a>
+                <a href="#知识库" class="nav-item">知识库</a>
+            </nav>
+            <div class="navbar-placeholder"></div>
+            <div class="navbar-actions">
+                <div class="mode-toggle" id="display-mode-toggle" title="切换显示方式">
+                    <span class="toggle-text">弹出模式</span>
+                </div>
+                <div class="version-toggle" id="version-toggle" title="切换版本">
+                    <span class="toggle-text">旧版</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- 主内容区 -->
+        <main class="main-content">
+            <!-- 首页内容 -->
+            <div id="home" class="page active">
+                <!-- 顶部时间维度和分类选择器 -->
+                <div class="top-selectors">
+                    <div class="time-selector" id="overview-time-selector">
+                        <button class="time-btn">年</button>
+                        <button class="time-btn">月</button>
+                        <button class="time-btn active">日</button>
+                    </div>
+                </div>
+                <!-- 顶部关键指标 -->
+                <div class="key-metrics">
+                    <div class="metric-card">
+                        <div class="metric-header">
+                            <span class="metric-title">总体能耗</span>
+                            <span class="metric-icon">📊</span>
+                        </div>
+                        <div class="metric-content">
+                            <span class="metric-value" id="total-energy">0</span>
+                            <span class="metric-unit">kWh</span>
+                        </div>
+                        <div class="metric-trend" id="energy-change">+0%</div>
+                    </div>
+
+                    <div class="metric-card">
+                        <div class="metric-header">
+                            <span class="metric-title">总体电费</span>
+                            <span class="metric-icon">💰</span>
+                        </div>
+                        <div class="metric-content">
+                            <span class="metric-value" id="total-cost-display">0</span>
+                            <span class="metric-unit">元</span>
+                        </div>
+                        <div class="metric-trend" id="cost-change">+0%</div>
+                    </div>
+
+                    <div class="metric-card">
+                        <div class="metric-header">
+                            <span class="metric-title">POI 总数</span>
+                            <span class="metric-icon">📍</span>
+                        </div>
+                        <div class="metric-content">
+                            <span class="metric-value" id="total-poi">0</span>
+                            <span class="metric-unit">个</span>
+                        </div>
+                        <div class="metric-trend" id="poi-change">+0%</div>
+                    </div>
+
+                    <div class="metric-card">
+                        <div class="metric-header">
+                            <span class="metric-title">设备总数</span>
+                            <span class="metric-icon">🔌</span>
+                        </div>
+                        <div class="metric-content">
+                            <span class="metric-value" id="total-device">0</span>
+                            <span class="metric-unit">个</span>
+                        </div>
+                        <div class="metric-trend" id="device-change">+0%</div>
+                    </div>
+                </div>
+
+                <!-- 图表区域 -->
+                <div class="charts-grid">
+                    <!-- 地图区域 -->
+                    <div class="chart-container map-container">
+                        <div class="chart-header">
+                            <h3>常州能耗分布</h3>
+                            <div class="region-selector">
+                                <select id="district-select" class="region-select">
+                                    <option value="">选择区县</option>
+                                </select>
+                                <select id="grid-select" class="region-select" disabled>
+                                    <option value="">选择网格</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div id="map-chart" class="chart map-chart"></div>
+                    </div>
+
+                    <!-- 能耗趋势图 -->
+                    <div class="chart-container">
+                        <div class="chart-header">
+                            <h3>能耗趋势图</h3>
+                            <div class="time-selector" id="trend-time-selector">
+                                <button class="time-btn">年</button>
+                                <button class="time-btn">月</button>
+                                <button class="time-btn active">日</button>
+                            </div>
+                        </div>
+                        <div id="energy-trend-chart" class="chart"></div>
+                    </div>
+
+                    <!-- 能耗分项统计 -->
+                    <div class="chart-container">
+                        <div class="chart-header">
+                            <h3>能耗分项统计</h3>
+                            <div class="time-selector" id="consumer-type-time-selector">
+                                <button class="time-btn">年</button>
+                                <button class="time-btn">月</button>
+                                <button class="time-btn active">日</button>
+                            </div>
+                        </div>
+                        <div id="consumer-type-chart" class="chart"></div>
+                    </div>
+
+                    <!-- POI 分项统计 -->
+                    <div class="chart-container">
+                        <div class="chart-header">
+                            <h3>POI 分项统计</h3>
+                            <div class="time-selector" id="poi-time-selector">
+                                <button class="time-btn">年</button>
+                                <button class="time-btn">月</button>
+                                <button class="time-btn active">日</button>
+                            </div>
+                        </div>
+                        <div id="poi-chart" class="chart"></div>
+                    </div>
+
+                    <!-- 用电类型统计 -->
+                    <div class="chart-container">
+                        <div class="chart-header">
+                            <h3>用电类型统计</h3>
+                            <div class="time-selector" id="electricity-type-time-selector">
+                                <button class="time-btn">年</button>
+                                <button class="time-btn">月</button>
+                                <button class="time-btn active">日</button>
+                            </div>
+                        </div>
+                        <div id="electricity-type-chart" class="chart"></div>
+                    </div>
+
+                    <!-- 报账总览 -->
+                    <div class="chart-container report-container">
+                        <div class="chart-header">
+                            <h3>报账总览</h3>
+                            <div class="time-selector">
+                                <button class="time-btn">年</button>
+                                <button class="time-btn">月</button>
+                                <button class="time-btn active">周</button>
+                            </div>
+                        </div>
+                        <div class="report-metrics">
+                            <div class="report-item">
+                                <span class="report-label">租费</span>
+                                <div class="report-stats">
+                                    <span class="report-total">总报账数: <span id="rent-total">0</span></span>
+                                    <span class="report-pending">待报账: <span id="rent-pending">0</span></span>
+                                    <span class="report-completed">已报账: <span id="rent-completed">0</span></span>
+                                    <div class="progress-bar">
+                                        <div class="progress" id="rent-progress"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="report-item">
+                                <span class="report-label">电费</span>
+                                <div class="report-stats">
+                                    <span class="report-total">总报账数: <span id="electricity-total">0</span></span>
+                                    <span class="report-pending">待报账: <span id="electricity-pending">0</span></span>
+                                    <span class="report-completed">已报账: <span id="electricity-completed">0</span></span>
+                                    <div class="progress-bar">
+                                        <div class="progress" id="electricity-progress"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 告警和事件 -->
+                    <div class="chart-container">
+                        <div class="chart-header">
+                            <h3>告警总览</h3>
+                        </div>
+                        <div class="alarm-list" id="alarm-list">
+                            <!-- 告警信息将通过JavaScript动态生成 -->
+                        </div>
+                    </div>
+
+                    <div class="chart-container">
+                        <div class="chart-header">
+                            <h3>事件总览</h3>
+                        </div>
+                        <div class="event-list" id="event-list">
+                            <!-- 事件信息将通过JavaScript动态生成 -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 其他页面保持不变 -->
+            <div id="报账管理" class="page">
+                <div class="iframe-container">
+                    <div class="iframe-loading">
+                        <div class="spinner"></div>
+                        <span>报账管理加载中...</span>
+                    </div>
+                    <iframe id="baozhang-frame" src="" style="width: 100%; height: 100%; border: none; display: block;"></iframe>
+                </div>
+            </div>
+
+            <div id="电表管理" class="page">
+                <div class="iframe-container">
+                    <div class="iframe-loading">
+                        <div class="spinner"></div>
+                        <span>电表管理加载中...</span>
+                    </div>
+                    <iframe id="dianbiao-frame" src="" style="width: 100%; height: 100%; border: none; display: block;"></iframe>
+                </div>
+            </div>
+
+            <div id="能耗分析" class="page">
+                <div id="energy-iframe-container" style="position: relative; width: 100%; height: 100%;">
+                    <div id="energy-iframe-loading" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 1000;">
+                        <div style="width: 50px; height: 50px; border: 5px solid #e0e0e0; border-top-color: #1890ff; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px;"></div>
+                        <p style="color: #666; font-size: 16px;">能耗分析平台加载中...</p>
+                    </div>
+                    <iframe id="energy-analysis-frame" src="" style="width: 100%; height: 100%; border: none; display: block;"></iframe>
+                </div>
+            </div>
+
+            <div id="报表管理" class="page">
+                <div class="iframe-container">
+                    <div class="iframe-loading">
+                        <div class="spinner"></div>
+                        <span>报表管理加载中...</span>
+                    </div>
+                    <iframe id="baobiao-frame" src="" style="width: 100%; height: 100%; border: none; display: block;"></iframe>
+                </div>
+            </div>
+
+            <div id="知识库" class="page">
+                <div class="knowledge-base-container">
+                    <div class="knowledge-base-main">
+                        <div class="knowledge-base-sidebar">
+                            <div class="menu-item active">管理办法</div>
+                            <div class="menu-item">风险管控</div>
+                        </div>
+
+                        <div class="knowledge-base-content">
+                            <div class="breadcrumb">
+                                <span id="breadcrumb-text">当前位置：知识库 > 管理办法</span>
+                            </div>
+
+                            <div class="file-list-container">
+                                <div class="upload-section">
+                                    <button id="upload-btn" class="upload-btn">上传文件</button>
+                                    <input type="file" id="file-input" multiple style="display: none;">
+                                </div>
+                                <table class="file-list-table">
+                                    <thead>
+                                        <tr>
+                                            <th>文件名</th>
+                                            <th>文件类型</th>
+                                            <th>时间</th>
+                                            <th>操作</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="file-list">
+                                        <!-- 文件列表将通过 JavaScript 动态生成 -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- 数据加载状态 -->
+    <div id="loading" class="loading" style="display: none;">
+        <div class="loading-content">
+            <div class="loading-spinner"></div>
+            <p>数据加载中...</p>
+        </div>
+    </div>
+
+    <!-- 后备：3秒后无论什么情况都强制隐藏加载状态 -->
+    <script>
+    setTimeout(function() {
+        var el = document.getElementById('loading');
+        if (el && el.style.display !== 'none') {
+            el.style.display = 'none';
+            el.classList.remove('visible');
+        }
+    }, 3000);
+    </script>
+
+    <script src="js/data.js?v=20260608e"></script>
+    <script src="js/charts.js?v=20260608e"></script>
+    <script src="js/map.js?v=20260608e"></script>
+    <script src="js/modern-app.js?v=20260608e"></script>
+</body>
+</html>

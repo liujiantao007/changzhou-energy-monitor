@@ -870,7 +870,7 @@ function calculateAndDisplayChanges(rawData, currentEnergy, currentCost, current
     }
 
     // 获取当前筛选的区域信息
-    const currentRegion = currentSelectedDistrict || '';
+    const currentRegion = window.currentSelectedDistrict || '';
     const isGridFilter = currentRegion.includes('网格');
 
     if (timeRange === '年') {

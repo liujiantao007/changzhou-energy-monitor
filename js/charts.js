@@ -249,7 +249,7 @@ function updatePoiChart(data) {
             textStyle: {
                 fontSize: 13,
                 fontFamily: 'Microsoft YaHei, SimHei, sans-serif',
-                color: '#fff'
+                color: '#333'
             },
             formatter: function(name) {
                 const data = chartData.find(d => d.name === name);
@@ -278,7 +278,7 @@ function updatePoiChart(data) {
                 fontFamily: 'Microsoft YaHei, SimHei, sans-serif',
                 fontWeight: 'bold',
                 position: 'outside',
-                color: '#fff',
+                color: '#666',
                 textShadowBlur: 2,
                 textShadowColor: 'rgba(0,0,0,0.5)'
             },
@@ -287,7 +287,7 @@ function updatePoiChart(data) {
                 length: 6,
                 length2: 8,
                 lineStyle: {
-                    color: 'rgba(255,255,255,0.6)',
+                    color: 'rgba(0,0,0,0.3)',
                     width: 1
                 }
             },
@@ -438,7 +438,7 @@ function updateElectricityTypeChart(data) {
                 textStyle: {
                     fontSize: 13,
                     fontFamily: 'Microsoft YaHei, SimHei, sans-serif',
-                    color: '#fff'
+                    color: '#333'
                 },
                 formatter: function(name) {
                     const energyData = energyDataArray.find(d => d.name === name);
@@ -463,7 +463,7 @@ function updateElectricityTypeChart(data) {
                 textStyle: {
                     fontSize: 13,
                     fontFamily: 'Microsoft YaHei, SimHei, sans-serif',
-                    color: '#fff'
+                    color: '#333'
                 },
                 formatter: function(name) {
                     const costData = costDataArray.find(d => d.name === name);
@@ -499,7 +499,7 @@ function updateElectricityTypeChart(data) {
                     fontFamily: 'Microsoft YaHei, SimHei, sans-serif',
                     fontWeight: 'bold',
                     position: 'outside',
-                    color: '#fff',
+                    color: '#666',
                     textShadowBlur: 2,
                     textShadowColor: 'rgba(0,0,0,0.5)'
                 },
@@ -508,7 +508,7 @@ function updateElectricityTypeChart(data) {
                     length: 10,
                     length2: 15,
                     lineStyle: {
-                        color: 'rgba(255,255,255,0.6)',
+                        color: 'rgba(0,0,0,0.3)',
                         width: 1
                     }
                 },
@@ -550,7 +550,7 @@ function updateElectricityTypeChart(data) {
                     fontFamily: 'Microsoft YaHei, SimHei, sans-serif',
                     fontWeight: 'bold',
                     position: 'inside',
-                    color: '#fff',
+                    color: '#666',
                     textShadowBlur: 2,
                     textShadowColor: 'rgba(0,0,0,0.5)'
                 },
@@ -818,12 +818,9 @@ function updateEnergyTrendChart(data, timeType) {
     const option = {
         tooltip: {
             trigger: 'axis',
-            backgroundColor: 'rgba(0, 0, 0, 0)',
-            borderColor: 'rgba(0, 0, 0, 0)',
+            backgroundColor: 'rgba(50, 50, 50, 0.9)',
+            borderColor: 'rgba(50, 50, 50, 0.9)',
             borderWidth: 0,
-            shadowBlur: 0,
-            padding: [0, 0, 0, 0],
-            extraCssText: 'box-shadow: none; border: none; background: transparent !important;',
             textStyle: {
                 fontSize: 14,
                 color: '#fff'
@@ -843,7 +840,7 @@ function updateEnergyTrendChart(data, timeType) {
             textStyle: {
                 fontSize: 14,
                 fontFamily: 'Microsoft YaHei, SimHei, sans-serif',
-                color: '#fff'
+                color: '#333'
             }
         },
         grid: {
@@ -860,7 +857,7 @@ function updateEnergyTrendChart(data, timeType) {
             axisLabel: {
                 fontSize: 12,
                 fontFamily: 'Microsoft YaHei, SimHei, sans-serif',
-                color: '#fff'
+                color: '#666'
             }
         },
         yAxis: [
@@ -871,7 +868,7 @@ function updateEnergyTrendChart(data, timeType) {
                 axisLabel: {
                     fontSize: 12,
                     fontFamily: 'Microsoft YaHei, SimHei, sans-serif',
-                    color: '#fff',
+                    color: '#666',
                     formatter: function(value) {
                         return value.toLocaleString('zh-CN');
                     }
@@ -879,11 +876,11 @@ function updateEnergyTrendChart(data, timeType) {
                 nameTextStyle: {
                     fontSize: 12,
                     fontFamily: 'Microsoft YaHei, SimHei, sans-serif',
-                    color: '#fff'
+                    color: '#333'
                 },
                 splitLine: {
                     lineStyle: {
-                        color: 'rgba(255, 255, 255, 0.1)'
+                        color: 'rgba(0, 0, 0, 0.1)'
                     }
                 }
             },
@@ -894,7 +891,7 @@ function updateEnergyTrendChart(data, timeType) {
                 axisLabel: {
                     fontSize: 12,
                     fontFamily: 'Microsoft YaHei, SimHei, sans-serif',
-                    color: '#fff',
+                    color: '#666',
                     formatter: function(value) {
                         return value.toLocaleString('zh-CN');
                     }
@@ -902,7 +899,7 @@ function updateEnergyTrendChart(data, timeType) {
                 nameTextStyle: {
                     fontSize: 12,
                     fontFamily: 'Microsoft YaHei, SimHei, sans-serif',
-                    color: '#fff'
+                    color: '#333'
                 },
                 splitLine: {
                     show: false
@@ -1086,7 +1083,7 @@ function updateConsumerTypeChart(data) {
                 textStyle: {
                     fontSize: 13,
                     fontFamily: 'Microsoft YaHei, SimHei, sans-serif',
-                    color: '#fff'
+                    color: '#333'
                 },
                 formatter: function(name) {
                     const energyData = energyDataArray.find(d => d.name === name);
@@ -1111,7 +1108,7 @@ function updateConsumerTypeChart(data) {
                 textStyle: {
                     fontSize: 13,
                     fontFamily: 'Microsoft YaHei, SimHei, sans-serif',
-                    color: '#fff'
+                    color: '#333'
                 },
                 formatter: function(name) {
                     const feeData = feeDataArray.find(d => d.name === name);
@@ -1168,7 +1165,7 @@ function updateConsumerTypeChart(data) {
                     fontFamily: 'Microsoft YaHei, SimHei, sans-serif',
                     fontWeight: 'bold',
                     position: 'outside',
-                    color: '#fff',
+                    color: '#666',
                     textShadowBlur: 2,
                     textShadowColor: 'rgba(0,0,0,0.5)'
                 },
@@ -1177,7 +1174,7 @@ function updateConsumerTypeChart(data) {
                     length: 6,
                     length2: 8,
                     lineStyle: {
-                        color: 'rgba(255,255,255,0.6)',
+                        color: 'rgba(0,0,0,0.3)',
                         width: 1
                     }
                 },
@@ -1213,7 +1210,7 @@ function updateConsumerTypeChart(data) {
                     fontFamily: 'Microsoft YaHei, SimHei, sans-serif',
                     fontWeight: 'bold',
                     position: 'inside',
-                    color: '#fff',
+                    color: '#666',
                     textShadowBlur: 2,
                     textShadowColor: 'rgba(0,0,0,0.5)'
                 },

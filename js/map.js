@@ -3,7 +3,7 @@
 // 全局地图实例
 let mapChart = null;
 // 当前选中的区域
-let currentSelectedDistrict = null;
+window.currentSelectedDistrict = null;
 
 // 检测浏览器类型
 function getBrowserInfo() {
@@ -64,7 +64,7 @@ function initMap() {
     console.log('将使用的图表尺寸:', chartWidth.toFixed(2), 'x', chartHeight.toFixed(2));
     
     try {
-        mapChart = echarts.init(mapContainer, null, {
+        mapChart = window.mapChart = echarts.init(mapContainer, null, {
             renderer: 'canvas',
             width: chartWidth,
             height: chartHeight
@@ -162,7 +162,7 @@ function initMap() {
                     }
                 },
                 label: {
-                    show: true,
+                    show: false,
                     fontSize: 12,
                     fontFamily: 'Microsoft YaHei, SimHei, sans-serif',
                     formatter: function(params) {
@@ -201,6 +201,8 @@ function initMap() {
         // 添加错误处理
         try {
             mapChart.setOption(option, true); // true 表示不合并，完全替换
+            // 保存原始 visualMap 配置，用于取消高亮时恢复
+            window.__savedVisualMap = JSON.parse(JSON.stringify(option.visualMap));
         } catch (error) {
             console.warn('初始化地图选项时出错:', error.message);
         }
@@ -218,7 +220,7 @@ function initMap() {
                 console.log('点击了区域:', regionName, '级别:', regionLevel);
                 
                 // 如果点击的是当前已选中的区域，则取消选中
-                if (currentSelectedDistrict === regionName) {
+                if (window.currentSelectedDistrict === regionName) {
                     console.log('取消选中区域');
                     resetDistrictFilter();
                     // 重置选择器
@@ -490,28 +492,28 @@ function loadMapData() {
 // 更新地图数据
 function updateMap(data) {
     if (!mapChart) return;
-    
+
     // 添加全局错误处理
     try {
         const energyData = data.energyData || [];
-        
+
         console.log('=== updateMap 被调用 ===');
         console.log('energyData 数据量:', energyData.length);
         if (energyData.length > 0) {
             console.log('前 3 条数据:', energyData.slice(0, 3));
         }
-    
+
     // 按区域统计能耗（支持区县和网格）
     const regionEnergy = {};
     const regionLevel = {}; // 记录区域级别
-    
+
     energyData.forEach(item => {
         // 优先使用归属网格，如果没有则使用归属单元
         const grid = item['GRID'] || '';
         const district = item['J'] || '';
         const region = grid || district;
         const energy = Number(item['AB'] || item['ab'] || 0) || 0;
-        
+
         if (region) {
             if (regionEnergy[region]) {
                 regionEnergy[region] += energy;
@@ -522,19 +524,66 @@ function updateMap(data) {
             regionLevel[region] = grid ? 'grid' : 'district';
         }
     });
-    
+
     console.log('区域统计结果:', regionEnergy);
     console.log('区域级别:', regionLevel);
-    
+
     // 保存当前选中的区域
     const currentDistrict = getCurrentDistrict();
-    
+
     // 构建地图数据（包含 level 属性）
-    const mapData = Object.entries(regionEnergy).map(([name, value]) => ({ 
-        name, 
+    let mapData = Object.entries(regionEnergy).map(([name, value]) => ({
+        name,
         value: Math.floor(value),
         level: regionLevel[name] || 'unknown'
     }));
+
+    // 特殊处理：当选中区县时，确保显示区县轮廓而不是单个网格
+    if (currentDistrict) {
+        // 如果当前选中的是区县，则需要确保地图显示区县轮廓
+        const isDistrictSelected = !currentDistrict.includes('网格');
+        if (isDistrictSelected) {
+            console.log('选中区县:', currentDistrict, '确保显示区县轮廓');
+
+            // 检查是否已有该区县的数据
+            const hasDistrictData = mapData.some(item =>
+                item.name === currentDistrict ||
+                item.name === currentDistrict.replace(/区|市|县/g, '')
+            );
+
+            if (!hasDistrictData) {
+                console.log('地图数据中无该区县数据，添加区县轮廓数据');
+                // 查找该区县的所有网格数据
+                const districtGridData = mapData.filter(item =>
+                    item.level === 'grid' &&
+                    item.name.includes(currentDistrict.replace(/区|市|县/g, ''))
+                );
+
+                if (districtGridData.length > 0) {
+                    // 计算该区县的总能耗
+                    const districtTotalEnergy = districtGridData.reduce((sum, item) => sum + item.value, 0);
+
+                    // 添加区县轮廓数据，使用完整的区县名称（如"武进区"）
+                    mapData.push({
+                        name: currentDistrict, // 使用完整名称
+                        value: districtTotalEnergy,
+                        level: 'district'
+                    });
+
+                    console.log('已添加区县轮廓数据:', currentDistrict);
+                    console.log('区县总能耗:', districtTotalEnergy);
+
+                    // 移除该区县的所有网格数据，只显示区县轮廓
+                    mapData = mapData.filter(item =>
+                        !(item.level === 'grid' &&
+                          item.name.includes(currentDistrict.replace(/区|市|县/g, '')))
+                    );
+
+                    console.log('已移除该区县的网格数据');
+                }
+            }
+        }
+    }
     
     console.log('最终地图数据:', mapData);
     console.log('当前选中区域:', currentDistrict);
@@ -583,11 +632,7 @@ function updateMap(data) {
     // 在下一帧恢复选中状态
     if (currentDistrict) {
         requestAnimationFrame(() => {
-            mapChart.dispatchAction({
-                type: 'select',
-                seriesIndex: 0,
-                name: currentDistrict
-            });
+            updateMapHighlight(currentDistrict);
         });
     }
     
@@ -611,7 +656,7 @@ function filterDataByDistrict(district) {
     console.log('按区域过滤数据:', district);
     
     // 更新当前选中的区域
-    currentSelectedDistrict = district;
+    window.currentSelectedDistrict = district;
     
     // 从原始完整数据中筛选（而不是从已筛选的数据中筛选）
     const dataSource = window.originalDataCache || window.rawDataCache || [];
@@ -658,7 +703,7 @@ function filterDataByRegion(regionName, regionLevel) {
     console.log('按区域级别过滤数据:', regionName, '级别:', regionLevel);
     
     // 更新当前选中的区域
-    currentSelectedDistrict = regionName;
+    window.currentSelectedDistrict = regionName;
     
     // 从原始完整数据中筛选
     const dataSource = window.originalDataCache || window.rawDataCache || [];
@@ -704,20 +749,7 @@ function filterDataByRegion(regionName, regionLevel) {
             reloadDataWithFilter(filteredData, regionName);
         }
         
-        // 取消之前的选中状态，然后选中当前网格
-        if (mapChart) {
-            mapChart.dispatchAction({
-                type: 'unSelect',
-                seriesIndex: 0
-            });
-            mapChart.dispatchAction({
-                type: 'select',
-                seriesIndex: 0,
-                name: regionName
-            });
-        }
-        
-        // 更新地图高亮
+        // 更新地图高亮（数据驱动方式，dispatchAction 在此版本无效）
         updateMapHighlight(regionName);
         return; // 直接返回，不进行后续筛选
     } else if (regionLevel === 'district') {
@@ -767,6 +799,9 @@ function filterDataByRegion(regionName, regionLevel) {
     } else if (typeof reloadDataWithoutLoading === 'function') {
         reloadDataWithoutLoading();
     }
+
+    // 更新地图高亮
+    updateMapHighlight(regionName);
     
     // 更新地图高亮
     updateMapHighlight(regionName);
@@ -775,23 +810,132 @@ function filterDataByRegion(regionName, regionLevel) {
 // 更新地图高亮
 function updateMapHighlight(district) {
     if (!mapChart || !district) return;
-    
+
     console.log('高亮地图区域:', district);
-    
-    // 使用 toggleSelect 实现持久化选中状态
-    mapChart.dispatchAction({
-        type: 'toggleSelect',
-        seriesIndex: 0,
-        name: district
+
+    // 获取当前 option 和 visualMap 范围
+    var opt = mapChart.getOption();
+    var vm = window.__savedVisualMap || (opt.visualMap && opt.visualMap[0]) || {};
+    var minVal = vm.min || 0;
+    var maxVal = vm.max || 100;
+    var colors = vm.inRange && vm.inRange.color || ['#e0f3ff', '#1890ff'];
+
+    // 获取当前地图数据
+    var seriesData = (opt.series && opt.series[0] && opt.series[0].data) || [];
+    console.log('updateMapHighlight数据量:', seriesData.length, '查找名称:', district);
+
+    if (seriesData.length === 0) {
+        console.error('地图数据为空，无法高亮');
+        return;
+    }
+
+    var districtKeyword = district.replace(/区|市|县/g, '');
+    var isGridSelection = district.includes('网格');
+
+    // 构建全新数据数组
+    var newData = [];
+
+    if (isGridSelection) {
+        // 网格选择：不跳过任何条目，直接全部添加
+        seriesData.forEach(function(d) {
+            newData.push({ name: d.name, value: d.value, level: d.level });
+        });
+    } else {
+        // 区县选择：跳过旧区县条目，添加金色区县轮廓
+
+        // 汇总该区县内所有网格的能耗
+        var gridData = seriesData.filter(function(d) {
+            return d.level === 'grid' && d.name.includes(districtKeyword);
+        });
+        var districtTotal = 0;
+        if (gridData.length > 0) {
+            districtTotal = gridData.reduce(function(sum, d) { return sum + d.value; }, 0);
+        } else {
+            var existDistrict = seriesData.find(function(d) {
+                return d.level === 'district' && d.name.includes(districtKeyword);
+            });
+            if (existDistrict) {
+                districtTotal = existDistrict.value;
+            }
+        }
+
+        seriesData.forEach(function(d) {
+            if (d.level === 'district' && d.name.includes(districtKeyword)) {
+                return;
+            }
+            newData.push({ name: d.name, value: d.value, level: d.level });
+        });
+
+        newData.push({
+            name: district,
+            value: districtTotal || 0,
+            level: 'district',
+            itemStyle: {
+                areaColor: '#FFD700',
+                borderColor: '#FF4500',
+                borderWidth: 4,
+                shadowBlur: 10,
+                shadowColor: 'rgba(255, 69, 0, 0.5)'
+            },
+            label: {
+                show: true,
+                fontSize: 18,
+                fontWeight: 'bold',
+                color: '#FF4500',
+                textShadowColor: '#fff',
+                textShadowBlur: 4,
+                formatter: function() { return district; }
+            },
+            emphasis: {
+                label: { show: true, fontSize: 18, fontWeight: 'bold', color: '#FF4500' },
+                itemStyle: { areaColor: '#FFD700', borderColor: '#FF4500', borderWidth: 4 }
+            }
+        });
+    }
+
+    // 高亮目标（网格选择时高亮网格，区县选择时高亮区县轮廓）
+    var targetFound = false;
+    newData.forEach(function(d) {
+        var isTarget = d.name === district;
+        if (isTarget) {
+            targetFound = true;
+            d.itemStyle = {
+                areaColor: '#FFD700',
+                borderColor: '#FF4500',
+                borderWidth: 4,
+                shadowBlur: 10,
+                shadowColor: 'rgba(255, 69, 0, 0.5)'
+            };
+            d.label = {
+                show: true,
+                fontSize: 18,
+                fontWeight: 'bold',
+                color: '#FF4500',
+                textShadowColor: '#fff',
+                textShadowBlur: 4,
+                formatter: function() { return district; }
+            };
+        }
     });
+
+    if (!targetFound) {
+        console.warn('未找到高亮目标:', district);
+    }
+
+    // 只更新系列数据，不修改 visualMap（保持原始蓝色渐变图例）
+    mapChart.setOption({
+        series: [{ data: newData }]
+    });
+
+    console.log('地图高亮完成:', district);
 }
 
 // 重置数据筛选（显示全部数据）
 function resetDistrictFilter() {
     console.log('重置区域筛选，显示全部数据');
 
-    const previousDistrict = currentSelectedDistrict;
-    currentSelectedDistrict = null;
+    const previousDistrict = window.currentSelectedDistrict;
+    window.currentSelectedDistrict = null;
 
     // 恢复原始完整数据
     if (window.originalDataCache && window.originalDataCache.length > 0) {
@@ -814,19 +958,21 @@ function resetDistrictFilter() {
         window.filterEventsByRegion('', '');
     }
 
-    // 取消地图选中状态
-    if (mapChart && previousDistrict) {
-        mapChart.dispatchAction({
-            type: 'unSelect',
-            seriesIndex: 0,
-            name: previousDistrict
+    // 取消所有地图高亮：移除自定义样式，由当前 visualMap 自动配色
+    if (mapChart) {
+        var opt = mapChart.getOption();
+        mapChart.setOption({
+            series: [{ data: opt.series[0].data.map(function(d) {
+                return { name: d.name, value: d.value, level: d.level };
+            })}]
         });
+        console.log('已取消地图高亮');
     }
 }
 
 // 获取当前选中的区域
 function getCurrentDistrict() {
-    return currentSelectedDistrict;
+    return window.currentSelectedDistrict;
 }
 
 // 存储区县和网格的对应关系
@@ -1031,3 +1177,4 @@ window.filterDataByDistrict = filterDataByDistrict;
 window.resetDistrictFilter = resetDistrictFilter;
 window.getCurrentDistrict = getCurrentDistrict;
 window.updateSelectorFromMap = updateSelectorFromMap;
+window.updateMapHighlight = updateMapHighlight;
