@@ -540,8 +540,7 @@ function updateElectricityTypeChart(data) {
                 avoidLabelOverlap: true,
                 minShowLabelAngle: 0,
                 label: {
-                    show: true,
-                    overflow: 'none',
+                    show: false,
                     textOverflow: 'none',
                     lineHeight: 18,
                     formatter: function(params) {
@@ -1204,7 +1203,7 @@ function updateConsumerTypeChart(data) {
                 avoidLabelOverlap: true,
                 minShowLabelAngle: 0,
                 label: {
-                    show: true,
+                    show: false,
                     formatter: function(params) {
                         if (!params.value || params.value === 0) return '';
                         const value = params.value.toLocaleString('zh-CN');
