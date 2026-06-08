@@ -292,10 +292,11 @@ body {
 }
 
 .column-left .module {
-    flex: 1;
+    flex: 1 1 0;
     min-height: 0;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
 }
 
 /* 中间栏模块高度分配 */
@@ -307,18 +308,20 @@ body {
 }
 
 .column-center > .module:first-child {
-    flex: 2;
+    flex: 2 1 0;
     min-height: 0;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
 }
 
 .chart-row {
-    flex: 1;
+    flex: 1 1 0;
     min-height: 0;
     display: grid;
     grid-template-columns: 1fr 1fr;
     grid-gap: 10px;
+    overflow: hidden;
 }
 
 .chart-row .module {
@@ -326,6 +329,7 @@ body {
     min-height: 0;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
 }
 
 /* 右侧栏模块高度分配 */
@@ -337,10 +341,11 @@ body {
 }
 
 .column-right .module {
-    flex: 1;
+    flex: 1 1 0;
     min-height: 0;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
 }
 
 /* 时间/分类选择器 */
