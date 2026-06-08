@@ -102,7 +102,18 @@ function initMap() {
         
         // 注册地图
         echarts.registerMap('常州', geoJson);
-        
+
+        // 常州区县中心坐标（用于呼吸灯散点）
+        window.__districtCoords = {
+            '溧阳市': [119.48, 31.42],
+            '金坛区': [119.56, 31.72],
+            '武进区': [119.94, 31.70],
+            '新北区': [119.97, 31.82],
+            '天宁区': [120.00, 31.78],
+            '钟楼区': [119.95, 31.78],
+            '经开区': [120.05, 31.73]
+        };
+
         // 初始化地图选项
         const option = {
             tooltip: {
@@ -201,14 +212,63 @@ function initMap() {
                     shadowOffsetX: 0,
                     shadowOffsetY: 2
                 }
-            }
-        ]};
+            },
+        // 第二个系列：呼吸灯散点效果
+        {
+            name: '能耗节点',
+            id: 'effectScatter',
+            type: 'effectScatter',
+            coordinateSystem: 'geo',
+            data: [],
+            symbolSize: function(val) {
+                return Math.max(5, Math.min(20, (val[2] || 0) / 5000));
+            },
+            showEffectOn: 'render',
+            rippleEffect: {
+                brushType: 'stroke',
+                scale: 3,
+                period: 4
+            },
+            hoverAnimation: true,
+            label: {
+                formatter: function(params) {
+                    return params.name;
+                },
+                position: 'right',
+                show: true,
+                fontSize: 12,
+                color: 'rgba(255,255,255,0.6)'
+            },
+            itemStyle: {
+                color: '#00d4ff',
+                shadowBlur: 10,
+                shadowColor: '#00d4ff'
+            },
+            zlevel: 2
+        }
+    ]};
         
         // 添加错误处理
         try {
             mapChart.setOption(option, true); // true 表示不合并，完全替换
             // 保存原始 visualMap 配置，用于取消高亮时恢复
             window.__savedVisualMap = JSON.parse(JSON.stringify(option.visualMap));
+
+            // 初始化呼吸灯散点数据（先使用默认值，后续在 updateMap 中更新）
+            var initScatterData = [];
+            for (var districtName in window.__districtCoords) {
+                var coord = window.__districtCoords[districtName];
+                initScatterData.push({
+                    name: districtName,
+                    value: coord.concat(0)
+                });
+            }
+            mapChart.setOption({
+                series: [{
+                    id: 'effectScatter',
+                    data: initScatterData
+                }]
+            });
         } catch (error) {
             console.warn('初始化地图选项时出错:', error.message);
         }
@@ -634,6 +694,52 @@ function updateMap(data) {
             data: mapData
         }]
     });
+
+    // 更新呼吸灯散点数据（根据各区县总能耗）
+    var coords = window.__districtCoords || {};
+    var scatterData = [];
+    var distEnergy = {}; // 按区县汇总能耗
+
+    // 从 mapData 中按区县汇总
+    var districtKeys = Object.keys(coords);
+    mapData.forEach(function(d) {
+        if (d.level === 'grid') {
+            // 查找归属区县
+            for (var k = 0; k < districtKeys.length; k++) {
+                var dk = districtKeys[k].replace(/区|市|县/g, '');
+                if (d.name.indexOf(dk) !== -1) {
+                    if (!distEnergy[districtKeys[k]]) distEnergy[districtKeys[k]] = 0;
+                    distEnergy[districtKeys[k]] += d.value;
+                    break;
+                }
+            }
+        } else if (d.level === 'district') {
+            for (var k2 = 0; k2 < districtKeys.length; k2++) {
+                if (d.name.indexOf(districtKeys[k2]) !== -1 || districtKeys[k2].indexOf(d.name) !== -1) {
+                    distEnergy[districtKeys[k2]] = d.value;
+                    break;
+                }
+            }
+        }
+    });
+
+    for (var dn in distEnergy) {
+        if (coords[dn] && distEnergy[dn] > 0) {
+            scatterData.push({
+                name: dn,
+                value: coords[dn].concat(distEnergy[dn])
+            });
+        }
+    }
+
+    if (scatterData.length > 0) {
+        mapChart.setOption({
+            series: [{
+                id: 'effectScatter',
+                data: scatterData
+            }]
+        });
+    }
     
     // 在下一帧恢复选中状态
     if (currentDistrict) {

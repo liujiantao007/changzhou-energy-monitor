@@ -577,7 +577,7 @@ body {
 }
 
 .alarm-item, .event-item {
-    padding: 8px;
+    padding: 10px 8px;
     border-bottom: 1px solid rgba(0, 180, 255, 0.08);
     font-size: 12px;
     background: rgba(0, 25, 60, 0.3);
@@ -603,7 +603,7 @@ body {
     display: flex;
     align-items: center;
     margin-bottom: 4px;
-    line-height: 1.4;
+    line-height: 1.8;
 }
 
 .alarm-row:last-child {
@@ -618,7 +618,7 @@ body {
 }
 
 .alarm-row .content {
-    color: rgba(255, 255, 255, 0.8);
+    color: rgba(150, 180, 220, 0.7);
     font-size: 11px;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -661,7 +661,7 @@ body {
     display: flex;
     align-items: center;
     margin-bottom: 4px;
-    line-height: 1.4;
+    line-height: 1.8;
 }
 
 .event-row:last-child {
@@ -676,7 +676,7 @@ body {
 }
 
 .event-row .content {
-    color: rgba(255, 255, 255, 0.8);
+    color: rgba(150, 180, 220, 0.7);
     font-size: 11px;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -781,7 +781,7 @@ body {
 }
 
 .alarm-row .time-info {
-    color: rgba(255, 255, 255, 0.4);
+    color: rgba(100, 140, 180, 0.5);
     font-size: 10px;
     margin-left: 12px;
     flex-shrink: 0;

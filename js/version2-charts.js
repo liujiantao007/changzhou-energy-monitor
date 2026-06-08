@@ -164,7 +164,7 @@ function updateElectricityChart(data) {
                 length2: 5
             },
             data: chartData,
-            color: ['#00d4ff', '#00e676', '#ffd740', '#ff1744', '#18ffff', '#69f0ae', '#ff9100', '#b388ff', '#ea80fc']
+            color: ['#00d4ff', '#66bb6a', '#ffb74d', '#ef5350', '#4dd0e1', '#81c784', '#ff8a65', '#b39ddb', '#f48fb1']
         }]
     };
     
@@ -305,7 +305,7 @@ function updatePoiChart(data) {
                 }
             },
             data: chartData,
-            color: ['#00d4ff', '#ff1744']
+            color: ['#00d4ff', '#ef5350']
         }]
     };
 
@@ -323,12 +323,12 @@ function updateElectricityTypeChart(data) {
         // 外环 - 能耗 (冷色科技系)
         energy: [
             '#00d4ff', // 直供电 - 亮青
-            '#ff1744'  // 转供电 - 亮红
+            '#ef5350'  // 转供电 - 柔和红
         ],
         // 内环 - 电费 (暖色财富系)
         cost: [
-            '#00e676', // 直供电 - 荧光绿
-            '#ffd740'  // 转供电 - 琥珀金
+            '#66bb6a', // 直供电 - 柔和绿
+            '#ffb74d'  // 转供电 - 柔和金
         ]
     };
 
@@ -355,12 +355,12 @@ function updateElectricityTypeChart(data) {
 
     const energyDataArray = [
         { name: '直供电', value: Math.floor(directEnergy), itemStyle: { color: '#00d4ff' } },
-        { name: '转供电', value: Math.floor(indirectEnergy), itemStyle: { color: '#ff1744' } }
+        { name: '转供电', value: Math.floor(indirectEnergy), itemStyle: { color: '#ef5350' } }
     ];
 
     const costDataArray = [
-        { name: '直供电', value: Math.floor(directCost), itemStyle: { color: '#00e676' } },
-        { name: '转供电', value: Math.floor(indirectCost), itemStyle: { color: '#ffd740' } }
+        { name: '直供电', value: Math.floor(directCost), itemStyle: { color: '#66bb6a' } },
+        { name: '转供电', value: Math.floor(indirectCost), itemStyle: { color: '#ffb74d' } }
     ];
 
     const totalEnergy = directEnergy + indirectEnergy;
@@ -452,7 +452,7 @@ function updateElectricityTypeChart(data) {
                 icon: 'roundRect',
                 data: [
                     { name: '直供电', icon: 'roundRect', itemStyle: { color: '#00d4ff' } },
-                    { name: '转供电', icon: 'roundRect', itemStyle: { color: '#ff1744' } }
+                    { name: '转供电', icon: 'roundRect', itemStyle: { color: '#ef5350' } }
                 ]
             },
             {
@@ -476,8 +476,8 @@ function updateElectricityTypeChart(data) {
                 itemGap: 12,
                 icon: 'roundRect',
                 data: [
-                    { name: '直供电', icon: 'roundRect', itemStyle: { color: '#00e676' } },
-                    { name: '转供电', icon: 'roundRect', itemStyle: { color: '#ffd740' } }
+                    { name: '直供电', icon: 'roundRect', itemStyle: { color: '#66bb6a' } },
+                    { name: '转供电', icon: 'roundRect', itemStyle: { color: '#ffb74d' } }
                 ]
             }
         ],
@@ -1019,12 +1019,12 @@ function updateConsumerTypeChart(data) {
 
     const energyDataArray = [
         { name: '移动', value: Math.floor(mobileEnergy), itemStyle: { color: '#00d4ff' } },
-        { name: '铁塔', value: Math.floor(towerEnergy), itemStyle: { color: '#ff1744' } }
+        { name: '铁塔', value: Math.floor(towerEnergy), itemStyle: { color: '#ef5350' } }
     ];
 
     const feeDataArray = [
-        { name: '移动', value: Math.floor(mobileFee), itemStyle: { color: '#00e676' } },
-        { name: '铁塔', value: Math.floor(towerFee), itemStyle: { color: '#ffd740' } }
+        { name: '移动', value: Math.floor(mobileFee), itemStyle: { color: '#66bb6a' } },
+        { name: '铁塔', value: Math.floor(towerFee), itemStyle: { color: '#ffb74d' } }
     ];
 
     const totalEnergy = mobileEnergy + towerEnergy;
@@ -1097,7 +1097,7 @@ function updateConsumerTypeChart(data) {
                 icon: 'roundRect',
                 data: [
                     { name: '移动', icon: 'roundRect', itemStyle: { color: '#00d4ff' } },
-                    { name: '铁塔', icon: 'roundRect', itemStyle: { color: '#ff1744' } }
+                    { name: '铁塔', icon: 'roundRect', itemStyle: { color: '#ef5350' } }
                 ]
             },
             {
@@ -1121,8 +1121,8 @@ function updateConsumerTypeChart(data) {
                 itemGap: 12,
                 icon: 'roundRect',
                 data: [
-                    { name: '移动', icon: 'roundRect', itemStyle: { color: '#00e676' } },
-                    { name: '铁塔', icon: 'roundRect', itemStyle: { color: '#ffd740' } }
+                    { name: '移动', icon: 'roundRect', itemStyle: { color: '#66bb6a' } },
+                    { name: '铁塔', icon: 'roundRect', itemStyle: { color: '#ffb74d' } }
                 ]
             }
         ],
