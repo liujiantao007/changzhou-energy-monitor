@@ -138,15 +138,15 @@ function initMap() {
                 orient: 'vertical',
                 text: ['高', '低'],
                 calculable: true,
-                itemWidth: 20,
-                itemHeight: 200,
+                itemWidth: 12,
+                itemHeight: 150,
                 inRange: {
                     // 暗黑科技风青色渐变
                     color: ['#0a1628', '#0a2848', '#0a3d6b', '#005a9e', '#0077c2', '#0091ea', '#00b0ff', '#00d4ff', '#18ffff', '#84ffff']
                 },
                 textStyle: {
                     fontSize: 12,
-                    color: 'rgba(255,255,255,0.6)'
+                    color: 'rgba(100,140,180,0.5)'
                 }
             },
             series: [{
