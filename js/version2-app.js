@@ -33,7 +33,15 @@ function initVersionToggle() {
 function checkVersionPreference() {
     const savedVersion = localStorage.getItem('version');
     console.log('检查版本偏好: savedVersion =', savedVersion);
-    var currentPage = window.location.pathname.split('/').pop() || 'version2-index.html';
+    var currentPage = window.location.pathname.split('/').pop() || 'version2-theme.html';
+
+    if (currentPage === 'version2-theme.html') {
+        if (savedVersion !== 'theme') {
+            localStorage.setItem('version', 'theme');
+        }
+        console.log('已在主题版页面，保持当前页面');
+        return;
+    }
 
     if (savedVersion === 'old') {
         console.log('当前版本是旧版，切换到旧版');

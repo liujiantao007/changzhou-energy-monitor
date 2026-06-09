@@ -95,7 +95,7 @@ The project contains multiple dashboard entry pages that share similar layout co
 - `index.html` + `js/app.js`: old/original version.
 - `modern-index.html` + `js/modern-app.js`: newer intermediate version.
 - `version2-index.html` + `js/version2-*.js`: version 2 dashboard.
-- `version2-theme.html` + `js/version2-theme.js`: theme-enabled version; this is the default page served at `/` by `serve_frontend.py`.
+- `version2-theme.html` + `js/version2-theme.js`: theme-enabled version; this is the default page served at `/` by both `serve_frontend.py` and root `nginx.conf`.
 
 Version switching logic lives mainly in the corresponding `*-app.js` files and uses `localStorage.version` values such as `old`, `new`, `version2`, and `theme`.
 
