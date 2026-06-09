@@ -7,6 +7,19 @@ window.currentSelectedDistrict = null;
 // 地图区域透明度（主题版右上角滑块实时控制）
 window.mapAreaOpacity = 0.60;
 
+function getMapThemeColors() {
+    if (window.getThemeColors) {
+        const colors = window.getThemeColors();
+        if (colors && colors.mapVisualMap) {
+            return colors;
+        }
+    }
+    return {
+        mapVisualMap: ['#0B2348', '#1A4BA8', '#3A8BFF', '#4FC3F7', '#66BB6A', '#FFD54F', '#FFB74D', '#FF8A65', '#FF5252', '#D32F2F'],
+        mapText: 'rgba(100,140,180,0.5)'
+    };
+}
+
 // 检测浏览器类型
 function getBrowserInfo() {
     const ua = navigator.userAgent;
@@ -119,6 +132,8 @@ function initMap() {
             '经开区': [120.05, 31.73]
         };
 
+        const mapThemeColors = getMapThemeColors();
+
         // 初始化地图选项
         const option = {
             tooltip: {
@@ -148,12 +163,12 @@ function initMap() {
                 borderWidth: 0,
                 backgroundColor: 'transparent',
                 inRange: {
-                    // 低能耗蓝色 → 高能耗红色/橙色
-                    color: ['#0B2348', '#1A4BA8', '#3A8BFF', '#4FC3F7', '#66BB6A', '#FFD54F', '#FFB74D', '#FF8A65', '#FF5252', '#D32F2F']
+                    // 低能耗蓝色 → 高能耗红色/橙色；主题版中会按当前主题覆盖
+                    color: mapThemeColors.mapVisualMap
                 },
                 textStyle: {
                     fontSize: 12,
-                    color: 'rgba(100,140,180,0.5)'
+                    color: mapThemeColors.mapText
                 }
             },
             series: [{

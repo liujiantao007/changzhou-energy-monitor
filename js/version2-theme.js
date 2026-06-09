@@ -54,6 +54,14 @@ function applyTheme(themeId) {
     }, 50);
 }
 
+function hexToRgba(hex, alpha) {
+    if (!hex || hex.charAt(0) !== '#') return hex;
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return 'rgba(' + r + ', ' + g + ', ' + b + ', ' + alpha + ')';
+}
+
 // 更新 ECharts
 function updateEChartsTheme(themeId) {
     const colors = THEME_CHART_COLORS[themeId] || THEME_CHART_COLORS.default;
@@ -82,13 +90,21 @@ function updateEChartsTheme(themeId) {
     // 单独更新地图（地图没有 xAxis/yAxis，避免错误注入）
     if (window.mapChart && window.mapChart.setOption) {
         try {
+            const mapBorderColor = themeId === 'default' ? 'rgba(0, 217, 255, 0.5)' : colors.palette[0];
+            const mapShadowColor = themeId === 'default' ? 'rgba(0, 217, 255, 0.15)' : hexToRgba(colors.palette[0], 0.18);
             window.mapChart.setOption({
                 visualMap: {
                     inRange: { color: colors.mapVisualMap },
                     textStyle: { color: colors.mapText },
                     borderWidth: 0,
                     backgroundColor: 'transparent'
-                }
+                },
+                series: [{
+                    itemStyle: {
+                        borderColor: mapBorderColor,
+                        shadowColor: mapShadowColor
+                    }
+                }]
             });
         } catch(e) {}
     }

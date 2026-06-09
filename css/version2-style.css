@@ -51,6 +51,10 @@
     --brand-start: #00d4ff;
     --brand-end: #4fc3f7;
 
+    /* 告警/事件列表 */
+    --list-item-bg: rgba(0, 25, 60, 0.3);
+    --list-item-bg-even: rgba(0, 35, 80, 0.3);
+
     /* 通用 */
     --text-white: #ffffff;
     --border-light: rgba(0, 180, 255, 0.1);
@@ -90,6 +94,8 @@
     --text-muted: rgba(255, 255, 255, 0.4);
     --brand-start: #ff85c0;
     --brand-end: #ffd591;
+    --list-item-bg: rgba(80, 20, 52, 0.32);
+    --list-item-bg-even: rgba(110, 30, 68, 0.28);
 }
 
 /* ---- 高级钛羽灰 ---- */
@@ -112,6 +118,8 @@
     --text-muted: rgba(255, 255, 255, 0.4);
     --brand-start: #5cdbd3;
     --brand-end: #ffd591;
+    --list-item-bg: rgba(28, 42, 62, 0.36);
+    --list-item-bg-even: rgba(38, 54, 76, 0.32);
 }
 
 /* ---- 低碳环保绿 ---- */
@@ -134,6 +142,8 @@
     --text-muted: rgba(255, 255, 255, 0.4);
     --brand-start: #30bf78;
     --brand-end: #a2f5ad;
+    --list-item-bg: rgba(16, 70, 44, 0.34);
+    --list-item-bg-even: rgba(24, 92, 58, 0.30);
 }
 
 /* ---- 赛博霓虹紫 ---- */
@@ -156,6 +166,8 @@
     --text-muted: rgba(255, 255, 255, 0.4);
     --brand-start: #ff007f;
     --brand-end: #00f0ff;
+    --list-item-bg: rgba(66, 16, 96, 0.34);
+    --list-item-bg-even: rgba(88, 22, 128, 0.30);
 }
 
 /* ---- 琥珀曜石金 ---- */
@@ -178,6 +190,8 @@
     --text-muted: rgba(255, 255, 255, 0.4);
     --brand-start: #ff9900;
     --brand-end: #ffcc00;
+    --list-item-bg: rgba(82, 52, 12, 0.34);
+    --list-item-bg-even: rgba(110, 70, 18, 0.30);
 }
 
 /* ---- 红岩重工业 ---- */
@@ -200,6 +214,8 @@
     --text-muted: rgba(255, 255, 255, 0.4);
     --brand-start: #ff4d4f;
     --brand-end: #ff7875;
+    --list-item-bg: rgba(82, 18, 18, 0.34);
+    --list-item-bg-even: rgba(112, 26, 26, 0.30);
 }
 
 /* ---- 极光幻境青 ---- */
@@ -222,6 +238,8 @@
     --text-muted: rgba(255, 255, 255, 0.4);
     --brand-start: #10ebd5;
     --brand-end: #73d13d;
+    --list-item-bg: rgba(12, 62, 82, 0.34);
+    --list-item-bg-even: rgba(16, 84, 108, 0.30);
 }
 
 /* ---- 极致纯黑碳 ---- */
@@ -244,6 +262,8 @@
     --text-muted: rgba(255, 255, 255, 0.4);
     --brand-start: #ffffff;
     --brand-end: #1890ff;
+    --list-item-bg: rgba(42, 42, 42, 0.45);
+    --list-item-bg-even: rgba(58, 58, 58, 0.40);
     --border-light: rgba(255, 255, 255, 0.1);
     --badge-info: #1890ff;
     --badge-info-end: #096dd9;
@@ -269,6 +289,8 @@
     --text-muted: rgba(255, 255, 255, 0.4);
     --brand-start: #b37feb;
     --brand-end: #ff85c0;
+    --list-item-bg: rgba(52, 38, 90, 0.36);
+    --list-item-bg-even: rgba(70, 48, 118, 0.32);
 }
 
 /* ---- 深海寂静蓝 ---- */
@@ -291,6 +313,8 @@
     --text-muted: rgba(255, 255, 255, 0.4);
     --brand-start: #00e5ff;
     --brand-end: #00a1ff;
+    --list-item-bg: rgba(8, 42, 88, 0.36);
+    --list-item-bg-even: rgba(10, 56, 116, 0.32);
 }
 
 /* ---- 浅色明亮模式 ---- */
@@ -319,6 +343,8 @@
     --shadow-md: rgba(0, 0, 0, 0.12);
     --brand-start: #1890ff;
     --brand-end: #69c0ff;
+    --list-item-bg: rgba(24, 144, 255, 0.08);
+    --list-item-bg-even: rgba(24, 144, 255, 0.14);
     --border-light: rgba(0, 0, 0, 0.08);
     --color-positive: #ff4d4f;
     --color-negative: #52c41a;
@@ -941,14 +967,14 @@ body {
     padding: 10px 8px;
     border-bottom: 1px solid rgba(var(--accent-rgb), 0.08);
     font-size: 12px;
-    background: rgba(0, 25, 60, 0.3);
+    background: var(--list-item-bg);
     margin-bottom: 4px;
     border-radius: 4px;
     transition: background 0.2s ease;
 }
 
 .alarm-item:nth-child(even), .event-item:nth-child(even) {
-    background: rgba(0, 35, 80, 0.3);
+    background: var(--list-item-bg-even);
 }
 
 .alarm-item:hover, .event-item:hover {
