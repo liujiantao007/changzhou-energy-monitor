@@ -1401,19 +1401,9 @@ body {
     color: rgba(255, 255, 255, 0.8);
 }
 
-html.edge-browser .region-selector .region-select option {
-    font-size: 32px;
-    line-height: 2;
-}
-
 #theme-dropdown option {
     font-size: 10px;
     line-height: 1.4;
-}
-
-html.edge-browser #theme-dropdown option {
-    font-size: 32px;
-    line-height: 2;
 }
 
 /* 知识库样式 */

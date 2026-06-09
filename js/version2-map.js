@@ -20,31 +20,10 @@ function getMapThemeColors() {
     };
 }
 
-// 检测浏览器类型
-function getBrowserInfo() {
-    const ua = navigator.userAgent;
-    if (ua.indexOf('Edg') !== -1) {
-        return { name: 'Edge', version: parseFloat(ua.match(/Edg\/(\d+)/)[1]) || null };
-    }
-    if (ua.indexOf('Chrome') !== -1 && ua.indexOf('Edg') === -1) {
-        return { name: 'Chrome', version: parseFloat(ua.match(/Chrome\/(\d+)/)[1]) || null };
-    }
-    if (ua.indexOf('Firefox') !== -1) {
-        return { name: 'Firefox', version: parseFloat(ua.match(/Firefox\/(\d+)/)[1]) || null };
-    }
-    return { name: 'Unknown', version: null };
-}
-
 // 初始化地图
 function initMap() {
     console.log('====================================');
     console.log('开始初始化地图...');
-    
-    const browser = getBrowserInfo();
-    console.log('浏览器信息:', browser);
-    if (browser.name === 'Edge') {
-        document.documentElement.classList.add('edge-browser');
-    }
     
     if (typeof echarts === 'undefined') {
         console.error('ECharts 库未加载！');

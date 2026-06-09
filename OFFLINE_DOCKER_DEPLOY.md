@@ -249,32 +249,28 @@ nginx.conf
 
 ### 8.1 在线服务器可以直接 SSH 到离线云主机
 
-在在线服务器执行：
+在在线服务器执行（注意端口用 `-P` 大写）：
 
 ```bash
-scp changzhou-energy-monitor_latest.tar.gz \
+scp -P 2202 changzhou-energy-monitor_latest.tar.gz \
     changzhou-energy-monitor_latest.tar.gz.sha256 \
     docker-compose.yml \
     nginx.conf \
-    用户名@离线云主机IP:/tmp/
+    root@10.38.78.228:/home/user/docker-images
 ```
 
-登录离线云主机：
+登录离线云主机（注意端口用 `-p` 小写）：
 
 ```bash
-ssh 用户名@离线云主机IP
+ssh -p 2202 root@10.38.78.228
 ```
 
-创建部署目录并移动文件：
+创建部署目录并移动文件（如果目录尚不存在）：
 
 ```bash
-sudo mkdir -p /opt/changzhou-energy-monitor
-sudo mv /tmp/changzhou-energy-monitor_latest.tar.gz /opt/changzhou-energy-monitor/
-sudo mv /tmp/changzhou-energy-monitor_latest.tar.gz.sha256 /opt/changzhou-energy-monitor/
-sudo mv /tmp/docker-compose.yml /opt/changzhou-energy-monitor/
-sudo mv /tmp/nginx.conf /opt/changzhou-energy-monitor/
-sudo chown -R $USER:$USER /opt/changzhou-energy-monitor
-cd /opt/changzhou-energy-monitor
+mkdir -p /home/dean/docker-images
+cd /home/dean/docker-images
+ls -lh
 ```
 
 ### 8.2 需要跳板机
@@ -282,15 +278,21 @@ cd /opt/changzhou-energy-monitor
 如果需要跳板机，可以使用 `scp -J`：
 
 ```bash
-scp -J 跳板机用户@跳板机IP \
+scp -o Port=2202 -J 跳板机用户@跳板机IP \
     changzhou-energy-monitor_latest.tar.gz \
     changzhou-energy-monitor_latest.tar.gz.sha256 \
     docker-compose.yml \
     nginx.conf \
-    用户名@离线云主机IP:/tmp/
+    root@10.38.78.228:/home/dean/docker-images/
 ```
 
-然后登录离线云主机，把 `/tmp` 里的文件移动到 `/opt/changzhou-energy-monitor`，命令同上。
+然后登录离线云主机：
+
+```bash
+ssh -p 2202 root@10.38.78.228
+cd /home/dean/docker-images
+ls -lh
+```
 
 ### 8.3 通过个人电脑中转
 
@@ -307,11 +309,11 @@ scp 在线服务器用户@在线服务器IP:/项目路径/changzhou-energy-monit
 scp 在线服务器用户@在线服务器IP:/项目路径/docker-compose.yml .
 scp 在线服务器用户@在线服务器IP:/项目路径/nginx.conf .
 
-scp changzhou-energy-monitor_latest.tar.gz \
+scp -P 2202 changzhou-energy-monitor_latest.tar.gz \
     changzhou-energy-monitor_latest.tar.gz.sha256 \
     docker-compose.yml \
     nginx.conf \
-    离线云主机用户@离线云主机IP:/tmp/
+    root@10.38.78.228:/home/dean/docker-images/
 ```
 
 ---
@@ -321,7 +323,7 @@ scp changzhou-energy-monitor_latest.tar.gz \
 登录离线云主机后：
 
 ```bash
-cd /opt/changzhou-energy-monitor
+cd /home/dean/docker-images
 sha256sum -c changzhou-energy-monitor_latest.tar.gz.sha256
 ```
 
@@ -359,7 +361,7 @@ changzhou-energy-monitor   latest   xxxxxxxxxxxx   ...
 
 ## 11. 离线云主机：启动服务
 
-在 `/opt/changzhou-energy-monitor` 目录执行：
+在 `/home/dean/docker-images` 目录执行：
 
 ```bash
 docker compose up -d
@@ -431,7 +433,7 @@ nginx.conf
 ### 12.3 离线云主机更新
 
 ```bash
-cd /opt/changzhou-energy-monitor
+cd /home/dean/docker-images
 
 docker compose down
 sha256sum -c changzhou-energy-monitor_latest.tar.gz.sha256
